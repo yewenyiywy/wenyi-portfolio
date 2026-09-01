@@ -56,6 +56,7 @@ export default function Home(){
   const barRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState('')
   const [shot, setShot] = useState<Shot | null>(null)
+  const [mobileMenu, setMobileMenu] = useState(false)
   const close = useCallback(() => setShot(null), [])
 
   /* Reveal on scroll. The hiding class is added by script, so the page still
@@ -138,6 +139,24 @@ export default function Home(){
       <a href="/hobbies">Hobbies</a>
     </div>
     <a href="#contact" className="nav-contact">Get in touch <ArrowUpRight size={13}/></a>
+    <button
+      type="button"
+      className="mobile-menu-toggle"
+      aria-label={mobileMenu ? 'Close navigation' : 'Open navigation'}
+      aria-expanded={mobileMenu}
+      onClick={() => setMobileMenu(v => !v)}
+    >
+      <span></span><span></span>
+    </button>
+    {mobileMenu && (
+      <div className="mobile-menu">
+        {navItems.map(n => (
+          <a key={n.id} href={`#${n.id}`} onClick={() => setMobileMenu(false)}>{n.label}</a>
+        ))}
+        <a href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</a>
+        <a href="#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</a>
+      </div>
+    )}
   </nav>
 
   <header className="fashion-hero wrap">
@@ -170,7 +189,7 @@ export default function Home(){
   </div></section>
 
   <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">
-    <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div></article>
+    <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div></article>
     <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div></article>
     <article className="timeline-entry edu"><div className="date">09/2018 – 07/2021</div><div className="entry-content"><div className="entry-top"><Brand src={logos.bdfz} alt="The Affiliated High School of Peking University"/><div className="entry-title"><div className="title-line"><h3>The Affiliated High School of Peking University</h3><span className="location">Beijing, China</span></div><div className="role">High School</div></div></div></div></article>
   </div></section>

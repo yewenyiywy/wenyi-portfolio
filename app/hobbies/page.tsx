@@ -43,6 +43,7 @@ export default function HobbiesPage() {
   const navRef = useRef<HTMLElement>(null)
   const heroImgRef = useRef<HTMLImageElement>(null)
   const [shot, setShot] = useState<Shot | null>(null)
+  const [mobileMenu, setMobileMenu] = useState(false)
 
   const open = useCallback((s: Shot) => setShot(s), [])
   const close = useCallback(() => setShot(null), [])
@@ -125,6 +126,25 @@ export default function HobbiesPage() {
           <Link href="/hobbies" className="active">Hobbies</Link>
         </div>
         <Link href="/#contact" className="nav-contact">Get in touch <span aria-hidden="true">↗</span></Link>
+        <button
+          type="button"
+          className="mobile-menu-toggle"
+          aria-label={mobileMenu ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={mobileMenu}
+          onClick={() => setMobileMenu(v => !v)}
+        >
+          <span></span><span></span>
+        </button>
+        {mobileMenu && (
+          <div className="mobile-menu">
+            <Link href="/#about" onClick={() => setMobileMenu(false)}>About</Link>
+            <Link href="/#education" onClick={() => setMobileMenu(false)}>Education</Link>
+            <Link href="/#experience" onClick={() => setMobileMenu(false)}>Experience</Link>
+            <Link href="/#research" onClick={() => setMobileMenu(false)}>Research</Link>
+            <Link href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</Link>
+            <Link href="/#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</Link>
+          </div>
+        )}
       </nav>
 
       <header className="hobbies-hero wrap">
