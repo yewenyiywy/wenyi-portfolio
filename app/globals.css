@@ -862,3 +862,79 @@ img{max-width:100%}
     font-size: .82em;
   }
 }
+
+/* v38 — portfolio hierarchy refinement */
+.hero-kicker span {
+  letter-spacing: .16em;
+}
+.hero-lede {
+  max-width: 35rem;
+}
+.about-prose {
+  max-width: 46rem;
+}
+.focus-lines > div {
+  grid-template-columns: 9rem minmax(0,1fr);
+  column-gap: 1.5rem;
+}
+.focus-lines span {
+  line-height: 1.55;
+}
+.tags {
+  gap: .3rem;
+}
+.tags span {
+  font-size: .66rem;
+  padding: .18rem .42rem;
+}
+@media (max-width: 640px) {
+  .focus-lines > div {
+    grid-template-columns: 1fr;
+    row-gap: .2rem;
+  }
+  .hero-kicker span {
+    letter-spacing: .1em;
+  }
+}
+
+/* v40 — hierarchy refinement */
+.hero-meta{margin-top:.7rem;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;opacity:.62}
+.hero-kicker{letter-spacing:.12em}
+.academic-index-group .coursework-item{align-items:baseline}
+.academic-index-group .coursework-code{letter-spacing:.03em}
+.academic-index-group .coursework-name{line-height:1.4}
+.academic-index-group .coursework-detail{font-style:italic;opacity:.58}
+
+/* v41 — final hierarchy */
+.hero-editorial .hero-kicker { font-weight: 700; }
+.hero-meta { margin-top: .65rem; }
+.focus-lines > div { align-items: baseline; }
+.focus-lines > div > b { white-space: nowrap; }
+.focus-lines > div > span { line-height: 1.5; }
+.coursework-group-title { letter-spacing: .1em; text-transform: uppercase; font-size: .68rem; font-weight: 700; }
+.coursework-detail { font-style: italic; opacity: .6; }
+@media (max-width: 760px) {
+  .focus-lines > div > b { white-space: normal; }
+}
+
+/* v42 — company-name links */
+.company-link,
+.company-link:visited {
+  color: inherit;
+  text-decoration: none;
+}
+.company-link:hover {
+  text-decoration: underline;
+  text-underline-offset: .18em;
+}
+
+/* v43 — experience company links */
+.company-link,
+.company-link:visited {
+  color: inherit;
+  text-decoration: none;
+}
+.company-link:hover {
+  text-decoration: underline;
+  text-underline-offset: .16em;
+}
