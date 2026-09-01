@@ -1,5 +1,4 @@
-'use client'
-
+"use client";
 import { ArrowUpRight, Github, Linkedin, Mail, Instagram } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -28,7 +27,7 @@ const logos = {
 
 const experience = [
   { company:'TikTok', logo:logos.tiktok, location:'San Jose, CA', role:'AI Product Manager Intern', date:'03/2026 – 08/2026', tags:['AI Evaluation','LangGraph','Python','SQL'], bullets:[<>Built an agentic evaluation framework for AI safety policies; red-team findings improved detection accuracy from <strong>69% → 91%</strong>.</>,<>Led A/B testing, marginal-traffic attribution, and A/A validation infrastructure for AI policy iteration.</>] },
-  { company:'Shepherd Ventures', logo:logos.shepherd, location:'San Diego, CA', role:'Quant Researcher', date:'10/2023 – 01/2025', tags:['Machine Learning','K-Means','Optimization','Python'], bullets:[<>Applied K-Means clustering and multivariate optimization to S&amp;P 500 data, reducing maximum drawdown by <strong>35.8%</strong>.</>,<>Automated monthly portfolio rebalancing; <strong>70%+</strong> of orders completed within a predefined trading horizon.</>] },
+  { company:'Shepherd Ventures', logo:logos.shepherd, location:'San Diego, CA', role:'Quant Researcher', date:'10/2023 – 01/2025', tags:['Machine & Deep Learning','K-Means','Optimization','Python'], bullets:[<>Applied K-Means clustering and multivariate optimization to S&amp;P 500 data, reducing maximum drawdown by <strong>35.8%</strong>.</>,<>Automated monthly portfolio rebalancing; <strong>70%+</strong> of orders completed within a predefined trading horizon.</>] },
   { company:'China Securities', logo:logos.csc, location:'Beijing, China', role:'Summer Quant Research Intern', date:'07/2024 – 09/2024', tags:['Alpha Research','ML','Regression','SQL'], bullets:[<>Built alternative-data coverage for <strong>50+ biotech companies</strong> with <strong>100K+</strong> records; derived <strong>35 alpha factors</strong>, with the top factor returning 15.2% annualized.</>,<>Developed style-index rotation strategies using regularized regression, generating a <strong>25.4%</strong> annual return.</>] },
   { company:'Bank of China', logo:logos.boc, location:'Beijing, China', role:'Summer Liquidity Risk Intern', date:'07/2023 – 09/2023', tags:['Python','SQL','ETL','Risk Modeling'], bullets:[<>Built ETL pipelines and liquidity-monitoring tools across <strong>$7T+</strong> in daily settlement volumes.</>,<>Performed liquidity stress testing and KRI analysis across entities, currencies, and agent banks.</>] },
 ]
@@ -50,7 +49,86 @@ function Entry({item}:{item:any}){return <article className="timeline-entry reve
   </div>
 </article>}
 
+
+const coursework = {
+  umich: {
+    Mathematics: [
+      { code: "MATH 451", name: "Advanced Calculus" },
+      { code: "MATH 472", name: "Numerical Methods in Financial Applications" },
+      { code: "MATH 526", name: "Discrete Stochastic Processes" },
+      { code: "MATH 573", name: "Financial Mathematics", detail: "Measure Theory" },
+    ],
+    Statistics: [
+      { code: "MATH 425", name: "Introduction to Probability" },
+      { code: "STATS 426", name: "Introduction to Theoretical Statistics" },
+      { code: "STATS 500", name: "Regression Analysis" },
+    ],
+    "Machine & Deep Learning": [
+      { code: "MATH 547", name: "Mathematics of Data" },
+      { code: "MATH 628", name: "Machine Learning for Finance" },
+      { code: "MATH 507", name: "Mathematical Algorithmic Trading", detail: "Optimization & Reinforcement Learning" },
+    ],
+    Finance: [
+      { code: "MATH 423", name: "Mathematics of Finance" },
+      { code: "FIN 608", name: "Capital Markets & Investment Strategies" },
+      { code: "FIN 614", name: "Global Capital Markets" },
+    ],
+  },
+  berkeley: {
+    Mathematics: [
+      { code: "MFE 230Q", name: "Stochastic Calculus" },
+      { code: "MFE 230D", name: "Derivative: Quantitative Methods" },
+    ],
+    Statistics: [
+      { code: "MFE 230E", name: "Empirical Methods in Finance", detail: "Time Series Analysis" },
+    ],
+    "Machine & Deep Learning": [
+      { code: "MFE 230ZA", name: "Deep Learning and Applications" },
+      { code: "MFE 230P", name: "Financial Data Science", detail: "Machine Learning" },
+    ],
+    Finance: [
+      { code: "MFE 230A", name: "Investments and Derivatives" },
+      { code: "MFE 230H", name: "Financial Risk Measurement and Management" },
+      { code: "MFE 230I", name: "Fixed Income Markets" },
+      { code: "MFE 230M", name: "Asset-Backed Security" },
+      { code: "MFE 230X", name: "High Frequency Finance" },
+    ],
+  },
+};
+
+function CourseworkPanel({ school, open, onToggle }: {
+  school: "umich" | "berkeley"; open: boolean; onToggle: () => void;
+}) {
+  return (
+    <div className="coursework-wrap">
+      <button type="button" className="coursework-toggle" onClick={onToggle} aria-expanded={open}>
+        <span>{open ? "Hide coursework" : "Click to view coursework"}</span>
+        <span className={`coursework-arrow ${open ? "is-open" : ""}`}>→</span>
+      </button>
+      {open && (
+        <div className="coursework-panel">
+          {Object.entries(coursework[school]).map(([group, courses]) => (
+            <div className="coursework-group" key={group}>
+              <div className="coursework-group-title">{group}</div>
+              <div className="coursework-list">
+                {courses.map(course => (
+                  <div className="coursework-item" key={course.code}>
+                    <span className="coursework-code">{course.code}</span>
+                    <span className="coursework-name">{course.name}{course.detail && <span className="coursework-detail"> / {course.detail}</span>}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home(){
+  const [openCoursework, setOpenCoursework] = useState<"umich" | "berkeley" | null>(null)
+
   const pageRef = useRef<HTMLElement>(null)
   const navRef = useRef<HTMLElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -189,12 +267,12 @@ export default function Home(){
   </div></section>
 
   <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">
-    <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div></article>
-    <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div></article>
+    <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="berkeley" open={openCoursework === "berkeley"} onToggle={() => setOpenCoursework(openCoursework === "berkeley" ? null : "berkeley")} /></div></article>
+    <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="umich" open={openCoursework === "umich"} onToggle={() => setOpenCoursework(openCoursework === "umich" ? null : "umich")} /></div></article>
     <article className="timeline-entry edu"><div className="date">09/2018 – 07/2021</div><div className="entry-content"><div className="entry-top"><Brand src={logos.bdfz} alt="The Affiliated High School of Peking University"/><div className="entry-title"><div className="title-line"><h3>The Affiliated High School of Peking University</h3><span className="location">Beijing, China</span></div><div className="role">High School</div></div></div></div></article>
   </div></section>
 
-  <section id="skills" className="section wrap"><div className="section-label reveal">FOCUS</div><div className="focus-lines reveal"><div><b>AI / ML</b><span>Machine Learning · Deep Learning · Model Evaluation · AI Safety · LangGraph · PyTorch · scikit-learn</span></div><div><b>Quant</b><span>Alpha Research · Time Series · Optimization · Stochastic Calculus · Algorithmic Trading · Backtesting</span></div><div><b>Tools</b><span>Python · C++ · SQL · R · Pandas · NumPy · SciPy · Git · Docker</span></div><div><b>Languages</b><span>Chinese (Native) · English (Professional) · French (Intermediate) · Korean (Beginner)</span></div><div><b>Certification</b><span>CFA Level 1 · Passed</span></div></div></section>
+  <section id="skills" className="section wrap"><div className="section-label reveal">FOCUS</div><div className="focus-lines reveal"><div><b>AI / ML</b><span>Machine & Deep Learning · Deep Learning · Model Evaluation · AI Safety</span></div><div><b>Quant</b><span>Alpha Research · Time Series · Optimization · Stochastic Calculus · Algorithmic Trading · Backtesting</span></div><div><b>Tools</b><span>Python (Pandas · NumPy · SciPy； PyTorch · scikit-learn； LangGraph) · C++ · SQL · R · Git · Docker</span></div><div><b>Languages</b><span>Chinese (Native) · English (Professional) · French (Intermediate) · Korean (Beginner)</span></div><div><b>Certification</b><span>CFA Level 1 · Passed</span></div></div></section>
 
   <section id="experience" className="section wrap"><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
   <section id="research" className="section wrap"><div className="section-label reveal">RESEARCH / TRADING</div><div className="timeline">{research.map(item=><Entry item={item} key={item.title}/>)}</div></section>
