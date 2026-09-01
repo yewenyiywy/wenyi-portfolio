@@ -114,7 +114,7 @@ function CourseworkPanel({ school, open, onToggle }: {
                 {courses.map(course => (
                   <div className="coursework-item" key={course.code}>
                     <span className="coursework-code">{course.code}</span>
-                    <span className="coursework-name">{course.name}{course.detail && <span className="coursework-detail"> / {course.detail}</span>}</span>
+                    <span className="coursework-name">{course.name}{("detail" in course) && course.detail && <span className="coursework-detail"> / {course.detail}</span>}</span>
                   </div>
                 ))}
               </div>
