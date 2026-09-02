@@ -128,6 +128,7 @@ function CourseworkPanel({ school, open, onToggle }: {
 
 export default function Home(){
   const [openCoursework, setOpenCoursework] = useState<"umich" | "berkeley" | null>(null)
+  const [showWorkflow, setShowWorkflow] = useState(false)
 
   const pageRef = useRef<HTMLElement>(null)
   const navRef = useRef<HTMLElement>(null)
@@ -273,14 +274,73 @@ export default function Home(){
   </div></section>
 
   <section id="skills" className="section wrap">
-    <div className="section-label reveal">RESEARCH INTERESTS</div>
+    <div className="section-label reveal">SKILLS</div>
     <div className="focus-lines reveal">
-      <div><b>AI × Finance</b><span>Alpha Auto Discovery · Agentic Systems · Deep Learning · Reinforcement Learning</span></div>
-      <div><b>Quantitative Finance</b><span>Alpha Research · Time Series · Stochastic Calculus · Optimization · Algorithmic Trading</span></div>
-      <div><b>Technical Stack</b><span>Python (Pandas · NumPy · SciPy · PyTorch · scikit-learn · LangGraph) · C++ · SQL · R · Git · DVC · MLFlow · Jenkins · Docker</span></div>
+      <div><b>Programming</b><span>Python (Pandas · NumPy · SciPy · PyTorch · scikit-learn) · C++ · SQL · R</span></div>
+      <div className="stack-row stack-row-wide"><b>AI-Ecosystem Tools</b><span><strong>Frontend:</strong> React · Next.js · Streamlit; <strong>Backend &amp; APIs:</strong> FastAPI · REST APIs; <strong>Development &amp; Version Control:</strong> Git · GitHub; <strong>Data &amp; Infrastructure:</strong> Redis · PostgreSQL · Docker; <strong>LLM &amp; Agents:</strong> LangGraph · MCP · Claude · GPT · Gemini · Hugging Face; <strong>Evaluation:</strong> RAGAS; <strong>Deployment:</strong> Vercel · AWS</span></div>
+      <div><b>Quantitative</b><span>Probability · Stochastic Processes · Statistical Inference · Time Series · Optimization · Algorithmic Trading · Backtesting</span></div>
       <div><b>Languages</b><span>Chinese (Native) · English (Professional) · French (Intermediate) · Korean (Beginner)</span></div>
       <div><b>Certification</b><span>CFA Level 1 · Passed</span></div>
     </div>
+
+    <div className="workflow-toggle-wrap reveal">
+      <button type="button" className={`workflow-toggle ${showWorkflow ? 'is-open' : ''}`} onClick={() => setShowWorkflow(v => !v)} aria-expanded={showWorkflow}>
+        <span className="workflow-toggle-mark">{showWorkflow ? '−' : '+'}</span>
+        <span>{showWorkflow ? 'Hide research workflow' : 'View AI-native research workflow'}</span>
+        <span className="workflow-toggle-arrow">→</span>
+      </button>
+    </div>
+
+    {showWorkflow && (
+      <div className="qwf reveal is-in" aria-label="AI-native quant research workflow">
+        <div className="qwf-grid">
+          <div className="qwf-head">AI Layer</div>
+          <div className="qwf-head">Research Loop</div>
+          <div className="qwf-head">Infrastructure</div>
+
+          <div className="qwf-ai is-first"><b>Claude &middot; GPT &middot; Gemini</b><span>Literature scan, prior framing</span></div>
+          <div className="qwf-stage is-first"><b>Hypothesis</b><span>Research question, prior</span></div>
+          <div className="qwf-infra">
+            <div className="qwf-infra-grp is-first">Serving</div>
+            <div className="qwf-infra-item"><b>FastAPI</b><span>Model &amp; signal endpoints</span></div>
+            <div className="qwf-infra-item"><b>REST APIs</b><span>Vendor &amp; internal data</span></div>
+            <div className="qwf-infra-item"><b>Next.js &middot; Streamlit</b><span>Research dashboards</span></div>
+            <div className="qwf-infra-grp">Storage</div>
+            <div className="qwf-infra-item"><b>PostgreSQL</b><span>Time series, fund data</span></div>
+            <div className="qwf-infra-item"><b>Redis</b><span>Backtest result caching</span></div>
+            <div className="qwf-infra-item"><b>Vector store</b><span>Text feature embeddings</span></div>
+            <div className="qwf-infra-grp">Compute &amp; Deploy</div>
+            <div className="qwf-infra-item"><b>Docker</b><span>Reproducible environments</span></div>
+            <div className="qwf-infra-item"><b>AWS</b><span>Sweep &amp; batch compute</span></div>
+            <div className="qwf-infra-item"><b>Vercel</b><span>Dashboard hosting</span></div>
+            <div className="qwf-infra-grp">Versioning</div>
+            <div className="qwf-infra-item"><b>Git &middot; GitHub</b><span>Experiment &amp; code history</span></div>
+          </div>
+
+          <div className="qwf-ai"><b>MCP</b><span>Repo and data access</span></div>
+          <div className="qwf-stage"><b>Data</b><span>Market, fund-level, vendor APIs</span></div>
+
+          <div className="qwf-ai"><b>Embeddings &middot; RAGAS</b><span>Text-derived features, retrieval scored on precision and recall</span></div>
+          <div className="qwf-stage"><b>Signal &amp; Features</b><span>Factor construction</span></div>
+
+          <div className="qwf-ai qwf-span"><b>Claude Code &middot; Codex</b><span>Implementation, derivation checks, backtest harness</span></div>
+          <div className="qwf-stage"><b>Model</b><span>Stochastic control, ML, RL</span></div>
+
+          <div className="qwf-stage"><b>Backtest</b><span>Walk-forward, costs, benchmark</span></div>
+
+          <div className="qwf-ai"><b>Agent &amp; Human Review</b><span>Agent flags anomalies, human makes the call</span></div>
+          <div className="qwf-stage"><b>Risk &amp; Diagnostics</b><span>Sharpe, drawdown, overfitting</span></div>
+
+          <div className="qwf-band"><b>LangGraph</b><span>Chains the steps above into repeatable agent runs</span></div>
+          <div></div>
+
+          <div className="qwf-band"><b>AI Security &amp; Safety</b><span>Sandboxed execution, injection guards, no proprietary data in prompts</span></div>
+          <div></div>
+
+          <div className="qwf-foot">&#8635; Diagnostics feed back to hypothesis &mdash; infrastructure supports every stage.</div>
+        </div>
+      </div>
+    )}
   </section>
 
   <section id="experience" className="section wrap"><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
