@@ -6,6 +6,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const steam = "https://store.steampowered.com/app/3117820/Sultans_Game/"
 
 type Shot = { src: string; alt: string; title: string; note: string }
+type FashionDesign = {
+  design: string
+  pattern: string
+  title: string
+  subtitle: string
+  source: string
+  description: string
+}
 
 /* Botanical line drawing used as a faint watermark behind the sections. */
 function Sprig({ short = false }: { short?: boolean }) {
@@ -43,7 +51,35 @@ export default function HobbiesPage() {
   const navRef = useRef<HTMLElement>(null)
   const heroImgRef = useRef<HTMLImageElement>(null)
   const [shot, setShot] = useState<Shot | null>(null)
+  const [fashion, setFashion] = useState<FashionDesign | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
+
+  const fashionDesigns: FashionDesign[] = [
+    {
+      design: '/hobbies/fashion-red-design.png',
+      pattern: '/hobbies/fashion-red-pattern.png',
+      title: 'Vermilion Swallows',
+      subtitle: 'Bold red · swallow & blossom',
+      source: 'Pattern language from the founding era of the People\'s Republic of China, c. 1949.',
+      description: 'A deliberately vivid red ground paired with swallows and blossoms, exploring the optimistic, graphic color language of early New China.',
+    },
+    {
+      design: '/hobbies/fashion-navy-design.png',
+      pattern: '/hobbies/fashion-navy-pattern.png',
+      title: 'Navy Blossoms',
+      subtitle: 'Deep blue · floral medallions',
+      source: 'Pattern language from the founding era of the People\'s Republic of China, c. 1949.',
+      description: 'A deep navy ground with a dense floral repeat and circular motifs, using strong contrast to create a more dramatic qipao silhouette.',
+    },
+    {
+      design: '/hobbies/fashion-snow-plum-design.png',
+      pattern: '/hobbies/fashion-snow-plum-pattern.png',
+      title: 'Snow Plum',
+      subtitle: 'Pale blue · Ming-inspired',
+      source: 'Ming-dynasty 雪梅纹 (snow-plum pattern).',
+      description: 'A pale blue interpretation of the traditional snow-plum motif, translated into a quieter contemporary textile repeat.',
+    },
+  ]
 
   const open = useCallback((s: Shot) => setShot(s), [])
   const close = useCallback(() => setShot(null), [])
@@ -103,8 +139,13 @@ export default function HobbiesPage() {
 
   /* Viewer: lock the page behind it and close on Escape. */
   useEffect(() => {
-    if (!shot) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    if (!shot && !fashion) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        close()
+        setFashion(null)
+      }
+    }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
@@ -288,19 +329,54 @@ export default function HobbiesPage() {
         </div>
       </section>
 
+      <section className="atelier-section fashion-section">
+        <div className="fashion-watermark" aria-hidden="true">衣</div>
+        <div className="wrap">
+          <div className="fashion-heading reveal">
+            <div className="atelier-index">03</div>
+            <div>
+              <div className="hobby-eyebrow">Fashion design</div>
+              <h2>Designing in silk &amp; story</h2>
+              <p>
+                I want to revive traditional Chinese textile motifs by bringing historic pattern
+                language into contemporary qipao silhouettes and a more daring palette.
+                <span className="fashion-inline-status">Currently in preparation — I am developing the visual language, textile patterns, and silhouettes for a future clothing label.</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="fashion-grid">
+            {fashionDesigns.map((item, index) => (
+              <article className="fashion-card reveal" key={item.title} style={{ transitionDelay: `${index * 100}ms` }}>
+                <button
+                  type="button"
+                  className="fashion-design-frame"
+                  onClick={() => setFashion(item)}
+                  aria-label={`Open ${item.title} qipao design and pattern details`}
+                >
+                  <img src={item.design} alt={`${item.title} qipao front and back design`} />
+                  <span className="fashion-open">
+                    <span>View design</span>
+                    <b>＋</b>
+                  </span>
+                </button>
+                <div className="fashion-card-meta">
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.subtitle}</p>
+                  </div>
+                  <span>0{index + 1}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
       <section className="other-passions wrap">
         <div className="section-label">Other passions</div>
         <div className="passion-list reveal">
-          <div>
-            <div className="passion-icon" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round">
-                <path d="M20 4v3" />
-                <path d="M13.5 12c0-2.6 2.9-4.4 6.5-4.4s6.5 1.8 6.5 4.4c0 3-1.9 5-1.9 7.8s2.4 3.9 2.4 6.9c0 3.1-3.2 4.8-7 4.8s-7-1.7-7-4.8c0-3 2.4-4.1 2.4-6.9s-1.9-4.8-1.9-7.8z" />
-                <path d="M20 31.5V36" /><path d="M15.5 37h9" />
-              </svg>
-            </div>
-            <div><h3>Fashion design</h3><p>Exploring form, fabric, and silhouette.</p></div>
-          </div>
           <div>
             <div className="passion-icon" aria-hidden="true">
               <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round">
@@ -326,6 +402,51 @@ export default function HobbiesPage() {
         <Link href="/">← Back to portfolio</Link>
         <span>© 2026 Wenyi Ye</span>
       </footer>
+
+      {fashion && (
+        <div
+          className="fashion-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${fashion.title} fashion design details`}
+          onClick={() => setFashion(null)}
+        >
+          <button
+            type="button"
+            className="fashion-lightbox-close"
+            aria-label="Close fashion design"
+            autoFocus
+            onClick={() => setFashion(null)}
+          >✕</button>
+          <div className="fashion-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <div className="fashion-lightbox-visuals">
+              <figure>
+                <img src={fashion.design} alt={`${fashion.title} qipao design`} />
+                <figcaption>Qipao design</figcaption>
+              </figure>
+              <figure>
+                <img src={fashion.pattern} alt={`${fashion.title} textile pattern detail`} />
+                <figcaption>Pattern detail</figcaption>
+              </figure>
+            </div>
+            <div className="fashion-lightbox-copy">
+              <div className="hobby-eyebrow">Pattern study</div>
+              <h2>{fashion.title}</h2>
+              <p className="fashion-lightbox-subtitle">{fashion.subtitle}</p>
+              <div className="fashion-source">
+                <span>Source</span>
+                <p>{fashion.source}</p>
+              </div>
+              <p className="fashion-lightbox-description">{fashion.description}</p>
+              <div className="fashion-lightbox-foot">
+                <span>Future clothing label</span>
+                <span>In preparation</span>
+              </div>
+            </div>
+          </div>
+          <div className="fashion-lightbox-hint">Click outside or press Esc to close</div>
+        </div>
+      )}
 
       {shot && (
         <div className="lightbox" role="dialog" aria-modal="true" aria-label={shot.title} onClick={close}>

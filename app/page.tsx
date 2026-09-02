@@ -284,7 +284,7 @@ export default function Home(){
   </section>
 
   <section id="experience" className="section wrap"><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
-  <section id="research" className="section wrap"><div className="section-label reveal">RESEARCH & PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.company}/>)}</div></section>
+  <section id="research" className="section wrap"><div className="section-label reveal">RESEARCH & PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.title}/>)}</div></section>
 
   <footer id="contact" className="footer wrap reveal"><div><div className="section-label reveal">CONTACT</div><h2>Say hello.</h2></div><div className="footer-links"><a href="mailto:ywywywy@berkeley.edu"><Mail size={14}/>ywywywy@berkeley.edu</a><a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer"><Linkedin size={14}/> LinkedIn</a><a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer"><Github size={14}/> GitHub / yewenyiywy</a><a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer"><Instagram size={14}/> Instagram / ye_wen_yi</a></div><div className="copyright">© 2026 Wenyi Ye</div></footer>
 

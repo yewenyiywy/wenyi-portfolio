@@ -621,13 +621,172 @@ img{max-width:100%}
 .steam-cta:hover{color:var(--h-wine-soft);border-bottom-color:var(--h-wine-soft)}
 .steam-cta svg{width:13px;height:13px;flex:0 0 13px;color:var(--h-gold)}
 
+
+/* ---------- 03 fashion design -------------------------------------------- */
+.fashion-section{
+  background:
+    radial-gradient(80% 90% at 88% 18%,rgba(176,138,82,.10),transparent 58%),
+    linear-gradient(180deg,rgba(255,252,248,.78),rgba(246,237,228,.72));
+}
+.fashion-section > .wrap{padding-top:82px;padding-bottom:76px}
+.fashion-watermark{
+  position:absolute;right:-24px;top:10px;
+  font:300 210px/1 'Noto Serif SC','Songti SC',serif;
+  color:rgba(110,31,48,.045);pointer-events:none;
+}
+.fashion-heading{
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  gap:30px;
+  align-items:start;
+  padding-bottom:34px;
+  border-bottom:1px solid var(--h-line);
+}
+.fashion-heading .atelier-index{align-self:start}
+.fashion-heading h2{margin:18px 0 0;font:400 43px/1.08 'Cormorant Garamond','Playfair Display',Georgia,serif;color:#2f2528}
+.fashion-heading p{font:400 12.5px/1.9 'DM Sans',Arial,sans-serif;color:var(--h-muted);max-width:72ch;margin:18px 0 0}
+.fashion-inline-status{display:block;margin-top:12px;color:#6d5559}
+.fashion-inline-status::before{content:'✦';color:var(--h-gold);margin-right:8px}
+.fashion-status{
+  border-left:1px solid var(--h-line);
+  padding:4px 0 4px 22px;
+  display:flex;flex-direction:column;gap:8px;
+  align-self:center;
+}
+.fashion-status span{
+  font:600 8px/1 'DM Sans',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--h-gold);
+}
+.fashion-status strong{
+  font:400 18px/1.25 'Cormorant Garamond','Playfair Display',Georgia,serif;color:var(--h-wine);
+}
+.fashion-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:26px;
+  padding-top:42px;
+}
+.fashion-card{min-width:0}
+.fashion-design-frame{
+  position:relative;width:100%;height:548px;
+  display:flex;align-items:center;justify-content:center;
+  padding:8px;border:1px solid rgba(176,138,82,.28);
+  background:linear-gradient(145deg,rgba(255,252,248,.92),rgba(241,232,222,.72));overflow:hidden;cursor:zoom-in;
+  transition:border-color .45s ease,transform .7s cubic-bezier(.22,.7,.2,1),box-shadow .55s ease;
+}
+.fashion-design-frame::before{
+  content:"";position:absolute;inset:9px;border:1px solid rgba(176,138,82,.16);pointer-events:none;z-index:2;
+}
+.fashion-design-frame img{
+  width:100%;height:100%;object-fit:contain;display:block;
+  transform:scale(1.08);
+  transition:transform 1s cubic-bezier(.22,.7,.2,1),filter .7s ease;
+  filter:saturate(.96) contrast(1.03);
+}
+.fashion-card:hover .fashion-design-frame,
+.fashion-design-frame:focus-visible{
+  transform:translateY(-5px);
+  border-color:rgba(110,31,48,.35);
+  box-shadow:0 18px 42px rgba(84,58,50,.12);
+}
+.fashion-card:hover .fashion-design-frame img{transform:scale(1.13);filter:saturate(1.02) contrast(1.04)}
+.fashion-design-frame:focus-visible{outline:2px solid var(--h-gold);outline-offset:4px}
+.fashion-open{
+  position:absolute;right:22px;bottom:22px;z-index:3;
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px 9px 13px;
+  background:rgba(50,39,40,.84);color:#fff9f3;
+  font:500 8px/1 'DM Sans',Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;
+  opacity:0;transform:translateY(7px);
+  transition:opacity .35s ease,transform .35s ease;
+}
+.fashion-open b{font-size:14px;font-weight:300;line-height:.7}
+.fashion-card:hover .fashion-open,
+.fashion-design-frame:focus-visible .fashion-open{opacity:1;transform:none}
+.fashion-card-meta{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  padding:15px 2px 0;
+}
+.fashion-card-meta h3{
+  font:400 24px/1.1 'Cormorant Garamond','Playfair Display',Georgia,serif;
+  color:#33292c;margin:0;
+}
+.fashion-card-meta p{
+  font:500 8px/1.4 'DM Sans',Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;
+  color:#9c8781;margin:7px 0 0;
+}
+.fashion-card-meta > span{
+  font:300 20px/1 'Cormorant Garamond',Georgia,serif;color:#cbb9a6;
+}
+/* fashion detail viewer */
+.fashion-lightbox{
+  position:fixed;inset:0;z-index:90;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:34px 4vw 24px;
+  background:rgba(40,29,30,.91);backdrop-filter:blur(9px);
+  animation:lb-fade .35s ease;
+}
+.fashion-lightbox-inner{
+  width:min(1180px,100%);
+  max-height:calc(100vh - 92px);
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+  gap:34px;align-items:center;
+}
+.fashion-lightbox-visuals{
+  min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+.fashion-lightbox-visuals figure{margin:0;min-width:0}
+.fashion-lightbox-visuals figure:first-child{background:#f7f3ee}
+.fashion-lightbox-visuals img{
+  width:100%;height:min(68vh,650px);object-fit:contain;display:block;
+}
+.fashion-lightbox-visuals figure:first-child img{padding:14px}
+.fashion-lightbox-visuals figcaption{
+  padding:9px 12px 11px;
+  font:500 8px/1 'DM Sans',Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8e7d78;
+}
+.fashion-lightbox-copy{color:#f4e9e1;align-self:center;padding-right:12px}
+.fashion-lightbox-copy .hobby-eyebrow{color:#cba36e}
+.fashion-lightbox-copy h2{
+  font:400 45px/1.05 'Cormorant Garamond','Playfair Display',Georgia,serif;
+  margin:18px 0 5px;color:#fff8f2;
+}
+.fashion-lightbox-subtitle{
+  font:500 8px/1.4 'DM Sans',Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;
+  color:#bda9a3;margin:0 0 30px;
+}
+.fashion-source{
+  padding:17px 0;border-top:1px solid rgba(238,222,212,.22);border-bottom:1px solid rgba(238,222,212,.22);
+}
+.fashion-source span{
+  font:600 8px/1 'DM Sans',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#cba06a;
+}
+.fashion-source p,.fashion-lightbox-description{
+  font:400 12px/1.8 'DM Sans',Arial,sans-serif;color:#d2c2bc;margin:10px 0 0;
+}
+.fashion-lightbox-description{margin-top:22px}
+.fashion-lightbox-foot{
+  display:flex;justify-content:space-between;gap:16px;margin-top:30px;
+  font:500 8px/1 'DM Sans',Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#a9958f;
+}
+.fashion-lightbox-foot span:last-child{color:#d2a76e}
+.fashion-lightbox-close{
+  position:absolute;top:22px;right:26px;width:42px;height:42px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(240,226,214,.38);background:transparent;color:#f2e7e0;
+  font-size:17px;cursor:pointer;
+}
+.fashion-lightbox-close:hover{background:rgba(240,226,214,.12)}
+.fashion-lightbox-hint{
+  font:400 7.5px/1 'DM Sans',Arial,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#998681;
+}
+
 /* ---------- other passions ---------------------------------------------- */
 .other-passions{padding:66px 0 58px;text-align:center;border-bottom:1px solid var(--h-line)}
 .other-passions .section-label{
   font:600 9.5px/1 'DM Sans',Arial,sans-serif;letter-spacing:.34em;
   text-transform:uppercase;color:var(--h-gold);margin-bottom:40px;
 }
-.passion-list{display:grid;grid-template-columns:repeat(3,1fr);border-top:0}
+.passion-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:0;max-width:760px;margin:0 auto}
 .passion-list > div{
   display:flex;align-items:flex-start;justify-content:center;gap:18px;
   padding:6px 26px;border-right:1px solid var(--h-line);text-align:left;
@@ -654,12 +813,26 @@ img{max-width:100%}
 
 /* ---------- responsive --------------------------------------------------- */
 @media(max-width:1040px){
+  .fashion-heading{grid-template-columns:72px minmax(0,1fr);gap:22px}
+  .fashion-heading h2{font-size:38px}
+  .fashion-design-frame{height:500px}
+  .fashion-lightbox-inner{grid-template-columns:minmax(0,1.15fr) minmax(250px,.65fr);gap:24px}
+  .fashion-lightbox-visuals img{height:min(62vh,560px)}
   .atelier-row{grid-template-columns:250px minmax(0,1fr) 150px;gap:34px}
   .detail-strip{padding-left:284px}
   .game-row{grid-template-columns:250px minmax(0,1fr);gap:34px}
   .game-art{height:440px}
 }
 @media(max-width:900px){
+  .fashion-heading{grid-template-columns:70px minmax(0,1fr);gap:20px}
+  .fashion-grid{grid-template-columns:1fr 1fr}
+  .fashion-design-frame{height:480px}
+  .fashion-lightbox{padding:58px 20px 20px;justify-content:flex-start;overflow:auto}
+  .fashion-lightbox-inner{display:block;max-height:none}
+  .fashion-lightbox-visuals{max-width:760px;margin:0 auto}
+  .fashion-lightbox-visuals img{height:54vh;max-height:520px}
+  .fashion-lightbox-copy{max-width:760px;margin:26px auto 0;padding:0}
+  .fashion-lightbox-copy h2{font-size:38px}
   .hobbies-hero{display:block;padding:60px 0 0;min-height:0}
   .hero-photo{position:relative;right:auto;top:auto;bottom:auto;width:auto;height:280px;margin:40px -22px 0}
   .hero-photo img{-webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.45) 16%,#000 48%);mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.45) 16%,#000 48%)}
@@ -679,6 +852,16 @@ img{max-width:100%}
   .passion-list p{max-width:none}
 }
 @media(max-width:600px){
+  .fashion-section > .wrap{padding-top:58px;padding-bottom:58px}
+  .fashion-heading{grid-template-columns:1fr;gap:12px}
+  .fashion-heading .atelier-index{font-size:48px}
+  .fashion-heading h2{font-size:34px}
+  .fashion-grid{grid-template-columns:1fr;gap:30px}
+  .fashion-design-frame{height:500px}
+  .fashion-lightbox-visuals{grid-template-columns:1fr}
+  .fashion-lightbox-visuals img{height:55vh;max-height:480px}
+  .fashion-lightbox-copy h2{font-size:34px}
+  .fashion-lightbox-foot{flex-direction:column;gap:10px}
   .atelier-section > .wrap{padding-top:54px;padding-bottom:58px}
   .hobbies-hero h1{letter-spacing:.04em}
   .hero-sparkle{left:-6px;top:-30px}
