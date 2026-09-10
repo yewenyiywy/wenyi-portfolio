@@ -1,0 +1,361 @@
+"use client";
+import { ArrowUpRight, Github, Linkedin, Mail, Instagram } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+
+type Shot = { src: string; alt: string; title: string; note: string }
+
+const gallery: (Shot & { cls: string })[] = [
+  { cls:'shot-main', src:'/wenyi.jpg',    alt:'Wenyi Ye in the garden', title:'Archive 01', note:'In the garden' },
+  { cls:'shot-a',    src:'/photo-03.jpg', alt:'Wenyi Ye in a pink dress', title:'Archive 02', note:'In the garden' },
+  { cls:'shot-b',    src:'/photo-02.jpg', alt:'Wenyi Ye', title:'Archive 03', note:'Beijing' },
+  { cls:'shot-c',    src:'/photo-04.jpg', alt:'Wenyi Ye', title:'Archive 04', note:'Berkeley' },
+]
+
+const navItems = [
+  { id:'about', label:'About' },
+  { id:'education', label:'Education' },
+  { id:'experience', label:'Experience' },
+  { id:'research', label:'Research' },
+]
+
+const logos = {
+  berkeley: '/logos/ucb-seal.png', umich: '/logos/umich.png', bdfz: '/logos/bdfz.png',
+  tiktok: '/logos/tiktok.png', csc: '/logos/china-securities.png', boc: '/logos/boc.png',
+  imc: '/logos/imc.png', ramify: '/logos/ramify.png', shepherd: '/logos/shepherd.png', selfEvolving: '/logos/self-evolving-agent.png',
+}
+
+const experience = [
+  { company:'TikTok', companyUrl:'https://www.tiktok.com/', logo:logos.tiktok, location:'San Jose, CA', role:'AI Product Manager Intern', date:'03/2026 – 08/2026', tags:['Agentic AI','Evaluation','A/B Testing'], bullets:[<>Built an agentic evaluation framework for AI safety policies; red-team findings improved detection accuracy from <strong>69% → 91%</strong>.</>,<>Led A/B testing, marginal-traffic attribution, and A/A validation infrastructure for AI policy iteration.</>] },
+  { company:'Shepherd Ventures', companyUrl:'https://sv3.vc/', logo:logos.shepherd, location:'San Diego, CA', role:'Quant Researcher', date:'10/2023 – 01/2025', tags:['Machine & Deep Learning','K-Means','Optimization','Python'], bullets:[<>Applied K-Means clustering and multivariate optimization to S&amp;P 500 data, reducing maximum drawdown by <strong>35.8%</strong>.</>,<>Automated monthly portfolio rebalancing; <strong>70%+</strong> of orders completed within a predefined trading horizon.</>] },
+  { company:'China Securities', companyUrl:'https://www.csc108.com/', logo:logos.csc, location:'Beijing, China', role:'Summer Quant Research Intern', date:'07/2024 – 09/2024', tags:['Alpha Research','ML','Regression','SQL'], bullets:[<>Built alternative-data coverage for <strong>50+ biotech companies</strong> with <strong>100K+</strong> records; derived <strong>35 alpha factors</strong>, with the top factor returning 15.2% annualized.</>,<>Developed style-index rotation strategies using regularized regression, generating a <strong>25.4%</strong> annual return.</>] },
+  { company:'Bank of China', companyUrl:'https://www.bocusa.com/', logo:logos.boc, location:'Beijing, China', role:'Summer Liquidity Risk Intern', date:'07/2023 – 09/2023', tags:['Python','SQL','ETL','Risk Modeling'], bullets:[<>Built ETL pipelines and liquidity-monitoring tools across <strong>$7T+</strong> in daily settlement volumes.</>,<>Performed liquidity stress testing and KRI analysis across entities, currencies, and agent banks.</>] },
+]
+
+const research = [
+  { company:'Self-Evolving Quantitative Trading Agent', logo:logos.selfEvolving, location:'Independent', role:'Long-term Research Project', date:'Long-term', tags:['Agentic AI','Quantitative Research','Self-Evolution','Portfolio Optimization'], bullets:[<>Built an <strong>autonomous self-evolving quantitative trading agent</strong> that discovers, validates, and evolves trading strategies under statistical and immutable risk controls.</>,<>Designed a closed-loop system integrating LLM-based strategy generation, backtesting, adaptive evolution, risk-adjusted capital allocation, and live/simulated execution.</>,<>Product demo: <a className="research-demo-link" href="https://frontend-six-wheat-17.vercel.app/" target="_blank" rel="noreferrer">Frontend Demo</a>. The product is currently in <strong>self-use</strong>; the backend code and infrastructure are not open-sourced.</>] },
+  { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] },
+  { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>] }
+]
+
+function Brand({src,alt,className=''}:{src:string,alt:string,className?:string}){return <span className={`brand ${className}`}><img src={src} alt={alt}/></span>}
+function InlineInstitution({children,logo,alt,href}:{children:ReactNode,logo:string,alt:string,href:string}){return <a className="inline-institution" href={href} target="_blank" rel="noreferrer"><Brand src={logo} alt={alt} className="inline-brand"/><strong>{children}</strong></a>}
+function Tags({items}:{items:string[]}){return <span className="tags">{items.map(t=><span key={t}>{t}</span>)}</span>}
+
+function Entry({item}:{item:any}){return <article className="timeline-entry reveal">
+  <div className="date">{item.date}</div>
+  <div className="entry-content">
+    <div className="entry-top"><Brand src={item.logo} alt={item.company || item.title}/><div className="entry-title"><div className="title-line"><h3>{item.companyUrl ? <a className="company-link" href={item.companyUrl} target="_blank" rel="noreferrer">{item.company}</a> : item.company}{item.titleSuffix}</h3><span className="location">{item.location}</span></div><div className="role">{item.role} <Tags items={item.tags}/></div></div></div>
+    <ul>{item.bullets.map((b:ReactNode,i:number)=><li key={i}>{b}</li>)}</ul>
+  </div>
+</article>}
+
+
+const coursework = {
+  umich: {
+    Mathematics: [
+      { code: "MATH 451", name: "Advanced Calculus" },
+      { code: "MATH 472", name: "Numerical Methods in Financial Applications" },
+      { code: "MATH 526", name: "Discrete Stochastic Processes" },
+      { code: "MATH 573", name: "Financial Mathematics", detail: "Measure Theory" },
+    ],
+    Statistics: [
+      { code: "MATH 425", name: "Introduction to Probability" },
+      { code: "STATS 426", name: "Introduction to Theoretical Statistics" },
+      { code: "STATS 500", name: "Regression Analysis" },
+    ],
+    "Machine & Deep Learning": [
+      { code: "MATH 547", name: "Mathematics of Data" },
+      { code: "MATH 628", name: "Machine Learning for Finance" },
+      { code: "MATH 507", name: "Mathematical Algorithmic Trading", detail: "Optimization & Reinforcement Learning" },
+    ],
+    Finance: [
+      { code: "MATH 423", name: "Mathematics of Finance" },
+      { code: "FIN 608", name: "Capital Markets & Investment Strategies" },
+      { code: "FIN 614", name: "Global Capital Markets" },
+    ],
+  },
+  berkeley: {
+    Mathematics: [
+      { code: "MFE 230Q", name: "Stochastic Calculus" },
+      { code: "MFE 230D", name: "Derivative: Quantitative Methods" },
+    ],
+    Statistics: [
+      { code: "MFE 230E", name: "Empirical Methods in Finance", detail: "Time Series Analysis" },
+    ],
+    "Machine & Deep Learning": [
+      { code: "MFE 230ZA", name: "Deep Learning and Applications" },
+      { code: "MFE 230P", name: "Financial Data Science", detail: "Machine Learning" },
+    ],
+    Finance: [
+      { code: "MFE 230A", name: "Investments and Derivatives" },
+      { code: "MFE 230H", name: "Financial Risk Measurement and Management" },
+      { code: "MFE 230I", name: "Fixed Income Markets" },
+      { code: "MFE 230M", name: "Asset-Backed Security" },
+      { code: "MFE 230X", name: "High Frequency Finance" },
+    ],
+  },
+};
+
+function CourseworkPanel({ school, open, onToggle }: {
+  school: "umich" | "berkeley"; open: boolean; onToggle: () => void;
+}) {
+  return (
+    <div className="coursework-wrap">
+      <button type="button" className="coursework-toggle" onClick={onToggle} aria-expanded={open}>
+        <span>{open ? "Hide coursework" : "Click to view coursework"}</span>
+        <span className={`coursework-arrow ${open ? "is-open" : ""}`}>→</span>
+      </button>
+      {open && (
+        <div className="coursework-panel">
+          {Object.entries(coursework[school]).map(([group, courses]) => (
+            <div className="coursework-group" key={group}>
+              <div className="coursework-group-title">{group}</div>
+              <div className="coursework-list">
+                {courses.map(course => (
+                  <div className="coursework-item" key={course.code}>
+                    <span className="coursework-code">{course.code}</span>
+                    <span className="coursework-name">{course.name}{"detail" in course && course.detail && <span className="coursework-detail"> / {course.detail}</span>}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Home(){
+  const [openCoursework, setOpenCoursework] = useState<"umich" | "berkeley" | null>(null)
+  const [showWorkflow, setShowWorkflow] = useState(false)
+
+  const pageRef = useRef<HTMLElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState('')
+  const [shot, setShot] = useState<Shot | null>(null)
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const close = useCallback(() => setShot(null), [])
+
+  /* Reveal on scroll. The hiding class is added by script, so the page still
+     reads in full if JS never runs. */
+  useEffect(() => {
+    const page = pageRef.current
+    if (!page) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const items = Array.from(page.querySelectorAll<HTMLElement>('.reveal'))
+    if (reduce || !('IntersectionObserver' in window)) {
+      items.forEach(el => el.classList.add('is-in'))
+      return
+    }
+    page.classList.add('reveal-on')
+    const hero = items.filter(el => el.closest('.fashion-hero'))
+    const rest = items.filter(el => !el.closest('.fashion-hero'))
+    const raf = requestAnimationFrame(() => hero.forEach(el => el.classList.add('is-in')))
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) }
+      })
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 })
+    rest.forEach(el => io.observe(el))
+    return () => { cancelAnimationFrame(raf); io.disconnect() }
+  }, [])
+
+  /* Reading progress, condensed nav, and a slow drift on the portrait. */
+  useEffect(() => {
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const y = window.scrollY
+        const max = document.documentElement.scrollHeight - window.innerHeight
+        if (barRef.current) barRef.current.style.width = `${max > 0 ? (y / max) * 100 : 0}%`
+        navRef.current?.classList.toggle('is-stuck', y > 12)
+        ticking = false
+      })
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  /* Highlight the section currently being read. */
+  useEffect(() => {
+    const sections = navItems
+      .map(n => document.getElementById(n.id))
+      .filter((el): el is HTMLElement => Boolean(el))
+    if (!sections.length || !('IntersectionObserver' in window)) return
+    const io = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+      if (visible) setActive(visible.target.id)
+    }, { rootMargin: '-30% 0px -55% 0px', threshold: [0.05, 0.25, 0.6] })
+    sections.forEach(el => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
+  /* Viewer: lock the page behind it and close on Escape. */
+  useEffect(() => {
+    if (!shot) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey) }
+  }, [shot, close])
+
+  return <main id="top" ref={pageRef}>
+  <div className="progress" ref={barRef} aria-hidden="true"></div>
+
+  <nav className="nav wrap" ref={navRef}>
+    <a href="#top" className="logo">WENYI YE<span>.</span></a>
+    <div className="navlinks">
+      {navItems.map(n => (
+        <a key={n.id} href={`#${n.id}`} className={active === n.id ? 'active' : undefined}>{n.label}</a>
+      ))}
+      <a href="/hobbies">Hobbies</a>
+    </div>
+    <a href="#contact" className="nav-contact">Get in touch <ArrowUpRight size={13}/></a>
+    <button
+      type="button"
+      className="mobile-menu-toggle"
+      aria-label={mobileMenu ? 'Close navigation' : 'Open navigation'}
+      aria-expanded={mobileMenu}
+      onClick={() => setMobileMenu(v => !v)}
+    >
+      <span></span><span></span>
+    </button>
+    {mobileMenu && (
+      <div className="mobile-menu">
+        {navItems.map(n => (
+          <a key={n.id} href={`#${n.id}`} onClick={() => setMobileMenu(false)}>{n.label}</a>
+        ))}
+        <a href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</a>
+        <a href="#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</a>
+      </div>
+    )}
+  </nav>
+
+  <header className="fashion-hero wrap">
+    <div className="hero-editorial reveal reveal-1">
+      <div className="hero-kicker">Quantitative Finance × AI</div>
+        <h1>Wenyi <em>Ye</em></h1>
+      <p className="hero-lede">Building intelligent systems for <strong>alpha discovery, trading, and financial decision-making</strong> — at the intersection of AI and quantitative finance.</p>
+      <div className="hero-rule"></div>
+      <div className="hero-meta"><span>Berkeley · MFE 2027</span><span>San Francisco · Ann Arbor · Beijing</span></div>
+      <div className="socials">
+        <a href="mailto:ywywywy@berkeley.edu">Email</a>
+        <a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer">LinkedIn</a>
+        <a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer">Instagram</a>
+      </div>
+    </div>
+    <div className="hero-gallery reveal reveal-2">
+      {gallery.map(g => (
+        <button key={g.src} type="button" className={`shot ${g.cls}`} onClick={() => setShot(g)}>
+          <img src={g.src} alt={g.alt}/>
+        </button>
+      ))}
+      <div className="gallery-caption">A personal archive / 2026</div>
+    </div>
+  </header>
+
+  <section id="about" className="section wrap"><div className="section-label reveal">ABOUT</div><div className="about-prose reveal">
+    <p>I’m currently pursuing a <a className="degree-link" href="https://mfe.haas.berkeley.edu/"><strong>Master of Financial Engineering</strong></a> at <InlineInstitution logo={logos.berkeley} alt="UC Berkeley" href="https://www.berkeley.edu/">UC Berkeley</InlineInstitution>, focused on the intersection of <strong>AI, machine learning, and financial markets</strong>.</p>
+    <p>My background is a little unconventional—I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I’ve worked across <strong>AI product, quantitative research, and risk management</strong>, with a particular interest in <strong>healthcare, biotech, and complex biological data</strong>.</p>
+  </div></section>
+
+  <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">
+    <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="berkeley" open={openCoursework === "berkeley"} onToggle={() => setOpenCoursework(openCoursework === "berkeley" ? null : "berkeley")} /></div></article>
+    <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="umich" open={openCoursework === "umich"} onToggle={() => setOpenCoursework(openCoursework === "umich" ? null : "umich")} /></div></article>
+    <article className="timeline-entry edu"><div className="date">09/2018 – 07/2021</div><div className="entry-content"><div className="entry-top"><Brand src={logos.bdfz} alt="The Affiliated High School of Peking University"/><div className="entry-title"><div className="title-line"><h3>The Affiliated High School of Peking University</h3><span className="location">Beijing, China</span></div><div className="role">High School</div></div></div></div></article>
+  </div></section>
+
+  <section id="skills" className="section wrap">
+    <div className="section-label reveal">SKILLS</div>
+    <div className="focus-lines reveal">
+      <div><b>Programming</b><span>Python (Pandas · NumPy · SciPy · PyTorch · scikit-learn) · C++ · SQL · R</span></div>
+      <div className="stack-row stack-row-wide"><b>AI-Ecosystem Tools</b><span><strong>Frontend:</strong> React · Next.js · Streamlit; <strong>Backend &amp; APIs:</strong> FastAPI · REST APIs; <strong>Development &amp; Version Control:</strong> Git · GitHub; <strong>Data &amp; Infrastructure:</strong> Redis · PostgreSQL · Docker; <strong>LLM &amp; Agents:</strong> LangGraph · MCP · Claude · GPT · Gemini · Hugging Face; <strong>Evaluation:</strong> RAGAS; <strong>Deployment:</strong> Vercel · AWS</span></div>
+      <div><b>Quantitative</b><span>Probability · Stochastic Processes · Statistical Inference · Time Series · Optimization · Algorithmic Trading · Backtesting</span></div>
+      <div><b>Languages</b><span>Chinese (Native) · English (Professional) · French (Intermediate) · Korean (Beginner)</span></div>
+      <div><b>Certification</b><span>CFA Level 1 · Passed</span></div>
+    </div>
+
+    <div className="workflow-toggle-wrap reveal">
+      <button type="button" className={`workflow-toggle ${showWorkflow ? 'is-open' : ''}`} onClick={() => setShowWorkflow(v => !v)} aria-expanded={showWorkflow}>
+        <span className="workflow-toggle-mark">{showWorkflow ? '−' : '+'}</span>
+        <span>{showWorkflow ? 'Hide research workflow' : 'View AI-native research workflow'}</span>
+        <span className="workflow-toggle-arrow">→</span>
+      </button>
+    </div>
+
+    {showWorkflow && (
+      <div className="qwf reveal is-in" aria-label="AI-native quant research workflow">
+        <div className="qwf-grid">
+          <div className="qwf-head">AI Layer</div>
+          <div className="qwf-head">Research Loop</div>
+          <div className="qwf-head">Infrastructure</div>
+
+          <div className="qwf-ai is-first"><b>Claude &middot; GPT &middot; Gemini</b><span>Literature scan, prior framing</span></div>
+          <div className="qwf-stage is-first"><b>Hypothesis</b><span>Research question, prior</span></div>
+          <div className="qwf-infra">
+            <div className="qwf-infra-grp is-first">Serving</div>
+            <div className="qwf-infra-item"><b>FastAPI</b><span>Model &amp; signal endpoints</span></div>
+            <div className="qwf-infra-item"><b>REST APIs</b><span>Vendor &amp; internal data</span></div>
+            <div className="qwf-infra-item"><b>Next.js &middot; Streamlit</b><span>Research dashboards</span></div>
+            <div className="qwf-infra-grp">Storage</div>
+            <div className="qwf-infra-item"><b>PostgreSQL</b><span>Time series, fund data</span></div>
+            <div className="qwf-infra-item"><b>Redis</b><span>Backtest result caching</span></div>
+            <div className="qwf-infra-item"><b>Vector store</b><span>Text feature embeddings</span></div>
+            <div className="qwf-infra-grp">Compute &amp; Deploy</div>
+            <div className="qwf-infra-item"><b>Docker</b><span>Reproducible environments</span></div>
+            <div className="qwf-infra-item"><b>AWS</b><span>Sweep &amp; batch compute</span></div>
+            <div className="qwf-infra-item"><b>Vercel</b><span>Dashboard hosting</span></div>
+            <div className="qwf-infra-grp">Versioning</div>
+            <div className="qwf-infra-item"><b>Git &middot; GitHub</b><span>Experiment &amp; code history</span></div>
+          </div>
+
+          <div className="qwf-ai"><b>MCP</b><span>Repo and data access</span></div>
+          <div className="qwf-stage"><b>Data</b><span>Market, fund-level, vendor APIs</span></div>
+
+          <div className="qwf-ai"><b>Embeddings &middot; RAGAS</b><span>Text-derived features, retrieval scored on precision and recall</span></div>
+          <div className="qwf-stage"><b>Signal &amp; Features</b><span>Factor construction</span></div>
+
+          <div className="qwf-ai qwf-span"><b>Claude Code &middot; Codex</b><span>Implementation, derivation checks, backtest harness</span></div>
+          <div className="qwf-stage"><b>Model</b><span>Stochastic control, ML, RL</span></div>
+
+          <div className="qwf-stage"><b>Backtest</b><span>Walk-forward, costs, benchmark</span></div>
+
+          <div className="qwf-ai"><b>Agent &amp; Human Review</b><span>Agent flags anomalies, human makes the call</span></div>
+          <div className="qwf-stage"><b>Risk &amp; Diagnostics</b><span>Sharpe, drawdown, overfitting</span></div>
+
+          <div className="qwf-band"><b>LangGraph</b><span>Chains the steps above into repeatable agent runs</span></div>
+          <div></div>
+
+          <div className="qwf-band"><b>AI Security &amp; Safety</b><span>Sandboxed execution, injection guards, no proprietary data in prompts</span></div>
+          <div></div>
+
+          <div className="qwf-foot">&#8635; Diagnostics feed back to hypothesis &mdash; infrastructure supports every stage.</div>
+        </div>
+      </div>
+    )}
+  </section>
+
+  <section id="experience" className="section wrap"><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
+  <section id="research" className="section wrap"><div className="section-label reveal">RESEARCH & PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.company}/>)}</div></section>
+
+  <footer id="contact" className="footer wrap reveal"><div><div className="section-label reveal">CONTACT</div><h2>Say hello.</h2></div><div className="footer-links"><a href="mailto:ywywywy@berkeley.edu"><Mail size={14}/>ywywywy@berkeley.edu</a><a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer"><Linkedin size={14}/> LinkedIn</a><a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer"><Github size={14}/> GitHub / yewenyiywy</a><a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer"><Instagram size={14}/> Instagram / ye_wen_yi</a></div><div className="copyright">© 2026 Wenyi Ye</div></footer>
+
+  {shot && (
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label={shot.title} onClick={close}>
+      <button className="lightbox-close" type="button" aria-label="Close" autoFocus>✕</button>
+      <img src={shot.src} alt={shot.alt}/>
+      <figcaption><span>{shot.title}</span><em>{shot.note}</em></figcaption>
+      <div className="lightbox-hint">Click anywhere or press Esc to close</div>
+    </div>
+  )}
+</main>
+}
