@@ -9,7 +9,7 @@
 .archive-index>header{text-align:center;margin-bottom:32px}.archive-index>header h1{font:400 clamp(45px,6vw,72px)/1 var(--display);color:#3d3025;margin:0 0 9px}.archive-index>header p{font:400 14px/1.5 var(--sans);color:#786043;margin:0}
 /* One physical pile. Four sheets peek out from behind the active sheet;
    selecting a visible edge moves that exact sheet to the front. */
-.archive-paper-stack{--sheet-step:58px;--sheet-inset:clamp(22px,6vw,80px);--stack-rise:calc(4 * var(--sheet-step));position:relative;isolation:isolate;padding-top:var(--stack-rise);margin:0 auto;scroll-margin-top:12px;width:100%}
+.archive-paper-stack{--sheet-step:58px;--sheet-inset:clamp(22px,6vw,80px);--stack-rise:calc(4 * var(--sheet-step));position:relative;isolation:isolate;padding-top:var(--stack-rise);margin:0 auto;scroll-margin-top:76px;width:100%}
 .archive-sheet{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#563e29;filter:drop-shadow(0 3px 3px #6f4e324d)}
 .archive-sheet-back{position:absolute;top:calc(var(--sheet-index) * var(--sheet-step));left:calc((var(--sheet-index) - 2) * 1.5px);width:100%;height:calc(100% - var(--stack-rise));z-index:calc(var(--sheet-index) + 1);pointer-events:none}
 .archive-sheet-back .archive-sheet-label{pointer-events:auto}
@@ -31,6 +31,7 @@
 @keyframes archive-page-arrive{from{opacity:.7;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 .archive-paper{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#3a2c21;padding:clamp(26px,5vw,68px) clamp(22px,6vw,80px);min-height:560px;filter:drop-shadow(0 7px 8px #4d35222c)}
 .archive-paper .chapter-view .wrap{width:100%;max-width:none}
+.archive-paper .chapter-view>[id]{scroll-margin-top:80px}
 .chapter-view>.progress,.chapter-view>nav,.chapter-view>header,.chapter-view>section,.chapter-view>footer{display:none}
 .chapter-view[data-chapter~="about"]>header{display:grid}
 .chapter-view[data-chapter~="about"]>#about,.chapter-view[data-chapter~="education"]>#education,.chapter-view[data-chapter~="skills"]>#skills,.chapter-view[data-chapter~="experience"]>#experience,.chapter-view[data-chapter~="projects"]>#projects,.chapter-view[data-chapter~="awards"]>#awards,.chapter-view[data-chapter~="contact"]>#contact{display:block;padding:24px 0}

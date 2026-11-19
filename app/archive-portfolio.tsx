@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import PortfolioView from './portfolio-view'
+import PortfolioNav from './portfolio-nav'
 import './archive.css'
 
 const folders = [
@@ -53,8 +53,19 @@ export default function ArchivePortfolio() {
     requestAnimationFrame(() => window.scrollTo({top:0,behavior:'smooth'}))
   }
 
+  function navigateSection(section:string) {
+    const folder=folders.find(f=>f.chapters.split(' ').includes(section))
+    if(!folder)return
+    setActive(folder)
+    window.history.pushState(null,'',`/classic#${section}`)
+    requestAnimationFrame(()=>{
+      if(section==='contact')document.getElementById(section)?.scrollIntoView({behavior:'smooth',block:'start'})
+      else stackRef.current?.scrollIntoView({behavior:'smooth',block:'start'})
+    })
+  }
+
   return <div className="archive-home">
-    <nav className="archive-nav"><Link href="/classic" className="archive-brand" onClick={e=>{e.preventDefault();close()}}>WENYI YE<span>.</span></Link><div><Link href="/">Play game</Link><Link href="/hobbies">Hobbies</Link><Link href="/classic/full" className="archive-full-link">View full portfolio</Link></div></nav>
+    <PortfolioNav page="archive" activeSection={active.chapters.split(' ')[0]} onHome={close} onSection={navigateSection}/>
     <div className="archive-index">
       <div className="archive-paper-stack" ref={stackRef} aria-label="Five overlapping portfolio papers">
         {ordered.slice(0,4).map((folder,index)=><div key={folder.id} className="archive-sheet archive-sheet-back" style={{'--sheet-index':index} as CSSProperties}><button className="archive-sheet-label" type="button" aria-pressed={false} onClick={()=>open(folder)}><SheetTitle folder={folder}/></button></div>)}

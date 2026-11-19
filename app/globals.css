@@ -74,11 +74,11 @@ img{max-width:100%}
 }
 .nav.is-stuck{height:60px}
 .nav.is-stuck::before{opacity:.95;border-bottom-color:var(--line)}
-.logo{font:500 13px/1 var(--sans);letter-spacing:.09em}
+.logo{font:400 23px/1 var(--display);letter-spacing:0;white-space:nowrap}
 .logo span{color:var(--wine)}
 .navlinks{
   display:flex;gap:32px;margin-left:auto;margin-right:34px;
-  font:500 11px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:#6e6569;
+  font:400 18px/1 var(--display);letter-spacing:0;text-transform:none;color:#6e6569;
 }
 .navlinks a{position:relative;padding-bottom:6px;transition:color .35s ease}
 .navlinks a::after{
@@ -89,7 +89,7 @@ img{max-width:100%}
 .navlinks a:hover::after,.navlinks a:focus-visible::after,.navlinks a.active::after{right:0}
 .nav-contact{
   display:inline-flex;align-items:center;gap:7px;
-  font:500 11px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:#5d5457;
+  font:400 18px/1 var(--display);letter-spacing:0;text-transform:none;color:#5d5457;
   transition:color .35s ease;
 }
 .nav-contact:hover{color:var(--wine)}
@@ -115,10 +115,30 @@ img{max-width:100%}
   }
   .mobile-menu a{
     padding:14px 0;border-bottom:1px solid var(--line-soft);
-    font:500 11px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:#6e6569;
+    font:400 19px/1 var(--display);letter-spacing:0;text-transform:none;color:#6e6569;
   }
   .mobile-menu a:last-child{border-bottom:0}
 }
+/* Identical navigation for the stacked portfolio and the hobbies journal.
+   Keep its pixel type independent of the journal's handwritten body font. */
+.portfolio-topnav{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:clamp(12px,2vw,26px);width:min(calc(100% - 48px),1180px);height:70px;margin:auto;color:#493a2e;font:400 18px/1.15 var(--display);isolation:isolate}
+.portfolio-topnav::before{content:"";position:absolute;inset:0 auto 0 50%;transform:translateX(-50%);width:100vw;background:#e9decaed;z-index:-1;pointer-events:none}
+.portfolio-topnav-brand{font:400 25px/1 var(--display);white-space:nowrap;flex:none}
+.portfolio-topnav-brand span{color:var(--wine)}
+.portfolio-topnav-links{display:flex;align-items:center;gap:clamp(12px,1.65vw,23px);margin-left:auto;white-space:nowrap}
+.portfolio-topnav-full{white-space:nowrap;color:var(--wine);margin-left:auto}
+.portfolio-topnav a:hover,.portfolio-topnav a:focus-visible,.portfolio-topnav a.active{color:var(--wine)}
+.portfolio-topnav a.active{text-decoration:underline;text-underline-offset:4px}
+.portfolio-topnav-toggle,.portfolio-topnav-menu{display:none}
+@media(max-width:1040px){
+  .portfolio-topnav{width:calc(100% - 32px);gap:12px;height:60px}
+  .portfolio-topnav-links{display:none}
+  .portfolio-topnav-toggle{display:flex;flex:none;align-items:center;justify-content:center;flex-direction:column;gap:5px;width:32px;height:32px;border:0;background:none;color:inherit;cursor:pointer}
+  .portfolio-topnav-toggle span{width:17px;height:2px;background:currentColor}
+  .portfolio-topnav-menu{position:absolute;inset:100% 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;background:#f2e6d2;padding:12px 18px;box-shadow:0 5px 14px #5e44252b}
+  .portfolio-topnav-menu a{padding:10px 0;min-width:0}
+}
+@media(max-width:420px){.portfolio-topnav{gap:8px;font-size:16px}.portfolio-topnav-brand{font-size:22px}.portfolio-topnav-toggle{width:27px}}
 /* thin reading-progress rule */
 .progress{
   position:fixed;top:0;left:0;height:1.5px;z-index:60;width:0;

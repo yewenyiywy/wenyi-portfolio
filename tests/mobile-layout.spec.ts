@@ -239,8 +239,8 @@ test.describe('hobbies page', () => {
   test('handwriting and non-repeating pressed flowers', async ({ page }) => {
     await page.goto('/hobbies')
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /Epistolary Ink Color/)
-    expect(await page.evaluate(() => document.fonts.check('16px "Epistolary Ink Color"'))).toBe(true)
+    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /La Belle Aurore/)
+    expect(await page.evaluate(() => document.fonts.check('16px "La Belle Aurore"'))).toBe(true)
     const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
     expect(titleFont).toContain('VT323')
     const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))
@@ -275,6 +275,17 @@ test.describe('hobbies page', () => {
       await menu.click()
       await check(page, 'hobbies-menu-open')
     }
+  })
+  test('matching pixel navigation and return to archive', async ({ page }) => {
+    await page.goto('/hobbies')
+    const nav=page.getByRole('navigation',{name:'Portfolio navigation'})
+    await expect(nav).toHaveCSS('font-family', /VT323/)
+    const labels=await nav.locator('.portfolio-topnav-links a').allTextContents()
+    await page.locator('.journal-spread:not([hidden])').getByRole('link',{name:'Back to portfolio'}).click()
+    await expect(page).toHaveURL(/\/classic$/)
+    await expect(nav).toHaveCSS('font-family', /VT323/)
+    expect(await nav.locator('.portfolio-topnav-links a').allTextContents()).toEqual(labels)
+    await expect(page.locator('.archive-paper-stack')).toBeVisible()
   })
   test('fashion swatches and varied tapes', async ({ page }) => {
     await page.goto('/hobbies#fashion-design')

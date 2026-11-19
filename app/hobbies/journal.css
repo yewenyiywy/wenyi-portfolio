@@ -2,16 +2,8 @@
   font-family:'La Belle Aurore';font-style:normal;font-weight:400;font-display:swap;
   src:url('/fonts/la-belle-aurore.ttf') format('truetype');
 }
-@font-face {
-  font-family:'Epistolary Ink Color';font-style:normal;font-weight:400;font-display:swap;
-  src:url('/fonts/EpistolaryInk-Color.woff2') format('woff2');
-}
-@font-face {
-  font-family:'Epistolary Ink';font-style:normal;font-weight:400;font-display:swap;
-  src:url('/fonts/EpistolaryInk-Regular.woff2') format('woff2');
-}
 .journal-page {
-  --sans:'Epistolary Ink Color','Epistolary Ink','La Belle Aurore',cursive;
+  --sans:'La Belle Aurore',cursive;
   --h-wine: #314b31;
   --h-wine-soft: #58734b;
   --h-ink: #3c3427;
@@ -197,7 +189,6 @@
 .journal-detail-pattern figcaption { text-align:center; }
 .journal-detail-art figcaption,.journal-detail-pattern figcaption { font: 400 17px/1.4 var(--sans); color: var(--h-muted); margin-top: 8px; }
 .journal-leaf .journal-detail-hint { font-size: 16px; color: var(--h-gold); margin-top: 20px; }
-.journal-page .navlinks,.journal-page .nav-contact,.journal-page .mobile-menu a {font-size:16px;}
 
 @media (max-width: 850px) {
   .journal-book { width: min(calc(100% - 20px), 540px); aspect-ratio: auto; background: none; }
