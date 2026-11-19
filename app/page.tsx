@@ -49,13 +49,12 @@ const research = [
       <>Developed hybrid momentum signals for FX alpha generation and dynamic currency hedging. Evaluated out-of-sample performance across market regimes with transaction costs included.</>,
     ],
   },
-  { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] },
-  { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>,<>Code: <a className="research-demo-link" href="https://github.com/Yolandayx929/imc-prosperity-3-code" target="_blank" rel="noreferrer">GitHub</a>.</>] }
+  { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] }
 ]
 
 const awards = [
   { name:'Berkeley MFE High-Frequency Trading Competition', org:'UC Berkeley', logo:logos.berkeley, result:<><strong>6th place</strong> among all MFE students</> },
-  { name:'IMC Prosperity 3', org:'IMC', logo:logos.imc, result:<><strong>Top 1%</strong> among 12,620 global teams (7th in China)</> },
+  { name:'IMC Prosperity 3', org:'IMC', logo:logos.imc, result:<><strong>Top 1%</strong> among 12,620 global teams (7th in China) · <a className="research-demo-link" href="https://github.com/Yolandayx929/imc-prosperity-3-code" target="_blank" rel="noreferrer">GitHub</a></> },
   { name:'SIG Prediction Market Cup', org:'SIG Susquehanna', logo:logos.sig, result:<><strong>Top 5%</strong></> },
 ]
 
