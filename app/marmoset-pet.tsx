@@ -1,17 +1,26 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { MouseEvent } from 'react'
 import styles from './marmoset-pet.module.css'
 
+const lines = [
+  'Hi! I’m a common marmoset.',
+  'I could fit in your two hands.',
+  'Marmosets usually have twins!',
+  'I love tree gum… and apples.',
+  'My tail is longer than my body.',
+  'I chatter in tiny high-pitched calls.',
+  'Have you seen Wenyi’s hobbies journal?',
+  'Thanks for visiting!',
+]
+
 export default function MarmosetPet() {
-  const pathname = usePathname()
   const [activity, setActivity] = useState<'idle' | 'hop' | 'eat' | 'happy' | 'rest'>('idle')
   const [greeting, setGreeting] = useState(false)
   const [fullness, setFullness] = useState(1)
   const [alignRight, setAlignRight] = useState(false)
+  const [line, setLine] = useState<number | null>(null)
 
   useEffect(() => {
     if (activity === 'idle' || activity === 'rest') return
@@ -35,7 +44,17 @@ export default function MarmosetPet() {
   function feed() {
     if (fullness >= 3 || activity === 'eat' || activity === 'happy') return
     setFullness(value => Math.min(3, value + 1))
+    setLine(null)
     setActivity('eat')
+  }
+
+  function talk() {
+    setLine(current => {
+      let next = Math.floor(Math.random() * lines.length)
+      if (next === current) next = (next + 1) % lines.length
+      return next
+    })
+    if (activity === 'idle') setActivity('hop')
   }
 
   const busy = activity === 'eat' || activity === 'happy'
@@ -63,12 +82,12 @@ export default function MarmosetPet() {
           <div className={styles.fullness} aria-label={`Fullness: ${fullness} of 3`}>
             <span>Fullness</span><span aria-hidden="true">{'♥'.repeat(fullness)}{'♡'.repeat(3 - fullness)}</span>
           </div>
-          <p className={styles.status} role="status">{activity === 'eat' ? 'Nom nom…' : activity === 'happy' ? 'Yummy!' : activity === 'rest' ? 'Zzz…' : fullness === 3 ? 'I’m full!' : 'Hi there!'}</p>
+          <p className={styles.status} role="status">{activity === 'eat' ? 'Nom nom…' : activity === 'happy' ? 'Yummy!' : activity === 'rest' ? 'Zzz…' : line !== null ? lines[line] : fullness === 3 ? 'I’m full!' : 'Hi there!'}</p>
           <div className={styles.actions}>
             <button type="button" onClick={feed} disabled={busy || fullness === 3}>Feed apple</button>
-            <button type="button" onClick={() => setActivity(activity === 'rest' ? 'idle' : 'rest')} disabled={busy}>{activity === 'rest' ? 'Wake' : 'Rest'}</button>
+            <button type="button" onClick={talk} disabled={busy || activity === 'rest'}>Talk</button>
+            <button type="button" onClick={() => { setLine(null); setActivity(activity === 'rest' ? 'idle' : 'rest') }} disabled={busy}>{activity === 'rest' ? 'Wake' : 'Rest'}</button>
           </div>
-          {pathname !== '/hobbies' && <Link href="/hobbies" onClick={() => setGreeting(false)}>Explore Hobbies</Link>}
         </div>
       </div>
     </div>
