@@ -360,7 +360,7 @@ img{max-width:100%}
   .nav-contact{margin-left:auto}
   .fashion-hero{display:block;padding:26px 0 40px}
   .hero-rule,.hero-meta{width:100%}
-  .hero-gallery{height:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:38px}
+  .hero-gallery{height:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:38px;margin-right:0}
   .shot{position:relative;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
     width:auto!important;transform:none!important;box-shadow:0 10px 26px rgba(84,58,50,.12)}
   .shot-main{grid-column:1/-1;height:420px}
