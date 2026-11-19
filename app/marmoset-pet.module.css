@@ -43,7 +43,7 @@
   animation: face 42s step-end infinite;
 }
 
-.sprite {
+.sprite, .edgeIdle {
   position: absolute;
   left: 0;
   top: calc(var(--size) * -.16);
@@ -51,13 +51,17 @@
   height: var(--size);
   background: url('/marmoset-sprites.webp') 0 0 / 400% 200% no-repeat;
   image-rendering: pixelated;
-  animation: walk .48s step-end infinite;
 }
+.walkLayer { display: block; position: absolute; inset: 0; animation: edge-walk 42s step-end infinite; }
+.sprite { animation: walk .48s step-end infinite; }
+.edgeIdle { background-position: 0 100%; opacity: 0; animation: edge-rest 42s step-end infinite; }
 
-.roamer:is(:has(:focus-visible), [data-hopping='true'], [data-greeting='true']),
-.roamer:is(:has(:focus-visible), [data-hopping='true'], [data-greeting='true']) .facing {
+.roamer:is(:has(:focus-visible), :not([data-activity='idle']), [data-greeting='true']),
+.roamer:is(:has(:focus-visible), :not([data-activity='idle']), [data-greeting='true']) :is(.facing, .edgeIdle, .walkLayer) {
   animation-play-state: paused;
 }
+.roamer:is(:has(:focus-visible), :not([data-activity='idle']), [data-greeting='true']) .edgeIdle { visibility: hidden; }
+.roamer:is(:has(:focus-visible), :not([data-activity='idle']), [data-greeting='true']) .walkLayer { opacity: 1 !important; }
 
 .pet:focus-visible .sprite, .roamer[data-greeting='true'] .sprite {
   animation: none;
@@ -65,25 +69,32 @@
 }
 
 @media (hover: hover) {
-  .roamer:hover, .roamer:hover .facing { animation-play-state: paused; }
+  .roamer:hover, .roamer:hover :is(.facing, .edgeIdle, .walkLayer) { animation-play-state: paused; }
+  .roamer:hover .edgeIdle { visibility: hidden; }
+  .roamer:hover .walkLayer { opacity: 1 !important; }
   .pet:hover .sprite {
     animation: none;
     background-position: calc(100% / 3) 100%;
   }
 }
 
-.roamer[data-hopping='true'] .sprite { animation: hop .66s step-end both; }
+.roamer[data-activity='hop'] .sprite { animation: hop .66s step-end both; }
+.roamer:is([data-activity='eat'], [data-activity='happy'], [data-activity='rest']) .sprite {
+  background-image: url('/marmoset-care.webp');
+  top: calc(var(--size) * -.23);
+}
+.roamer[data-activity='eat'] .sprite { animation: eat .8s step-end infinite; }
+.roamer[data-activity='happy'] .sprite { animation: happy 1.5s step-end both; }
+.roamer[data-activity='rest'] .sprite { animation: none; background-position: 100% 100%; }
 
 .greeting {
   position: absolute;
   bottom: calc(100% + 5px);
-  left: 50%;
-  width: max-content;
-  max-width: calc(var(--size) + 20px);
-  padding: 6px 8px;
-  transform: translateX(-50%);
-  border: 1px solid var(--gold-soft);
-  border-radius: 7px;
+  left: 0;
+  width: 176px;
+  padding: 9px;
+  border: 2px solid var(--gold-soft);
+  border-radius: 3px;
   background: var(--ivory);
   box-shadow: 0 3px 8px #231e1f22;
   color: var(--wine);
@@ -91,6 +102,20 @@
   text-align: center;
   pointer-events: auto;
 }
+.roamer[data-align-right='true'] .greeting { left: auto; right: 0; }
+.petTitle, .fullness { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+.petTitle { font-weight: 700; }
+.petTitle button { border: 0; background: none; color: inherit; font-size: 18px; cursor: pointer; }
+.fullness { margin-top: 6px; font-size: 12px; }
+.fullness span:last-child { letter-spacing: 2px; }
+.status { margin: 7px 0; font-size: 12px; }
+.actions { display: flex; gap: 5px; margin-bottom: 7px; }
+.actions button {
+  flex: 1; border: 1px solid var(--gold); background: #f4ede4;
+  color: var(--wine); padding: 6px 4px; font: 600 11px var(--sans); cursor: pointer;
+}
+.actions button:disabled { opacity: .5; cursor: default; }
+.actions button:focus-visible, .petTitle button:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
 
 .greeting a { text-decoration: underline; text-underline-offset: 2px; }
 
@@ -108,6 +133,18 @@
   88%, 100% { background-position: 0 100%; }
 }
 
+@keyframes eat {
+  0% { background-position: 0 0; }
+  25% { background-position: calc(100% / 3) 0; }
+  50% { background-position: calc(200% / 3) 0; }
+  75% { background-position: 100% 0; }
+}
+
+@keyframes happy {
+  0% { background-position: calc(100% / 3) 100%; }
+  55%, 100% { background-position: calc(200% / 3) 100%; }
+}
+
 @keyframes roam {
   0%, 100% { left: 82%; top: 95%; }
   12%, 14% { left: 100%; top: 95%; }
@@ -121,9 +158,21 @@
   14%, 73% { transform: scaleX(-1); }
 }
 
+@keyframes edge-rest {
+  0%, 14%, 44%, 73%, 100% { opacity: 0; }
+  12%, 40%, 69% { opacity: 1; }
+}
+@keyframes edge-walk {
+  0%, 14%, 44%, 73%, 100% { opacity: 1; }
+  12%, 40%, 69% { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .roamer { animation: none; left: 100%; top: 100%; }
   .facing { animation: none; }
   .sprite { animation: none; background-position: 0 100%; }
-  .roamer[data-hopping='true'] .sprite { animation: none; }
+  .edgeIdle, .walkLayer { animation: none; }
+  .roamer[data-activity='hop'] .sprite { animation: none; }
+  .roamer[data-activity='eat'] .sprite { animation: none; background-position: calc(200% / 3) 0; }
+  .roamer[data-activity='happy'] .sprite { animation: none; background-position: calc(200% / 3) 100%; }
 }
