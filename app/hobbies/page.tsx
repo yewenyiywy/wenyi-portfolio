@@ -80,6 +80,7 @@ export default function HobbiesPage() {
   const [shot, setShot] = useState<Shot | null>(null)
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [runningPaused, setRunningPaused] = useState(false)
 
   const fashionDesigns: FashionDesign[] = [
     {
@@ -462,27 +463,22 @@ export default function HobbiesPage() {
         </div>
       </section>
 
-      <section className="other-passions wrap">
-        <div className="section-label">Other passions</div>
-        <div className="passion-list reveal">
-          <div>
-            <div className="passion-icon" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round">
-                <path d="M8 32l1.8-6.4L26.5 8.9a2.6 2.6 0 0 1 3.7 0l1.4 1.4a2.6 2.6 0 0 1 0 3.7L14.9 30.6z" />
-                <path d="M24.4 11l4.9 4.9" /><path d="M9.8 25.6l4.9 4.9" /><path d="M9 36h22" />
-              </svg>
-            </div>
-            <div><h3>Drawing</h3><p>Capturing ideas and moments.</p></div>
+      <section id="running" className="atelier-section running-section" aria-labelledby="running-title">
+        <div className="wrap running-row">
+          <div className="atelier-copy reveal">
+            <div className="atelier-index">04</div>
+            <h2 id="running-title">Running</h2>
+            <p>Running long distances, clearing my mind.</p>
           </div>
-          <div>
-            <div className="passion-icon" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round">
-                <path d="M5 24.5c0-2.6 1.4-4.3 3.9-5.2l4.4-1.6 3.4 3.1 4.9 1.4 7.3 2.3c2.7.9 4.1 2.1 4.1 4.1V31H5z" />
-                <path d="M13.3 17.7l-1.6 3.6" /><path d="M17.7 20.8l-1.7 3.4" /><path d="M22.6 22.2l-1.6 3.2" /><path d="M5 34h30" />
-              </svg>
+          <figure className="running-scene reveal" data-paused={runningPaused}>
+            <div className="running-track" role="img" aria-label="A pixel-art golden snub-nosed monkey running back and forth on all fours">
+              <div className="running-monkey" aria-hidden="true"><span className="running-facing"><span className="running-sprite" /></span></div>
             </div>
-            <div><h3>Marathon</h3><p>Running long distances, clearing my mind.</p></div>
-          </div>
+            <figcaption className="running-caption">
+              <span>Golden snub-nosed monkey <em>Rhinopithecus roxellana</em></span>
+              <button type="button" className="running-control" onClick={() => setRunningPaused(paused => !paused)}>{runningPaused ? 'Play' : 'Pause'}</button>
+            </figcaption>
+          </figure>
         </div>
       </section>
 
