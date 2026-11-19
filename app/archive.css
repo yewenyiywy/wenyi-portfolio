@@ -1,0 +1,65 @@
+/* Shared archive art for the game, document desk, and continuous portfolio. */
+.archive-home,.classic-portfolio{min-height:100vh;background:radial-gradient(ellipse at 50% 15%,#f3e8d0 0,#e4d7bf 65%,#d7c6a9 100%);color:#382e24}
+.archive-nav{width:min(calc(100% - 48px),1180px);margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;font:400 17px/1.3 var(--display)}
+.archive-nav>div{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.archive-brand{font:400 25px/1 var(--display);white-space:nowrap}.archive-brand span{color:var(--wine)}
+.archive-full-link{color:var(--wine);text-decoration:underline;text-underline-offset:4px}
+.archive-nav a:hover{color:var(--wine)}
+.archive-index{width:min(calc(100% - 48px),1000px);margin:0 auto;padding:28px 0 70px;scroll-margin-top:16px}
+.archive-index>header{text-align:center;margin-bottom:32px}.archive-index>header h1{font:400 clamp(45px,6vw,72px)/1 var(--display);color:#3d3025;margin:0 0 9px}.archive-index>header p{font:400 14px/1.5 var(--sans);color:#786043;margin:0}
+/* One physical pile. Four sheets peek out from behind the active sheet;
+   selecting a visible edge moves that exact sheet to the front. */
+.archive-paper-stack{--sheet-step:50px;--stack-rise:calc(4 * var(--sheet-step));position:relative;isolation:isolate;padding-top:var(--stack-rise);margin:0 auto;scroll-margin-top:12px;width:100%}
+.archive-sheet{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#563e29;filter:drop-shadow(0 3px 3px #6f4e324d)}
+.archive-sheet-back{position:absolute;top:calc(var(--sheet-index) * var(--sheet-step));left:calc((var(--sheet-index) - 2) * 1.5px);width:100%;height:calc(100% - var(--stack-rise));z-index:calc(var(--sheet-index) + 1);pointer-events:none}
+.archive-sheet-back .archive-sheet-label{pointer-events:auto}
+.archive-sheet-front.archive-paper{position:relative;z-index:6;padding-top:15px;min-height:650px;animation:archive-page-arrive .22s ease-out both}
+.archive-sheet-label{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;height:var(--sheet-step);padding:7px clamp(20px,5vw,65px) 9px;border:0;background:none;color:#65452d;text-align:left;cursor:pointer;transition:color .18s}
+.archive-sheet-label strong{font:400 clamp(22px,3vw,30px)/1 var(--display);overflow-wrap:anywhere}.archive-sheet-label>span{font:400 11px/1.35 var(--sans);text-align:right;overflow-wrap:anywhere}
+.archive-sheet-label:hover,.archive-sheet-label:focus-visible{color:#822c3d}.archive-sheet-label:focus-visible{outline:2px solid #8a4d35;outline-offset:-7px}
+.archive-sheet-selected{padding:12px 0 14px;color:#6e1f30;border-bottom:1px solid #af8e5f50;margin-bottom:12px;height:auto;min-height:48px;cursor:default}
+@keyframes archive-page-arrive{from{opacity:.7;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.archive-paper{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#3a2c21;padding:clamp(26px,5vw,68px) clamp(22px,6vw,80px);min-height:560px;filter:drop-shadow(0 7px 8px #4d35222c)}
+.archive-paper .chapter-view .wrap{width:100%;max-width:none}
+.chapter-view>.progress,.chapter-view>nav,.chapter-view>header,.chapter-view>section,.chapter-view>footer{display:none}
+.chapter-view[data-chapter~="about"]>header{display:grid}
+.chapter-view[data-chapter~="about"]>#about,.chapter-view[data-chapter~="education"]>#education,.chapter-view[data-chapter~="skills"]>#skills,.chapter-view[data-chapter~="experience"]>#experience,.chapter-view[data-chapter~="projects"]>#projects,.chapter-view[data-chapter~="awards"]>#awards,.chapter-view[data-chapter~="contact"]>#contact{display:block;padding:24px 0}
+.chapter-view .reveal{opacity:1;transform:none}.chapter-view{min-height:0;font-family:var(--sans)}
+.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{border-color:#ad895d50}
+.archive-paper .chapter-view>.section:first-of-type{border-top:0}
+.archive-paper .chapter-view>.fashion-hero{padding:10px 0 28px}
+.archive-paper .chapter-view .footer-links{padding-bottom:12px}
+
+/* Every organization uses a normalized, individually bounded wax sprite. */
+.wax-seal{display:block;flex:none;width:100%;height:100%;aspect-ratio:1;background-image:url('/archive/wax-seals.webp');background-size:400% 300%;background-repeat:no-repeat;filter:drop-shadow(1px 2px 1px #68483245)}
+.classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:58px;height:58px;flex:0 0 58px}
+.classic-portfolio .awards-lines .award-brand,.chapter-view .awards-lines .award-brand{width:38px;height:38px;flex:0 0 38px}
+
+/* Archive photographs are mounted within the actual transparent scrapbook
+   frame, and the tape overlaps both its top edge and the surrounding paper. */
+.fashion-hero:has(.archive-gallery){grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.hero-gallery.archive-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 17px;align-items:center;justify-items:center;height:auto;max-width:530px;margin:0 auto;padding:18px 10px 4px;width:100%}
+.archive-gallery .archive-photo{position:relative;inset:auto!important;width:100%!important;height:auto;max-width:230px;aspect-ratio:589/800;grid-column:auto;display:block;background:none;box-shadow:none;overflow:visible;transform:rotate(var(--photo-angle))!important;--photo-angle:-3deg}
+.archive-gallery .archive-photo-1{--photo-angle:3deg}.archive-gallery .archive-photo-2{--photo-angle:2deg}.archive-gallery .archive-photo-3{--photo-angle:-2deg}
+.archive-gallery .archive-photo::after{display:none}
+.archive-gallery .archive-photo:hover{transform:rotate(0deg) translateY(-3px)!important;box-shadow:none}
+.archive-gallery .archive-photo-window{position:absolute;inset:6.7% 6.7% 17.5%;display:block;overflow:hidden;background:#ead9bd}
+.archive-gallery .archive-photo-window img{width:100%;height:100%;object-fit:cover;object-position:center 38%;filter:sepia(.12) saturate(.94)}
+.archive-gallery .archive-photo-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;filter:none;pointer-events:none;filter:drop-shadow(1px 3px 2px #68503d44)}
+.archive-photo-tape{position:absolute;z-index:5;top:-4%;left:26%;width:48%;aspect-ratio:320/108;background:url('/hobbies/scrapbook/tape.webp') 0 0/400% 100% no-repeat;transform:rotate(-11deg);pointer-events:none}
+.archive-photo-1 .archive-photo-tape{background-position:calc(100% / 3) 0;transform:rotate(13deg);left:35%}
+.archive-photo-2 .archive-photo-tape{background-position:calc(200% / 3) 0;transform:rotate(-6deg);left:20%}
+.archive-photo-3 .archive-photo-tape{background-position:100% 0;transform:rotate(17deg);left:30%}
+.archive-gallery .gallery-caption{position:static;grid-column:1/-1;text-align:right;margin:6px 0 0;color:#795f43}
+
+/* The optional full scroll mode keeps all sections visible as separate sheets. */
+.classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{background:url('/archive/paper.webp') center/100% 100% no-repeat;max-width:1070px;margin:14px auto 28px;padding:clamp(30px,5vw,60px) clamp(24px,5vw,60px);border:0;filter:drop-shadow(0 4px 5px #5e44252b)}
+.classic-portfolio>.nav::before{background:#e6d7bb}
+.classic-portfolio .navlinks{gap:18px;margin-right:20px}
+.classic-portfolio .timeline,.chapter-view .timeline{border-color:#b2926a50}.classic-portfolio .timeline-entry,.chapter-view .timeline-entry{border-color:#b2926a45}
+.classic-portfolio .section-label,.chapter-view .section-label{color:#846035}
+.classic-portfolio .hero-rule,.chapter-view .hero-rule{background:#b1916855}
+
+@media(max-width:850px){.archive-index{padding-top:24px}.archive-paper{min-height:450px}.chapter-view[data-chapter~="about"]>header,.classic-portfolio>.fashion-hero{display:block}.hero-gallery.archive-gallery{margin:24px auto 0;max-width:460px}.archive-gallery .archive-photo{max-width:215px}.archive-nav{width:calc(100% - 32px)}}
+@media(max-width:520px){.archive-nav{align-items:flex-start;padding:17px 0;font-size:16px}.archive-nav>div{gap:8px 14px}.archive-brand{font-size:22px}.archive-index{width:calc(100% - 32px);padding-bottom:44px}.archive-index>header{margin-bottom:26px}.archive-paper-stack{--sheet-step:45px}.archive-sheet-label{padding-inline:20px}.archive-sheet-label>span{font-size:10px}.archive-sheet-selected{padding-inline:0}.archive-sheet-front.archive-paper{min-height:440px}.archive-paper{padding:27px 20px;min-height:420px}.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{padding:20px 0}.archive-paper .chapter-view .title-line h3{font-size:23px}.classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{width:calc(100% - 22px);padding:32px 22px}.classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:46px;height:46px;flex:0 0 46px}.archive-gallery .archive-photo-tape{width:50%}.hero-gallery.archive-gallery{gap:10px;padding:14px 3px}.archive-paper .chapter-view .inline-institution{white-space:normal}}
+@media(prefers-reduced-motion:reduce){.archive-sheet-front,.archive-photo{animation:none;transition:none}}

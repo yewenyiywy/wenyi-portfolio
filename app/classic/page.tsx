@@ -1,5 +1,5 @@
-import PortfolioView from '../portfolio-view'
+import ArchivePortfolio from '../archive-portfolio'
 
 export default function ClassicPage() {
-  return <PortfolioView />
+  return <ArchivePortfolio />
 }
