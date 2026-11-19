@@ -23,6 +23,7 @@ const logos = {
   berkeley: '/logos/ucb-seal.png', umich: '/logos/umich.png', bdfz: '/logos/bdfz.png',
   tiktok: '/logos/tiktok.png', csc: '/logos/china-securities.png', boc: '/logos/boc.png',
   imc: '/logos/imc.png', ramify: '/logos/ramify.png', shepherd: '/logos/shepherd.png', selfEvolving: '/logos/self-evolving-agent.png',
+  milltech: '/logos/milltech.png',
 }
 
 const experience = [
@@ -37,8 +38,7 @@ const research = [
   {
     company: 'MillTech (Millennium)',
     titleSuffix: ' — UCB MFE Industry Project',
-    logo: logos.berkeley,
-    logoAlt: 'UC Berkeley',
+    logo: logos.milltech,
     location: 'Berkeley, CA',
     role: 'Quantitative Researcher',
     date: '10/2026 – 12/2026',
@@ -59,7 +59,7 @@ function Tags({items}:{items:string[]}){return <span className="tags">{items.map
 function Entry({item}:{item:any}){return <article className="timeline-entry reveal">
   <div className="date">{item.date}</div>
   <div className="entry-content">
-    <div className="entry-top"><Brand src={item.logo} alt={item.logoAlt ?? (item.company || item.title)}/><div className="entry-title"><div className="title-line"><h3>{item.companyUrl ? <a className="company-link" href={item.companyUrl} target="_blank" rel="noreferrer">{item.company}</a> : item.company}{item.titleSuffix}</h3><span className="location">{item.location}</span></div><div className="role">{item.role} <Tags items={item.tags}/></div></div></div>
+    <div className="entry-top"><Brand src={item.logo} alt={item.company || item.title}/><div className="entry-title"><div className="title-line"><h3>{item.companyUrl ? <a className="company-link" href={item.companyUrl} target="_blank" rel="noreferrer">{item.company}</a> : item.company}{item.titleSuffix}</h3><span className="location">{item.location}</span></div><div className="role">{item.role} <Tags items={item.tags}/></div></div></div>
     <ul>{item.bullets.map((b:ReactNode,i:number)=><li key={i}>{b}</li>)}</ul>
   </div>
 </article>}
