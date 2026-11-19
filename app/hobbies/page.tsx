@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, CSSProperties } from 'react'
 import './journal.css'
 
 const steam = 'https://store.steampowered.com/app/3117820/Sultans_Game/'
@@ -96,6 +96,35 @@ function Tape({ kind = 0 }: { kind?: TapeKind }) {
   return <span className={`scrap-tape scrap-tape-${kind}`} aria-hidden="true" />
 }
 
+function GameTapeLink({ href, label, kind }: { href: string; label: string; kind: TapeKind }) {
+  return <a className="journal-game-entry" href={href} target="_blank" rel="noreferrer"><Tape kind={kind} /><span className="game-entry-label">{label}</span></a>
+}
+
+const tarotSlots = [
+  [31, 20, -18, .72, 1], [13, 41, -35, .77, 2], [27, 70, -18, .88, 4],
+  [50, 78, 0, 1, 6], [73, 70, 18, .88, 4], [87, 41, 35, .77, 2], [69, 20, 18, .72, 1],
+]
+
+function TarotRing({ onOpen }: { onOpen: (item: Shot) => void }) {
+  const [center, setCenter] = useState(0)
+  const gesture = useRef<{ x: number; y: number; dragged: boolean } | null>(null)
+  const moved = useRef(false)
+  const lastWheel = useRef(0)
+  const rotate = (direction: number) => setCenter(i => (i + direction + tarotCards.length) % tarotCards.length)
+  return <>
+    <div className="journal-tarot-ring" role="group" aria-label="Circular tarot deck. Drag horizontally or use left and right arrow keys to rotate." tabIndex={0}
+      onKeyDown={e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {e.preventDefault();rotate(e.key === 'ArrowLeft' ? -1 : 1)} }}
+      onPointerDown={e => { if (e.button !== 0) return; gesture.current = {x:e.clientX,y:e.clientY,dragged:false};moved.current=false }}
+      onPointerMove={e => {const g=gesture.current;if(!g)return;const dx=e.clientX-g.x;const dy=e.clientY-g.y;if(Math.abs(dx)>24&&Math.abs(dx)>Math.abs(dy)){g.dragged=true;moved.current=true;g.x=e.clientX;g.y=e.clientY;rotate(dx<0?1:-1);if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId)}}}
+      onPointerUp={() => {gesture.current=null}} onPointerCancel={() => {gesture.current=null}}
+      onClickCapture={e => {if(moved.current){e.preventDefault();e.stopPropagation();moved.current=false}}}
+      onWheel={e => {const d=e.deltaX || (e.shiftKey?e.deltaY:0);if(Math.abs(d)>5 && Date.now()-lastWheel.current>110){rotate(d>0?1:-1);lastWheel.current=Date.now()}}}>
+      {tarotSlots.map(([x,y,angle,scale,z],slot) => {const index=(center+slot-3+tarotCards.length)%tarotCards.length;const [number,title,character]=tarotCards[index];const src=`${afterglowUrl}tarot/${number}.jpg`;return <button key={slot} type="button" className="journal-ring-card" style={{'--ring-x':`${x}%`,'--ring-y':`${y}%`,'--ring-angle':`${angle}deg`,'--ring-scale':scale,'--ring-z':z} as CSSProperties} aria-label={`${title}, ${character}`} onClick={() => onOpen({src,alt:`${title} tarot card featuring ${character}`,title,note:character})}><img src={src} alt="" width={480} height={720} loading="lazy" decoding="async" draggable={false}/></button>})}
+    </div>
+    <p className="journal-ring-hint">Drag the ring · Select a card</p>
+  </>
+}
+
 function Pressed({ kind, className = '' }: { kind: 0 | 1 | 2 | 3 | 4 | 5; className?: string }) {
   return <span className={`scrap-pressed scrap-pressed-${kind} ${className}`} aria-hidden="true" />
 }
@@ -143,7 +172,6 @@ function spreadFromHash() {
 
 export default function HobbiesPage() {
   const bookRef = useRef<HTMLDivElement>(null)
-  const tarotSpreadRef = useRef<HTMLUListElement>(null)
   const navRef = useRef<HTMLElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
   const detailCloseRef = useRef<HTMLButtonElement>(null)
@@ -216,11 +244,6 @@ export default function HobbiesPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [shot, fashion, close])
 
-  function scrollTarotDeck(direction: -1 | 1) {
-    const spread = tarotSpreadRef.current
-    if (spread) spread.scrollBy({ left: direction * spread.clientWidth * .7 })
-  }
-
   function spread(index: number, left: ReactNode, right: ReactNode) {
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
@@ -283,7 +306,7 @@ export default function HobbiesPage() {
       </>, <>
         <JournalArt item={gameStudies[1]} onOpen={open} style="mounted" tape={5} contain />
         <div className="journal-game-text"><h3>苏丹的游戏 · Sultan&apos;s Game</h3><p>A card-driven narrative RPG by Double Cross. I create mods that introduce new characters, events, and storylines.</p>
-          <a className="journal-link" href={steam} target="_blank" rel="noreferrer">View Sultan&apos;s Game on Steam</a></div>
+          <GameTapeLink href={steam} label="Sultan’s Game on Steam" kind={2} /></div>
         <PressedCollage kinds={[5]} arrangement="single" />
       </>)}
 
@@ -292,24 +315,12 @@ export default function HobbiesPage() {
         <div className="journal-cover"><ScrapPhoto src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" style="mounted" tape={7} /></div>
         <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
         <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
-        <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
+        <GameTapeLink href={afterglowUrl} label="Play Afterglow" kind={1} />
         <PressedCollage kinds={[1, 4]} />
       </>, <><section id="afterglow-tarot" className="journal-tarot" aria-labelledby="afterglow-tarot-title">
         <h2 id="afterglow-tarot-title">Character Tarot</h2>
         <p>I designed these 22 Major Arcana cards around characters from Afterglow.</p>
-        <details className="tarot-deck">
-          <summary className="tarot-deck-toggle">
-            <span className="tarot-stack" aria-hidden="true"><img src={`${afterglowUrl}tarot/06.jpg`} alt="" width={480} height={720} loading="lazy" /></span>
-            <span className="tarot-spread-label">Spread the deck</span><span className="tarot-stack-label">Gather the deck</span>
-          </summary>
-          <div className="tarot-browse"><p>Swipe across the spread. Select a card to see its artwork and character.</p><div className="tarot-controls"><button type="button" aria-controls="tarot-spread" onClick={() => scrollTarotDeck(-1)}>Previous</button><button type="button" aria-controls="tarot-spread" onClick={() => scrollTarotDeck(1)}>Next</button></div></div>
-          <ul id="tarot-spread" className="tarot-spread" ref={tarotSpreadRef} aria-label="Afterglow tarot cards">
-            {tarotCards.map(([number, title, character]) => {
-              const src = `${afterglowUrl}tarot/${number}.jpg`
-              return <li key={number}><button type="button" className="tarot-card" aria-label={`${title}, ${character}`} onClick={() => open({ src, alt: `${title} tarot card featuring ${character}`, title, note: character })}><img src={src} alt="" width={480} height={720} loading="lazy" decoding="async" draggable={false} /></button></li>
-            })}
-          </ul>
-        </details>
+        <TarotRing onOpen={open} />
       </section><PressedCollage kinds={[0, 2, 3]} arrangement="bouquet" tape={2} /></>)}
 
       {spread(4, <>

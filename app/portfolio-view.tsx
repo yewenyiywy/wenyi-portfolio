@@ -36,7 +36,7 @@ const experience = [
 ]
 
 const research = [
-  { company:'Self-Evolving Quantitative Trading Agent', logo:logos.selfEvolving, location:'Independent', role:'Long-term Research Project', date:'Long-term', tags:['Agentic AI','Quantitative Research','Self-Evolution','Portfolio Optimization'], bullets:[<>Built an <strong>autonomous self-evolving quantitative trading agent</strong> that discovers, validates, and evolves trading strategies under statistical and immutable risk controls.</>,<>Designed a closed-loop system integrating LLM-based strategy generation, backtesting, adaptive evolution, risk-adjusted capital allocation, and live/simulated execution.</>,<>Product demo: <a className="research-demo-link" href="https://frontend-six-wheat-17.vercel.app/" target="_blank" rel="noreferrer">Frontend Demo</a>. The product is currently in <strong>self-use</strong>; the backend code and infrastructure are not open-sourced.</>] },
+  { company:'Self-Evolving Quantitative Trading Agent', logo:logos.selfEvolving, location:'Independent', role:'Long-term Research Project', date:'Long-term', tags:['MCTS','Evolutionary Algorithms','Foundation Models'], bullets:[<>Built a self-evolving research agent combining <strong>Monte Carlo Tree Search (MCTS)</strong> and evolutionary algorithms with automated backtesting and risk controls.</>,<>Integrating newer foundation models and neural networks for strategy generation and evaluation. <a className="research-demo-link" href="https://frontend-six-wheat-17.vercel.app/" target="_blank" rel="noreferrer">Frontend Demo</a> (private backend).</>] },
   {
     company: 'MillTech (Millennium)',
     titleSuffix: ' — UCB MFE Industry Project',
@@ -228,7 +228,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
     return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey) }
   }, [shot, close])
 
-  return <main id="top" ref={pageRef} className={chapter ? 'chapter-view' : undefined} data-chapter={chapter}>
+  return <main id="top" ref={pageRef} className={chapter ? 'chapter-view' : 'classic-portfolio'} data-chapter={chapter}>
   <div className="progress" ref={barRef} aria-hidden="true"></div>
 
   <nav className="nav wrap" ref={navRef}>

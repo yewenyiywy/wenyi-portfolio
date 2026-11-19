@@ -215,6 +215,10 @@ img{max-width:100%}
   font:400 15px/1.92 var(--sans);color:#5f585b;margin:0 0 20px;letter-spacing:-.005em;
 }
 .about-prose p:last-child{margin-bottom:0}
+.classic-portfolio .about-prose p{font-size:14px;line-height:1.82;margin-bottom:16px}
+.classic-portfolio .about-prose p:last-child{margin-bottom:0}
+.classic-portfolio .timeline-entry li{font-size:12.5px;line-height:1.65;margin:4px 0}
+.classic-portfolio .role,.classic-portfolio .focus-lines span{font-size:12.5px}
 .about-prose strong{color:var(--ink);font-weight:500}
 .about-prose p:first-child::first-letter{
   float:left;font:300 76px/.78 var(--display);color:var(--wine);

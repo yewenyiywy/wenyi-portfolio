@@ -146,14 +146,20 @@
   .scrap-collage-taped.scrap-collage-single .scrap-stem-0{--stem-anchor:50%;--stem-angle:8deg}
   .scrap-collage-taped .scrap-tape{left:50%;bottom:7.5%;width:min(44cqw,172px);transform:translateX(-50%) rotate(var(--tape-angle));}
 }
-.journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; align-self:flex-start; font-size:18px; }
-.journal-book .afterglow-cta:hover { background: #49603c; }
-.journal-book .tarot-deck { margin-top: 16px; min-width: 0; }
-.journal-book .tarot-deck-toggle { gap: 16px; padding: 8px; font-size: 18px; }
-.journal-book .tarot-stack { width: 70px; }
-.journal-book .tarot-spread { --tarot-width: clamp(84px, 10vw, 118px); }
-.journal-book .tarot-browse { margin-top: 10px; gap: 4px; }
-.journal-book .tarot-controls button { padding: 6px 10px; font-size: 16px; }
+.journal-game-entry { position:relative;display:flex;align-items:center;justify-content:center;isolation:isolate;width:min(100%,235px);aspect-ratio:320/108;align-self:flex-start;margin:5px 0 5px;transform:rotate(-4deg);color:#39442d;text-decoration:none;cursor:pointer;transition:transform .2s; }
+.journal-game-entry .scrap-tape { inset:0;width:100%;height:100%;transform:none;z-index:-1; }
+.journal-game-entry .game-entry-label { font:400 22px/1.1 var(--sans);text-align:center;padding:4px 15px; }
+.journal-game-entry:hover,.journal-game-entry:focus-visible{transform:rotate(0deg) translateY(-2px);color:#703d29;}
+.journal-game-text .journal-game-entry{transform:rotate(5deg)}
+.journal-game-text .journal-game-entry:hover{transform:rotate(0deg) translateY(-2px)}
+.journal-tarot-ring { position:relative; width:100%;height:clamp(218px,26vw,320px);isolation:isolate;touch-action:pan-y;cursor:grab;user-select:none;overflow:visible;margin:0 auto; }
+.journal-tarot-ring:active{cursor:grabbing}
+.journal-tarot-ring:focus-visible{outline:2px solid var(--h-wine);outline-offset:2px}
+.journal-ring-card { position:absolute;left:var(--ring-x);top:var(--ring-y);width:clamp(49px,18%,90px);aspect-ratio:2/3;z-index:var(--ring-z);border:0;padding:0;background:none;cursor:pointer;transform:translate(-50%,-50%) rotate(var(--ring-angle)) scale(var(--ring-scale));transition:filter .18s,transform .18s; }
+.journal-ring-card img {display:block;width:100%;height:100%;object-fit:cover;border-radius:4px;box-shadow:1px 3px 7px #48353c88;pointer-events:none;}
+.journal-ring-card:hover,.journal-ring-card:focus-visible {z-index:8;transform:translate(-50%,-50%) rotate(var(--ring-angle)) scale(calc(var(--ring-scale) * 1.09));filter:brightness(1.07);}
+.journal-leaf .journal-ring-hint { text-align:center;font-size:16px;margin:5px 0 0;color:var(--h-gold); }
+@media(prefers-reduced-motion:reduce){.journal-ring-card,.journal-game-entry{transition:none}}
 
 .journal-fashion-card { margin: 14px 0 0; max-width: 300px; min-width: 0; }
 .journal-fashion-card button { width:100%; }
