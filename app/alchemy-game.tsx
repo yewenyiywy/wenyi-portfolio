@@ -46,10 +46,10 @@ export default function AlchemyGame() {
     return () => { if (timer.current) clearTimeout(timer.current) }
   }, [router])
 
-  function choose(id: Ingredient) {
+  function choose(id: Ingredient, onlyAdd = false) {
     if (brewing) return
-    setSelected(prev => prev.includes(id) ? prev.filter(i => i !== id) : prev.length === 2 ? [prev[1], id] : [...prev, id])
-    setMessage('Mix two ingredients in the cauldron.')
+    setSelected(prev => prev.includes(id) ? onlyAdd ? prev : prev.filter(i => i !== id) : prev.length === 2 ? [prev[1], id] : [...prev, id])
+    setMessage('Choose a second ingredient, or brew your potion.')
   }
 
   function openChapter(id: string) {
@@ -65,7 +65,7 @@ export default function AlchemyGame() {
     timer.current = setTimeout(() => {
       setBrewing(false)
       setSelected([])
-      if (!match) { setMessage('A mysterious potion! Try a combination from the recipe book.'); return }
+      if (!match) { setMessage('A mysterious potion… Try a different pair.'); return }
       setUnlocked(prev => prev.includes(match.id) ? prev : [...prev, match.id])
       setMessage(`${match.title} discovered!`)
       openChapter(match.id)
@@ -75,12 +75,20 @@ export default function AlchemyGame() {
   return <div className="alchemy-home">
     <nav className="alchemy-nav"><Link href="/" className="alchemy-brand">WENYI YE<span>.</span></Link><div><Link href="/hobbies">Hobbies</Link><Link href="/classic" className="alchemy-skip">Skip game · View portfolio</Link></div></nav>
     <div className="alchemy-shell">
-      <header className="alchemy-heading"><p>THE ALCHEMY ARCHIVE</p><h1>A little magic, a lot of curiosity.</h1><p>Explore Wenyi’s story by mixing ingredients and uncovering the chapters of her portfolio.</p></header>
-      <div className="alchemy-board">
-        <section className="alchemy-panel alchemy-inventory"><h2>Ingredients</h2><p>Pick any two.</p><div className="alchemy-items">{ingredients.map(i => <button type="button" key={i.id} disabled={brewing} aria-pressed={selected.includes(i.id)} onClick={() => choose(i.id)}><Sprite id={i.id} frames={i.frames}/><span>{i.name}</span></button>)}</div></section>
-        <section className="alchemy-panel alchemy-workbench"><div className="alchemy-counter">{unlocked.length} / {recipes.length} chapters discovered</div><div className="alchemy-cauldron"><Sprite key={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} id={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} frames={brewing ? 5 : 6} pot /></div><div className="alchemy-slots">{[0, 1].map(n => { const item = ingredients.find(i => i.id === selected[n]); return <button key={n} type="button" disabled={!item || brewing} onClick={() => item && choose(item.id)} aria-label={item ? `Remove ${item.name}` : 'Empty ingredient slot'}>{item ? <Sprite id={item.id} frames={item.frames}/> : '+'}</button> })}</div><button className="alchemy-brew" type="button" onClick={brew} disabled={selected.length !== 2 || brewing}>{brewing ? 'Brewing…' : 'Brew potion'}</button><p className="alchemy-message" role="status">{message}</p></section>
-        <section className="alchemy-panel alchemy-book"><h2>Recipe book</h2><p>Discover every chapter.</p>{recipes.map(r => <button type="button" key={r.id} className={unlocked.includes(r.id) ? 'unlocked' : ''} disabled={brewing} onClick={() => { if (unlocked.includes(r.id)) openChapter(r.id); else { setSelected([...r.items]); setMessage(`Ready to brew: ${r.title}.`) } }}><span>{r.title}</span><span className="alchemy-recipe-icons">{r.items.map(id => <Sprite key={id} id={id} frames={ingredients.find(i => i.id === id)!.frames} />)}<span>{unlocked.includes(r.id) ? '✓' : '◇'}</span></span></button>)}</section>
+      <header className="alchemy-heading"><p>THE ALCHEMY ARCHIVE</p><h1>A little magic, a lot of curiosity.</h1><p>Mix two ingredients to uncover a chapter of Wenyi’s story.</p></header>
+      <div className="alchemy-counter" aria-live="polite">{unlocked.length} / {recipes.length} chapters discovered</div>
+      <div className="alchemy-scene" aria-label="Alchemy workbench">
+        {ingredients.map(i => <button type="button" key={i.id} className={`alchemy-ingredient ingredient-${i.id}`} disabled={brewing} aria-pressed={selected.includes(i.id)} onClick={() => choose(i.id)} draggable={!brewing} onDragStart={e => { e.dataTransfer.setData('text/plain', i.id); e.dataTransfer.effectAllowed = 'copy' }}><Sprite id={i.id} frames={i.frames}/><span className="ingredient-label">{i.name}</span></button>)}
+        <div className="alchemy-cauldron" onDragOver={e => { if (!brewing) e.preventDefault() }} onDrop={e => { e.preventDefault(); const id = ingredients.find(i => i.id === e.dataTransfer.getData('text/plain'))?.id; if (id) choose(id, true) }}>
+          <Sprite key={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} id={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} frames={brewing ? 5 : 6} pot />
+        </div>
       </div>
+      <div className="alchemy-actions">
+        <div className="alchemy-selection" aria-live="polite">{selected.length ? selected.map(id => ingredients.find(i => i.id === id)?.name).join(' + ') : 'Select or drag two ingredients into the cauldron'}</div>
+        <button className="alchemy-brew" type="button" onClick={brew} disabled={selected.length !== 2 || brewing}>{brewing ? 'Brewing…' : 'Brew potion'}</button>
+        <p className="alchemy-message" role="status">{message}</p>
+      </div>
+      {unlocked.length > 0 && <div className="alchemy-discoveries"><span>Discovered:</span>{recipes.filter(r => unlocked.includes(r.id)).map(r => <button key={r.id} onClick={() => openChapter(r.id)} type="button">{r.title}</button>)}</div>}
       <p className="alchemy-note">Prefer a traditional introduction? <Link href="/classic">Read the complete portfolio.</Link></p>
       {chapter && <div ref={reward} className="alchemy-reward"><div className="alchemy-reward-header"><span>CHAPTER UNLOCKED · {recipes.find(r => r.id === chapter)?.title}</span><button onClick={() => setChapter(null)} type="button">Close ×</button></div><PortfolioView key={chapter} chapter={chapter}/></div>}
     </div>
