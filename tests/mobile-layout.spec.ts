@@ -140,6 +140,10 @@ test.describe('home page', () => {
       await page.getByRole('button', { name: /hide coursework/i }).click()
     }
     await page.getByRole('button', { name: /research workflow/i }).click()
+    await expect(page.locator('.research-system-title')).toHaveText('AI-Native Research & Product System')
+    await expect(page.locator('.research-steps li')).toHaveCount(6)
+    await expect(page.locator('.research-notes')).toContainText('Foundation models')
+    await expect(page.locator('.research-notes')).toContainText('RLHF')
     await check(page, 'home-workflow')
   })
   test('alchemy chapter and skip', async ({ page }) => {
