@@ -4,10 +4,8 @@
   display: block;
   width: var(--plant-size);
   aspect-ratio: 1;
-  background-image: url('/rainforest-plants.webp');
-  background-size: 400% 300%;
+  background-size: 100% 100%;
   background-repeat: no-repeat;
-  image-rendering: pixelated;
   pointer-events: none;
   user-select: none;
 }
@@ -17,15 +15,15 @@
 .heroMonstera {
   --plant-size: clamp(136px, 16vw, 212px);
   top: -34px;
-  left: -92px;
-  background-position: 0 0;
+  left: -132px;
+  background-image: url('/rainforest/monstera.webp');
   transform: rotate(-9deg);
 }
 .heroFern {
   --plant-size: clamp(95px, 11vw, 150px);
   top: 7px;
   left: 48px;
-  background-position: calc(100% / 3) 0;
+  background-image: url('/rainforest/fern.webp');
   transform: rotate(9deg);
   z-index: 5;
 }
@@ -33,31 +31,31 @@
   --plant-size: clamp(125px, 14vw, 185px);
   top: 8px;
   right: 13%;
-  background-position: calc(200% / 3) 50%;
+  background-image: url('/rainforest/vine.webp');
 }
 .heroOrchid {
   --plant-size: clamp(100px, 12vw, 150px);
   bottom: -15px;
   left: -48px;
-  background-position: calc(100% / 3) 50%;
+  background-image: url('/rainforest/orchid.webp');
 }
 .aboutClimber {
   --plant-size: 112px;
   top: 8px;
   right: -24px;
-  background-position: 100% 50%;
+  background-image: url('/rainforest/climber.webp');
 }
 .aboutGround {
   --plant-size: 175px;
   right: 25px;
   bottom: -25px;
-  background-position: 100% 100%;
+  background-image: url('/rainforest/ground.webp');
 }
 .educationBromeliad {
   --plant-size: 126px;
   top: -14px;
   left: -103px;
-  background-position: 0 50%;
+  background-image: url('/rainforest/bromeliad.webp');
   transform: rotate(9deg);
   z-index: 1;
 }
@@ -65,20 +63,20 @@
   --plant-size: 140px;
   top: -44px;
   right: -58px;
-  background-position: calc(100% / 3) 100%;
+  background-image: url('/rainforest/shrub.webp');
 }
 .experienceHeliconia {
   --plant-size: 126px;
   top: 6px;
   left: -105px;
-  background-position: calc(200% / 3) 100%;
+  background-image: url('/rainforest/heliconia.webp');
   z-index: 1;
 }
 .researchMoss {
   --plant-size: 160px;
   right: -59px;
   bottom: -32px;
-  background-position: 0 100%;
+  background-image: url('/rainforest/moss.webp');
 }
 
 @media (max-width: 1080px) {
