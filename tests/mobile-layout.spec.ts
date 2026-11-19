@@ -185,6 +185,10 @@ test.describe('hobbies page', () => {
     await page.goto('/hobbies#running')
     await expect(page.locator('.running-monkey')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+    const collage = page.locator('#running .scrap-collage')
+    await expect(collage.locator('.scrap-stem-0')).toBeVisible()
+    const stem = await collage.locator('.scrap-stem-0').boundingBox()
+    expect(stem?.width).toBeGreaterThan(100)
   })
 
   test('menu open', async ({ page }) => {

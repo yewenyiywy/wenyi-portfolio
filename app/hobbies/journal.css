@@ -30,6 +30,8 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   padding: 2px 8px 14px 2px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -37,6 +39,7 @@
   scrollbar-color: #ad8c60 transparent;
   overflow-wrap: anywhere;
 }
+.journal-leaf-content > * { flex-shrink: 0; }
 .journal-leaf h1,.journal-leaf h2,.journal-leaf h3 { font: 400 1em/1.02 var(--display); color: var(--h-wine); margin: 0 0 14px; }
 .journal-leaf h1 { font-size: clamp(56px, 7vw, 90px); }
 .journal-leaf h2 { font-size: clamp(32px, 3.6vw, 48px); }
@@ -68,11 +71,13 @@
 .journal-book :is(button,a,summary):focus-visible { outline: 2px solid var(--h-wine); outline-offset: 2px; }
 .journal-leaf-footer :is(button,a):hover,.journal-link:hover { color: #8d472e; }
 
-.journal-intro { display: flex; flex-direction: column; gap: 8px; min-height: 100%; align-items: flex-start; justify-content: center; }
+.journal-intro { display: flex; flex: 1 1 auto; flex-direction: column; gap: 8px; min-height: 0; align-items: flex-start; justify-content: flex-start; }
+.journal-intro > * { flex-shrink:0; }
 .journal-intro h1 { margin: 0 0 6px; }
 .journal-intro > p { max-width: 38ch; margin-top: 8px; }
 .journal-intro small { color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
-.journal-contents { padding-top: clamp(8px, 4.5vw, 54px); }
+.journal-contents { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; padding-top: clamp(8px, 4.5vw, 54px); }
+.journal-contents > * { flex-shrink:0; }
 .journal-contents ol { list-style: none; margin: 24px 0 0; padding: 0; }
 .journal-contents button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; width: 100%; padding: 13px 2px; border: 0; background: transparent; color: var(--h-wine); cursor: pointer; font: 400 clamp(22px, 2.4vw, 30px)/1.15 var(--display); }
 .journal-contents button:hover { background: #8b6b3912; }
@@ -108,19 +113,23 @@
 .scrap-mounted .scrap-tape{left:16%;top:-5%;transform:rotate(-12deg) scaleX(-1)}
 .scrap-corner { position:absolute;z-index:2;width:17%;aspect-ratio:1;background-image:url('/hobbies/scrapbook/corners.webp');background-size:400% 100%; }
 .scrap-corner-0{top:-1%;left:-1%;background-position:0 0}.scrap-corner-1{top:-1%;right:-1%;background-position:calc(100% / 3) 0}.scrap-corner-2{bottom:-1%;left:-1%;background-position:calc(200% / 3) 0}.scrap-corner-3{bottom:-1%;right:-1%;background-position:100% 0}
-.scrap-pressed { width:100px;aspect-ratio:196/240;background-image:url('/hobbies/scrapbook/pressed.webp');background-size:600% 100%; }
+.scrap-pressed { width:210px;aspect-ratio:196/240;background-image:url('/hobbies/scrapbook/pressed.webp');background-size:600% 100%; }
 .scrap-pressed-0{background-position:0 0}.scrap-pressed-1{background-position:20% 0}.scrap-pressed-2{background-position:40% 0}.scrap-pressed-3{background-position:60% 0}.scrap-pressed-4{background-position:80% 0}.scrap-pressed-5{background-position:100% 0}
-.scrap-intro-botanicals { position:relative; width:min(100%,260px);height:clamp(110px,15vw,160px);margin:8px 0 5px; }
-.scrap-intro-botanicals .scrap-pressed { position:absolute; width:45%;bottom:0;left:5%;transform:rotate(-20deg); }
-.scrap-intro-botanicals .scrap-pressed-3 { left:32%;bottom:4%;transform:rotate(18deg) scaleX(-1); }
-.scrap-intro-botanicals .scrap-pressed-4 { left:62%;bottom:-1%;width:34%;transform:rotate(27deg); }
-.scrap-intro-botanicals .scrap-tape { top:auto;bottom:1%;left:34%;width:42%;transform:rotate(-8deg); }
-.scrap-contents-botanicals { display:flex; justify-content:flex-end;gap:4px; margin:20px 10px 0; }
-.scrap-contents-botanicals .scrap-pressed{width:clamp(70px,9vw,118px);transform:rotate(-15deg) scaleX(-1)}
-.scrap-contents-botanicals .scrap-pressed-5{transform:rotate(15deg)}
-.scrap-small-botanical { display:flex;justify-content:flex-end;margin:-8px 20px 0; }
-.scrap-small-botanical .scrap-pressed { width:75px;transform:rotate(32deg); }
-.journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; }
+/* Reserve no intrinsic height: the collage uses only leftover paper, so
+   crowded spreads (or the expanded tarot deck) never lose content space. */
+.scrap-collage { flex:1 1 0px; min-height:0; max-height:390px; width:100%; position:relative; container-type:size; overflow:hidden; }
+.scrap-collage > * { visibility:hidden; }
+@container (min-height:150px) {
+  .scrap-collage > * { visibility:visible; }
+  .scrap-collage .scrap-pressed { position:absolute; width:min(51cqw,70cqh); max-width:260px; bottom:5%; left:9%; transform:rotate(-14deg); }
+  .scrap-collage .scrap-stem-1 { left:auto;right:9%;bottom:4%;transform:rotate(17deg) scaleX(-1); }
+  .scrap-collage-bouquet .scrap-stem-0 { width:min(45cqw,67cqh);left:3%;bottom:5%;transform:rotate(-17deg); }
+  .scrap-collage-bouquet .scrap-stem-1 { width:min(53cqw,72cqh);left:50%;right:auto;bottom:4%;transform:translateX(-50%) rotate(3deg); }
+  .scrap-collage-bouquet .scrap-stem-2 { width:min(43cqw,65cqh);left:auto;right:3%;bottom:4%;transform:rotate(17deg) scaleX(-1); }
+  .scrap-collage-single .scrap-pressed { width:min(65cqw,72cqh);left:auto;right:12%;transform:rotate(16deg); }
+  .scrap-collage .scrap-tape { top:auto;bottom:4%;left:34%;width:min(34cqw,142px);transform:rotate(-8deg); }
+}
+.journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; align-self:flex-start; }
 .journal-book .afterglow-cta:hover { background: #49603c; }
 .journal-book .tarot-deck { margin-top: 16px; min-width: 0; }
 .journal-book .tarot-deck-toggle { gap: 16px; padding: 8px; font-size: 12px; }
