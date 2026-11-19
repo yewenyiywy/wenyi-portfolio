@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode, CSSProperties } from 'react'
+import type { ReactNode, CSSProperties, Ref } from 'react'
 import './journal.css'
 
 const steam = 'https://store.steampowered.com/app/3117820/Sultans_Game/'
@@ -100,6 +100,15 @@ function GameTapeLink({ href, label, kind }: { href: string; label: string; kind
   return <a className="journal-game-entry" href={href} target="_blank" rel="noreferrer"><Tape kind={kind} /><span className="game-entry-label">{label}</span></a>
 }
 
+function PageTape({ label, kind, onClick, href, buttonRef }: { label:string; kind:TapeKind; onClick?:()=>void; href?:string; buttonRef?:Ref<HTMLButtonElement> }) {
+  const style={'--page-tape-angle':`${[-5,4,-3,6,-5,3,-6,5][kind]}deg`} as CSSProperties
+  const className=`journal-page-tape${label.length>10?' journal-page-tape-long':''}`
+  const content=<><Tape kind={kind}/><span>{label}</span></>
+  return href?<Link href={href} className={className} style={style}>{content}</Link>:<button type="button" className={className} style={style} onClick={onClick} ref={buttonRef}>{content}</button>
+}
+
+const pageTapeKinds: [TapeKind,TapeKind,TapeKind][] = [[0,2,5],[1,3,2],[0,1,3],[5,2,6],[1,0,7],[6,2,1]]
+
 const tarotSlots = [
   [31, 20, -18, .72, 1], [13, 41, -35, .77, 2], [27, 70, -18, .88, 4],
   [50, 78, 0, 1, 6], [73, 70, 18, .88, 4], [87, 41, 35, .77, 2], [69, 20, 18, .72, 1],
@@ -179,7 +188,6 @@ export default function HobbiesPage() {
   const [shot, setShot] = useState<Shot | null>(null)
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
-  const [runningPaused, setRunningPaused] = useState(false)
 
   const scrollBook = useCallback(() => {
     requestAnimationFrame(() => bookRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }))
@@ -245,15 +253,16 @@ export default function HobbiesPage() {
   }, [shot, fashion, close])
 
   function spread(index: number, left: ReactNode, right: ReactNode) {
+    const [previousTape,contentsTape,nextTape]=pageTapeKinds[index]
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
         <span className="journal-page-number">{String(index * 2 + 1).padStart(2, '0')}</span>
-        {index > 0 ? <div className="journal-page-actions"><button type="button" onClick={() => turnTo(index - 1)}>Previous</button><button type="button" onClick={() => turnTo(0)}>Contents</button></div> : <Link href="/">Back to portfolio</Link>}
+        {index > 0 ? <div className="journal-page-actions"><PageTape label="Previous" kind={previousTape} onClick={() => turnTo(index - 1)}/><PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/></div> : <PageTape label="Back to portfolio" kind={previousTape} href="/"/>}
       </>}>
         {left}
       </JournalLeaf>
       <JournalLeaf side="right" footer={<>
-        {index < chapters.length - 1 ? <button type="button" onClick={() => turnTo(index + 1)}>Next page</button> : <Link href="/">Back to portfolio</Link>}
+        {index < chapters.length - 1 ? <PageTape label="Next page" kind={nextTape} onClick={() => turnTo(index + 1)}/> : <PageTape label="Back to portfolio" kind={nextTape} href="/"/>}
         <span className="journal-page-number">{String(index * 2 + 2).padStart(2, '0')}</span>
       </>}>
         {right}
@@ -337,18 +346,15 @@ export default function HobbiesPage() {
         <p>I love long-distance running, and the version of me that lets my mind go blank out there.</p>
         <PressedCollage kinds={[0, 2, 5]} arrangement="bouquet" tape={0} />
       </>, <>
-        <figure className="running-scene" data-paused={runningPaused}>
-          <div className="running-track" role="img" aria-label="A pixel-art golden snub-nosed monkey running back and forth on all fours"><div className="running-monkey" aria-hidden="true"><span className="running-facing"><span className="running-sprite" /></span></div></div>
-          <figcaption className="running-caption"><span>Golden snub-nosed monkey <em>Rhinopithecus roxellana</em></span><button type="button" className="running-control" onClick={() => setRunningPaused(paused => !paused)}>{runningPaused ? 'Play' : 'Pause'}</button></figcaption>
-        </figure>
+        <PressedCollage kinds={[1,3,4]} arrangement="bouquet" tape={7} />
         <p className="journal-copyright">© 2026 Wenyi Ye</p>
       </>)}
 
       {(shot || fashion) && <section className="journal-spread journal-detail" aria-label={shot?.title ?? fashion?.title}>
-        <JournalLeaf side="left" footer={<button type="button" ref={detailCloseRef} onClick={close}>Back to chapter</button>}>
+        <JournalLeaf side="left" footer={<PageTape label="Back to chapter" kind={5} buttonRef={detailCloseRef} onClick={close}/>}>
           {shot ? <figure className="journal-detail-art"><img src={shot.src} alt={shot.alt} /><figcaption>{shot.title}</figcaption></figure> : fashion && <figure className="journal-detail-art"><img src={fashion.design} alt={`${fashion.title} qipao design`} /><figcaption>Qipao design</figcaption></figure>}
         </JournalLeaf>
-        <JournalLeaf side="right" footer={<button type="button" onClick={close}>Close detail</button>}>
+        <JournalLeaf side="right" footer={<PageTape label="Close detail" kind={3} onClick={close}/>}>
           {shot ? <><h2>{shot.title}</h2>{shot.src.startsWith(afterglowUrl) && <p>{shot.note}</p>}</> : fashion && <>
             <h2>{fashion.title}</h2>
             <figure className="journal-detail-pattern"><div className="journal-swatch"><img src={fashion.swatch} alt={`${fashion.title} fabric swatch with frayed edges`} /><Tape kind={fashion.swatchTape} /></div><figcaption>Fabric swatch</figcaption></figure>

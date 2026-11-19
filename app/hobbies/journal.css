@@ -53,12 +53,12 @@
 .journal-leaf p { font: 400 clamp(17px, 1.55vw, 21px)/1.45 var(--sans); color: var(--h-muted); margin: 0 0 12px; }
 .journal-leaf-footer {
   flex: 0 0 auto;
-  min-height: 35px;
+  min-height: 49px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 2px 0;
+  padding: 6px 4px 5px;
   font: 400 16px/1.35 var(--sans);
   color: var(--h-muted);
 }
@@ -76,6 +76,11 @@
 }
 .journal-book :is(button,a,summary):focus-visible { outline: 2px solid var(--h-wine); outline-offset: 2px; }
 .journal-leaf-footer :is(button,a):hover,.journal-link:hover { color: #8d472e; }
+.journal-leaf-footer .journal-page-tape { position:relative;display:inline-flex;align-items:center;justify-content:center;isolation:isolate;flex:none;width:92px;height:34px;max-width:100%;padding:4px 7px;color:#3c492f;text-decoration:none;font:400 16px/1.1 var(--sans);white-space:nowrap;transform:rotate(var(--page-tape-angle));transition:transform .18s; }
+.journal-leaf-footer .journal-page-tape-long{width:138px;height:42px}
+.journal-page-tape .scrap-tape{inset:0;width:100%;height:100%;transform:none;z-index:-1;}
+.journal-leaf-footer .journal-page-tape:hover,.journal-leaf-footer .journal-page-tape:focus-visible{transform:rotate(0deg) translateY(-2px);color:#713c29;text-decoration:none}
+@media(max-width:520px){.journal-leaf-footer{gap:5px;padding-inline:3px}.journal-page-actions{gap:7px}.journal-leaf-footer .journal-page-tape{width:79px;height:30px;font-size:15px}.journal-leaf-footer .journal-page-tape-long{width:127px;height:40px}}
 
 .journal-intro { display: flex; flex: 1 1 auto; flex-direction: column; gap: 8px; min-height: 0; align-items: flex-start; justify-content: flex-start; }
 .journal-intro > * { flex-shrink:0; }
@@ -170,11 +175,6 @@
 .journal-fashion-grid .journal-fashion-card:nth-child(2) .scrap-photo { transform:rotate(3deg); }
 .journal-fashion-grid .journal-fashion-card:nth-child(2) .scrap-tape { --tape-flip:-1; }
 
-.journal-book .running-track { --runner-size: clamp(104px, 16vw, 180px); height: clamp(155px, 22vw, 260px); border:0;background:none; }
-.journal-book .running-scene { margin-top: 30px; }
-.journal-book .running-caption { font-size: 17px; flex-wrap: wrap; }
-.journal-book .running-caption em {font-size:16px;}
-.journal-book .running-control { color: var(--h-wine); border:0; text-decoration:underline; font-size:16px; }
 .journal-leaf .journal-copyright { margin-top: 30px; font-size: 16px; color: var(--h-gold); }
 
 .journal-detail-art,.journal-detail-pattern { margin: 0 0 14px; }
