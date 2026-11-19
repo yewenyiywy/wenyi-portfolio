@@ -621,6 +621,40 @@ img{max-width:100%}
 .steam-cta:hover{color:var(--h-wine-soft);border-bottom-color:var(--h-wine-soft)}
 .steam-cta svg{width:13px;height:13px;flex:0 0 13px;color:var(--h-gold)}
 
+.afterglow-module{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  align-items:center;
+  margin-top:clamp(48px,7vw,82px);
+  border:1px solid var(--h-line);
+  background:#fcf8f2;
+  scroll-margin-top:90px;
+}
+.afterglow-cover{display:block;width:100%;height:auto}
+.afterglow-copy{padding:clamp(24px,4vw,54px)}
+.afterglow-copy h2{
+  margin:15px 0 12px;
+  color:var(--h-wine);
+  font:500 clamp(40px,5vw,64px)/1 'Cormorant Garamond',Georgia,serif;
+}
+.afterglow-copy p{
+  max-width:48ch;
+  margin:0 0 12px;
+  color:var(--h-muted);
+  font:400 16px/1.6 'DM Sans',Arial,sans-serif;
+}
+.afterglow-cta{
+  display:inline-flex;
+  margin-top:8px;
+  padding:10px 16px;
+  background:var(--h-wine);
+  color:#fff;
+  font:600 14px/1.5 'DM Sans',Arial,sans-serif;
+}
+.afterglow-cta:hover{background:#451522}
+.afterglow-cta:focus-visible{outline:2px solid var(--h-wine);outline-offset:3px}
+@media (max-width:760px){.afterglow-module{grid-template-columns:minmax(0,1fr)}}
+
 
 /* ---------- 03 fashion design -------------------------------------------- */
 .fashion-section{

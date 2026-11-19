@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const steam = "https://store.steampowered.com/app/3117820/Sultans_Game/"
+const afterglowUrl = 'https://afterglow-gray-five.vercel.app/'
 
 type Shot = { src: string; alt: string; title: string; note: string }
 type FashionDesign = {
@@ -326,6 +327,24 @@ export default function HobbiesPage() {
               </div>
             </div>
           </div>
+
+          <section id="game-design" className="afterglow-module reveal" aria-labelledby="afterglow-title">
+            <img
+              className="afterglow-cover"
+              src="/hobbies/afterglow-cover.webp"
+              alt="Afterglow cover art with pixel-art characters against a city skyline at dusk"
+              width={960}
+              height={640}
+              loading="lazy"
+            />
+            <div className="afterglow-copy">
+              <div className="hobby-eyebrow">Game Design</div>
+              <h2 id="afterglow-title">Afterglow</h2>
+              <p>I designed and built Afterglow, a browser-based romance and life sim. Create a character, choose a career, and build a life across 19 cities.</p>
+              <p>Friends can introduce you to someone new, and characters remember shared moments. Where you go and who you spend time with shape the relationships and stories that unfold.</p>
+              <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
+            </div>
+          </section>
         </div>
       </section>
 
