@@ -172,6 +172,20 @@ test.describe('hobbies page', () => {
     await page.goto('/hobbies')
     await check(page, 'hobbies')
   })
+  test('scrapbook assets and running companion', async ({ page }) => {
+    await page.goto('/hobbies#embroidery')
+    await expect(page.locator('#embroidery')).toBeVisible()
+    await expect(page.locator('#embroidery .scrap-paper-frame')).toHaveCount(2)
+    await expect(page.locator('.journal-keywords')).toHaveCount(0)
+    await expect(page.locator('img[src*="/rainforest/orchid"],img[src*="/rainforest/fern"]')).toHaveCount(0)
+    await page.getByRole('button', { name: 'View full size: Blue bird' }).click()
+    await expect(page.locator('.journal-detail')).toBeVisible()
+    await page.getByRole('button', { name: 'Back to chapter' }).click()
+    await expect(page.locator('#embroidery')).toBeVisible()
+    await page.goto('/hobbies#running')
+    await expect(page.locator('.running-monkey')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+  })
 
   test('menu open', async ({ page }) => {
     await page.goto('/hobbies')

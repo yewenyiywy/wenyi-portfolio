@@ -89,23 +89,39 @@ function JournalLeaf({ children, footer, side }: { children: ReactNode; footer: 
   </div>
 }
 
-function JournalArt({ item, onOpen }: { item: Shot; onOpen: (item: Shot) => void }) {
+type PhotoStyle = 'portrait' | 'tilted' | 'mounted'
+
+function Tape({ kind = 0 }: { kind?: 0 | 1 | 2 | 3 }) {
+  return <span className={`scrap-tape scrap-tape-${kind}`} aria-hidden="true" />
+}
+
+function Pressed({ kind, className = '' }: { kind: 0 | 1 | 2 | 3 | 4 | 5; className?: string }) {
+  return <span className={`scrap-pressed scrap-pressed-${kind} ${className}`} aria-hidden="true" />
+}
+
+function ScrapPhoto({ src, alt, style = 'portrait', tape = 0, contain = false }: { src: string; alt: string; style?: PhotoStyle; tape?: 0 | 1 | 2 | 3; contain?: boolean }) {
+  return <span className={`scrap-photo scrap-${style}${contain ? ' scrap-contain' : ''}`}>
+    <span className="scrap-photo-window"><img src={src} alt={alt} loading="lazy" /></span>
+    {style === 'mounted' ? <>{[0, 1, 2, 3].map(i => <span key={i} className={`scrap-corner scrap-corner-${i}`} aria-hidden="true" />)}</> : <img className="scrap-paper-frame" src={`/hobbies/scrapbook/${style}.webp`} alt="" aria-hidden="true" />}
+    <Tape kind={tape} />
+  </span>
+}
+
+function JournalArt({ item, onOpen, style = 'portrait', tape = 0, contain = false }: { item: Shot; onOpen: (item: Shot) => void; style?: PhotoStyle; tape?: 0 | 1 | 2 | 3; contain?: boolean }) {
   return <figure className="journal-art">
     <button type="button" onClick={() => onOpen(item)} aria-label={`View full size: ${item.title}`}>
-      <img src={item.src} alt={item.alt} loading="lazy" />
-      <span className="journal-view-label">View full size</span>
+      <ScrapPhoto src={item.src} alt={item.alt} style={style} tape={tape} contain={contain} />
     </button>
-    <figcaption><strong>{item.title}</strong><span>{item.note}</span></figcaption>
+    <figcaption>{item.title}</figcaption>
   </figure>
 }
 
 function FashionCard({ item, onOpen }: { item: FashionDesign; onOpen: (item: FashionDesign) => void }) {
   return <article className="journal-fashion-card">
     <button type="button" onClick={() => onOpen(item)} aria-label={`Open ${item.title} qipao design and pattern details`}>
-      <img src={item.design} alt={`${item.title} qipao front and back design`} loading="lazy" />
-      <span className="journal-view-label">View design</span>
+      <ScrapPhoto src={item.design} alt={`${item.title} qipao front and back design`} style="portrait" tape={2} contain />
     </button>
-    <h3>{item.title}</h3><p>{item.subtitle}</p>
+    <h3>{item.title}</h3>
   </article>
 }
 
@@ -229,42 +245,40 @@ export default function HobbiesPage() {
 
     <div className="journal-book" ref={bookRef}>
       {spread(0, <div className="journal-intro">
-        <p className="journal-kicker">Natural History Journal</p>
         <h1>Hobbies</h1>
-        <p className="journal-kicker">Passions outside of work</p>
         <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
-        <img className="journal-intro-plant" src="/rainforest/orchid.webp" alt="" />
+        <div className="scrap-intro-botanicals" aria-hidden="true"><Pressed kind={1} /><Pressed kind={3} /><Pressed kind={4} /><Tape kind={2} /></div>
         <small>Wenyi Ye · 2026</small>
       </div>, <div className="journal-contents">
         <h2>Contents</h2>
         <ol>{contents.map(entry => <li key={entry.title}>
           <button type="button" onClick={() => turnTo(entry.spread)}><span>{entry.title}</span><span>{String(entry.spread * 2 + 1).padStart(2, '0')}</span></button>
         </li>)}</ol>
+        <div className="scrap-contents-botanicals" aria-hidden="true"><Pressed kind={0} /><Pressed kind={5} /></div>
       </div>)}
 
       {spread(1, <>
-        <p className="journal-kicker">01 · Embroidery</p><h2>Stitching stories</h2>
+        <h2>Stitching stories</h2>
         <p>Growing up, I loved fashion design and tailoring clothes. These days my favorite craft is French embroidery.</p>
-        <JournalArt item={embroidery[0]} onOpen={open} />
+        <JournalArt item={embroidery[0]} onOpen={open} style="portrait" tape={0} />
       </>, <>
-        <JournalArt item={embroidery[1]} onOpen={open} />
-        <ul className="journal-keywords"><li>Patience</li><li>Focus</li><li>Craftsmanship</li><li>Beauty in detail</li></ul>
+        <JournalArt item={embroidery[1]} onOpen={open} style="tilted" tape={2} />
+        <div className="scrap-small-botanical"><Pressed kind={1} /></div>
       </>)}
 
       {spread(2, <>
-        <p className="journal-kicker">02 · Game design · Modding</p><h2>Reimagining worlds</h2>
+        <h2>Reimagining worlds</h2>
         <p>I love playing games, and I also like making mods and drawing illustrations for them. Here are a few things I&apos;ve made.</p>
-        <ul className="journal-keywords"><li>Drawn by hand</li><li>Coded in JavaScript</li></ul>
-        <JournalArt item={gameStudies[0]} onOpen={open} />
+        <JournalArt item={gameStudies[0]} onOpen={open} style="portrait" tape={3} contain />
       </>, <>
-        <JournalArt item={gameStudies[1]} onOpen={open} />
+        <JournalArt item={gameStudies[1]} onOpen={open} style="mounted" tape={1} contain />
         <div className="journal-game-text"><h3>苏丹的游戏 · Sultan&apos;s Game</h3><p>A card-driven narrative RPG by Double Cross. I create mods that introduce new characters, events, and storylines.</p>
           <a className="journal-link" href={steam} target="_blank" rel="noreferrer">View Sultan&apos;s Game on Steam</a></div>
       </>)}
 
       {spread(3, <>
-        <p className="journal-kicker">02 · Game design · Afterglow</p><h2>Afterglow</h2>
-        <img className="journal-cover" src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" width={960} height={640} loading="lazy" />
+        <h2>Afterglow</h2>
+        <div className="journal-cover"><ScrapPhoto src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" style="mounted" tape={3} /></div>
         <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
         <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
         <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
@@ -287,7 +301,7 @@ export default function HobbiesPage() {
       </section>)}
 
       {spread(4, <>
-        <p className="journal-kicker">03 · Fashion design</p><h2>Designing in silk &amp; story</h2>
+        <h2>Designing in silk &amp; story</h2>
         <p>I want to revive traditional Chinese textile motifs by bringing historic pattern language into contemporary qipao silhouettes and a more daring palette.</p>
         <FashionCard item={fashionDesigns[0]} onOpen={openFashion} />
       </>, <div className="journal-fashion-grid">
@@ -295,9 +309,8 @@ export default function HobbiesPage() {
       </div>)}
 
       {spread(5, <>
-        <p className="journal-kicker">04 · Running</p><h2>Running</h2>
+        <h2>Running</h2>
         <p>I love long-distance running, and the version of me that lets my mind go blank out there.</p>
-        <img className="journal-running-plant" src="/rainforest/fern.webp" alt="" />
       </>, <>
         <figure className="running-scene" data-paused={runningPaused}>
           <div className="running-track" role="img" aria-label="A pixel-art golden snub-nosed monkey running back and forth on all fours"><div className="running-monkey" aria-hidden="true"><span className="running-facing"><span className="running-sprite" /></span></div></div>
@@ -311,8 +324,8 @@ export default function HobbiesPage() {
           {shot ? <figure className="journal-detail-art"><img src={shot.src} alt={shot.alt} /><figcaption>{shot.title}</figcaption></figure> : fashion && <figure className="journal-detail-art"><img src={fashion.design} alt={`${fashion.title} qipao design`} /><figcaption>Qipao design</figcaption></figure>}
         </JournalLeaf>
         <JournalLeaf side="right" footer={<button type="button" onClick={close}>Close detail</button>}>
-          {shot ? <><h2>{shot.title}</h2><p>{shot.note}</p></> : fashion && <>
-            <p className="journal-kicker">Pattern study</p><h2>{fashion.title}</h2><p>{fashion.subtitle}</p>
+          {shot ? <><h2>{shot.title}</h2>{shot.src.startsWith(afterglowUrl) && <p>{shot.note}</p>}</> : fashion && <>
+            <h2>{fashion.title}</h2>
             <figure className="journal-detail-pattern"><img src={fashion.pattern} alt={`${fashion.title} textile pattern detail`} /><figcaption>Pattern detail</figcaption></figure>
             <h3>Source</h3><p>{fashion.source}</p><p>{fashion.description}</p><p>Future clothing label · In preparation</p>
           </>}
