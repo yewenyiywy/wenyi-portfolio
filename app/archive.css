@@ -42,6 +42,8 @@
 
 /* Every organization uses a normalized, individually bounded wax sprite. */
 .wax-seal{display:block;flex:none;width:100%;height:100%;aspect-ratio:1;background-image:url('/archive/wax-seals.webp');background-size:400% 300%;background-repeat:no-repeat;filter:drop-shadow(1px 2px 1px #68483245)}
+.inline-institution .inline-brand{width:20px!important;height:20px!important;min-width:20px;min-height:20px;max-width:20px;max-height:20px;flex:none;aspect-ratio:1;align-self:center}
+.inline-institution .inline-brand .wax-seal{width:20px;height:20px;min-width:20px;min-height:20px;max-width:20px;max-height:20px;flex:none;aspect-ratio:1}
 .classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:58px;height:58px;flex:0 0 58px}
 .classic-portfolio .awards-lines .award-brand,.chapter-view .awards-lines .award-brand{width:38px;height:38px;flex:0 0 38px}
 

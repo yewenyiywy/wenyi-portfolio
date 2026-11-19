@@ -182,6 +182,14 @@ test.describe('home page', () => {
     await expect(page.locator('#education')).toBeHidden()
     await page.getByRole('button', { name: 'About', exact:true }).click()
     await expect(page.locator('#about')).toBeVisible()
+    const inlineSeals = page.locator('#about .inline-brand .wax-seal')
+    await expect(inlineSeals).toHaveCount(2)
+    for (const seal of await inlineSeals.all()) {
+      const box=await seal.boundingBox()
+      expect(box).not.toBeNull()
+      expect(box!.width).toBeCloseTo(box!.height, 1)
+      expect(box!.width).toBeCloseTo(20, 1)
+    }
     await expect(page.locator('#contact')).toBeVisible()
     await expect(page.locator('.hero-editorial .socials')).toHaveCount(0)
     await expect(page.locator('#contact .footer-links a')).toHaveCount(4)
@@ -231,8 +239,8 @@ test.describe('hobbies page', () => {
   test('handwriting and non-repeating pressed flowers', async ({ page }) => {
     await page.goto('/hobbies')
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /La Belle Aurore/)
-    expect(await page.evaluate(() => document.fonts.check('16px "La Belle Aurore"'))).toBe(true)
+    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /Epistolary Ink Color/)
+    expect(await page.evaluate(() => document.fonts.check('16px "Epistolary Ink Color"'))).toBe(true)
     const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
     expect(titleFont).toContain('VT323')
     const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))
