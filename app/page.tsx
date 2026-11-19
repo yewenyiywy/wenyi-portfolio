@@ -362,6 +362,14 @@ export default function Home(){
   <section id="experience" className="section wrap"><div className="section-label reveal">PROFESSIONAL EXPERIENCES</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
   <section id="projects" className="section wrap"><div className="section-label reveal">PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.company}/>)}</div></section>
 
+  <section id="awards" className="section wrap">
+    <div className="section-label reveal">HONORS & AWARDS</div>
+    <div className="focus-lines awards-lines reveal">
+      <div><b>Berkeley MFE High-Frequency Trading Competition</b><span><strong>6th place</strong> among all MFE students</span></div>
+      <div><b>SIG Prediction Market Cup</b><span><strong>Top 5%</strong></span></div>
+    </div>
+  </section>
+
   <footer id="contact" className="footer wrap reveal"><div><div className="section-label reveal">CONTACT</div><h2>Say hello.</h2></div><div className="footer-links"><a href="mailto:ywywywy@berkeley.edu"><Mail size={14}/>ywywywy@berkeley.edu</a><a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer"><Linkedin size={14}/> LinkedIn</a><a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer"><Github size={14}/> GitHub / yewenyiywy</a><a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer"><Instagram size={14}/> Instagram / ye_wen_yi</a></div><div className="copyright">© 2026 Wenyi Ye</div></footer>
 
   {shot && (

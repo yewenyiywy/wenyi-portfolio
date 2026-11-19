@@ -293,6 +293,9 @@ img{max-width:100%}
   font:600 11px/1.6 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--wine-soft);
 }
 .focus-lines span{font:400 13px/1.75 var(--sans);color:#6b6367}
+.awards-lines > div{grid-template-columns:minmax(0,1fr) auto;align-items:baseline}
+.awards-lines b{white-space:normal}
+.awards-lines span{text-align:right}
 
 /* footer */
 .footer{
@@ -374,6 +377,8 @@ img{max-width:100%}
   .date{padding-top:0}
   .title-line{flex-direction:column;gap:5px}
   .focus-lines > div{grid-template-columns:1fr;gap:8px}
+  .awards-lines > div{gap:2px}
+  .awards-lines span{text-align:left}
   .footer{grid-template-columns:1fr;padding-top:56px}
   .copyright{grid-column:1}
 }
