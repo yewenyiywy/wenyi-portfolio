@@ -208,12 +208,12 @@ export default function HobbiesPage() {
     <nav className="nav wrap" ref={navRef}>
       <Link href="/" className="logo">WENYI YE<span>.</span></Link>
       <div className="navlinks">
-        <Link href="/#about">About</Link><Link href="/#education">Education</Link><Link href="/#experience">Experience</Link><Link href="/#research">Research</Link><Link href="/hobbies" className="active">Hobbies</Link>
+        <Link href="/#about">About</Link><Link href="/#education">Education</Link><Link href="/#experience">Experience</Link><Link href="/#projects">Projects</Link><Link href="/hobbies" className="active">Hobbies</Link>
       </div>
       <Link href="/#contact" className="nav-contact">Get in touch <span aria-hidden="true">↗</span></Link>
       <button type="button" className="mobile-menu-toggle" aria-label={mobileMenu ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileMenu} onClick={() => setMobileMenu(v => !v)}><span></span><span></span></button>
       {mobileMenu && <div className="mobile-menu">
-        <Link href="/#about" onClick={() => setMobileMenu(false)}>About</Link><Link href="/#education" onClick={() => setMobileMenu(false)}>Education</Link><Link href="/#experience" onClick={() => setMobileMenu(false)}>Experience</Link><Link href="/#research" onClick={() => setMobileMenu(false)}>Research</Link><Link href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</Link><Link href="/#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</Link>
+        <Link href="/#about" onClick={() => setMobileMenu(false)}>About</Link><Link href="/#education" onClick={() => setMobileMenu(false)}>Education</Link><Link href="/#experience" onClick={() => setMobileMenu(false)}>Experience</Link><Link href="/#projects" onClick={() => setMobileMenu(false)}>Projects</Link><Link href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</Link><Link href="/#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</Link>
       </div>}
     </nav>
 
