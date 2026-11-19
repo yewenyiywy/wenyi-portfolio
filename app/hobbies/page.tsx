@@ -244,7 +244,7 @@ export default function HobbiesPage() {
 
       {spread(1, <>
         <p className="journal-kicker">01 · Embroidery</p><h2>Stitching stories</h2>
-        <p>My favorite kind is French embroidery.</p>
+        <p>Growing up, I loved fashion design and tailoring clothes. These days my favorite craft is French embroidery.</p>
         <JournalArt item={embroidery[0]} onOpen={open} />
       </>, <>
         <JournalArt item={embroidery[1]} onOpen={open} />
@@ -265,7 +265,7 @@ export default function HobbiesPage() {
       {spread(3, <>
         <p className="journal-kicker">02 · Game design · Afterglow</p><h2>Afterglow</h2>
         <img className="journal-cover" src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" width={960} height={640} loading="lazy" />
-        <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, about 80% of the art was generated with AI models.</p>
+        <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
         <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
         <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
       </>, <section id="afterglow-tarot" className="journal-tarot" aria-labelledby="afterglow-tarot-title">
