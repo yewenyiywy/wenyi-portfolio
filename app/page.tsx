@@ -262,8 +262,6 @@ export default function Home(){
     <RainforestPlant slot="heroMonstera" />
     <RainforestPlant slot="heroFern" />
     <RainforestPlant slot="heroVine" />
-    <RainforestPlant slot="heroBanana" />
-    <RainforestPlant slot="heroBromeliad" />
     <RainforestPlant slot="heroOrchid" />
     <div className="hero-editorial reveal reveal-1">
       <div className="hero-kicker">Quantitative Finance × AI</div>
@@ -293,7 +291,7 @@ export default function Home(){
     <p>My background is a little unconventional—I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I’ve worked across <strong>AI product, quantitative research, and risk management</strong>, with a particular interest in <strong>healthcare, biotech, and complex biological data</strong>.</p>
   </div></section>
 
-  <section id="education" className="section wrap"><RainforestPlant slot="educationPalm" /><div className="section-label reveal">EDUCATION</div><div className="timeline">
+  <section id="education" className="section wrap"><RainforestPlant slot="educationBromeliad" /><div className="section-label reveal">EDUCATION</div><div className="timeline">
     <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="berkeley" open={openCoursework === "berkeley"} onToggle={() => setOpenCoursework(openCoursework === "berkeley" ? null : "berkeley")} /></div></article>
     <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="umich" open={openCoursework === "umich"} onToggle={() => setOpenCoursework(openCoursework === "umich" ? null : "umich")} /></div></article>
     <article className="timeline-entry edu"><div className="date">09/2018 – 07/2021</div><div className="entry-content"><div className="entry-top"><Brand src={logos.bdfz} alt="The Affiliated High School of Peking University"/><div className="entry-title"><div className="title-line"><h3>The Affiliated High School of Peking University</h3><span className="location">Beijing, China</span></div><div className="role">High School</div></div></div></div></article>

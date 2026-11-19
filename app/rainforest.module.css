@@ -35,25 +35,11 @@
   right: 13%;
   background-position: calc(200% / 3) 50%;
 }
-.heroBanana {
-  --plant-size: clamp(132px, 17vw, 218px);
-  right: -82px;
-  bottom: 38px;
-  background-position: 100% 0;
-  transform: rotate(-8deg);
-}
-.heroBromeliad {
+.heroOrchid {
   --plant-size: clamp(100px, 12vw, 150px);
   bottom: -15px;
   left: -48px;
-  background-position: 0 50%;
-}
-.heroOrchid {
-  --plant-size: clamp(94px, 11vw, 146px);
-  bottom: 8px;
-  left: 43%;
   background-position: calc(100% / 3) 50%;
-  transform: rotate(8deg);
 }
 .aboutClimber {
   --plant-size: 112px;
@@ -67,11 +53,11 @@
   bottom: -25px;
   background-position: 100% 100%;
 }
-.educationPalm {
+.educationBromeliad {
   --plant-size: 126px;
   top: -14px;
   left: -103px;
-  background-position: calc(200% / 3) 0;
+  background-position: 0 50%;
   transform: rotate(9deg);
   z-index: 1;
 }
@@ -98,7 +84,7 @@
 @media (max-width: 1080px) {
   .aboutClimber { --plant-size: 88px; right: -28px; top: -24px; }
   .aboutGround { --plant-size: 130px; right: -24px; bottom: -36px; }
-  .educationPalm, .experienceHeliconia { --plant-size: 92px; left: -60px; top: -22px; }
+  .educationBromeliad, .experienceHeliconia { --plant-size: 92px; left: -60px; top: -22px; }
   .skillsShrub { --plant-size: 105px; right: -25px; top: -32px; }
   .researchMoss { --plant-size: 110px; right: -23px; bottom: -27px; }
 }
@@ -107,9 +93,7 @@
   .heroMonstera { --plant-size: 112px; top: -18px; right: -26px; left: auto; }
   .heroFern { --plant-size: 83px; top: 28px; right: 31px; left: auto; }
   .heroVine { --plant-size: 108px; top: auto; bottom: 188px; right: -29px; }
-  .heroBanana { --plant-size: 116px; bottom: 18px; right: -35px; }
-  .heroOrchid { --plant-size: 93px; bottom: -19px; left: 39%; }
-  .heroBromeliad { --plant-size: 100px; left: -24px; bottom: -17px; }
+  .heroOrchid { --plant-size: 100px; left: -24px; bottom: -17px; }
   .aboutClimber { --plant-size: 76px; }
   .aboutGround { --plant-size: 101px; right: -17px; bottom: -24px; }
 }
@@ -118,8 +102,6 @@
   .heroMonstera { --plant-size: 91px; right: -24px; top: -21px; }
   .heroFern { --plant-size: 65px; right: -1px; top: 22px; }
   .heroVine { --plant-size: 89px; right: -24px; }
-  .heroBanana { --plant-size: 94px; }
-  .heroOrchid { --plant-size: 80px; }
-  .heroBromeliad { --plant-size: 92px; }
-  .educationPalm, .experienceHeliconia { left: -53px; --plant-size: 76px; }
+  .heroOrchid { --plant-size: 92px; }
+  .educationBromeliad, .experienceHeliconia { left: -53px; --plant-size: 76px; }
 }
