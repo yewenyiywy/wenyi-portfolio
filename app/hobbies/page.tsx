@@ -6,6 +6,31 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const steam = "https://store.steampowered.com/app/3117820/Sultans_Game/"
 const afterglowUrl = 'https://afterglow-gray-five.vercel.app/'
 
+const tarotCards = [
+  ['00', 'The Fool', 'Jordan Park'],
+  ['01', 'The Magician', 'Li Wei'],
+  ['02', 'The High Priestess', 'Saoirse Byrne'],
+  ['03', 'The Empress', 'Emily Carter'],
+  ['04', 'The Emperor', 'Adrian Whitmore'],
+  ['05', 'The Hierophant', 'Omar Farouk'],
+  ['06', 'The Lovers', 'Ren Takahashi & Hana Sato'],
+  ['07', 'The Chariot', 'Isaiah “Zay” Williams'],
+  ['08', 'Strength', 'Amara Okafor'],
+  ['09', 'The Hermit', 'Kenji Watanabe'],
+  ['10', 'Wheel of Fortune', 'Kang Jiho'],
+  ['11', 'Justice', 'Selin Yılmaz'],
+  ['12', 'The Hanged Man', 'Sarah Benamar'],
+  ['13', 'Death', 'Denise Brooks'],
+  ['14', 'Temperance', 'Nour Haddad'],
+  ['15', 'The Devil', 'Daniel Cho'],
+  ['16', 'The Tower', 'Evan Miller'],
+  ['17', 'The Star', 'Grace Huang'],
+  ['18', 'The Moon', 'Nyibol Atem'],
+  ['19', 'The Sun', 'Sofia Reyes'],
+  ['20', 'Judgement', 'Theo Blackwood'],
+  ['21', 'The World', 'Chloe Bennett'],
+]
+
 type Shot = { src: string; alt: string; title: string; note: string }
 type FashionDesign = {
   design: string
@@ -328,22 +353,44 @@ export default function HobbiesPage() {
             </div>
           </div>
 
-          <section id="game-design" className="afterglow-module reveal" aria-labelledby="afterglow-title">
+          <section id="game-design" className="afterglow-module" aria-labelledby="afterglow-title">
             <img
-              className="afterglow-cover"
+              className="afterglow-cover reveal"
               src="/hobbies/afterglow-cover.webp"
               alt="Afterglow cover art with pixel-art characters against a city skyline at dusk"
               width={960}
               height={640}
               loading="lazy"
             />
-            <div className="afterglow-copy">
+            <div className="afterglow-copy reveal">
               <div className="hobby-eyebrow">Game Design</div>
               <h2 id="afterglow-title">Afterglow</h2>
               <p>I designed and built Afterglow, a browser-based romance and life sim. Create a character, choose a career, and build a life across 19 cities.</p>
               <p>Friends can introduce you to someone new, and characters remember shared moments. Where you go and who you spend time with shape the relationships and stories that unfold.</p>
               <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
             </div>
+            <section id="afterglow-tarot" className="afterglow-tarot" aria-labelledby="afterglow-tarot-title">
+              <h3 id="afterglow-tarot-title">Character Tarot</h3>
+              <p>I designed 22 Major Arcana cards around characters from Afterglow. Select any card to see the artwork up close.</p>
+              <ul className="tarot-grid">
+                {tarotCards.map(([number, title, character]) => {
+                  const src = `${afterglowUrl}tarot/${number}.jpg`
+                  return (
+                    <li key={number}>
+                      <button
+                        className="tarot-card"
+                        type="button"
+                        onClick={() => open({ src, alt: `${title} tarot card featuring ${character}`, title, note: character })}
+                      >
+                        <img src={src} alt="" width={480} height={720} loading="lazy" decoding="async" />
+                        <span className="tarot-card-title">{title}</span>
+                        <span className="tarot-character">{character}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           </section>
         </div>
       </section>

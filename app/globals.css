@@ -655,6 +655,46 @@ img{max-width:100%}
 .afterglow-cta:focus-visible{outline:2px solid var(--h-wine);outline-offset:3px}
 @media (max-width:760px){.afterglow-module{grid-template-columns:minmax(0,1fr)}}
 
+.afterglow-tarot{
+  grid-column:1/-1;
+  padding:clamp(24px,4vw,54px);
+  border-top:1px solid var(--h-line);
+  scroll-margin-top:90px;
+}
+.afterglow-tarot h3{
+  margin:0 0 10px;
+  color:var(--h-wine);
+  font:500 clamp(32px,4vw,46px)/1 'Cormorant Garamond',Georgia,serif;
+}
+.afterglow-tarot p{
+  margin:0 0 24px;
+  color:var(--h-muted);
+  font:400 16px/1.6 'DM Sans',Arial,sans-serif;
+}
+.tarot-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,132px),1fr));
+  gap:24px 16px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.tarot-card{
+  display:block;
+  width:100%;
+  padding:0;
+  border:0;
+  background:none;
+  color:var(--h-wine);
+  text-align:left;
+  cursor:zoom-in;
+}
+.tarot-card img{display:block;width:100%;height:auto;aspect-ratio:2/3;background:#242032}
+.tarot-card:hover img,.tarot-card:focus-visible img{outline:2px solid var(--h-wine);outline-offset:3px}
+.tarot-card-title{display:block;margin-top:8px;font:600 18px/1.15 'Cormorant Garamond',Georgia,serif}
+.tarot-character{display:block;margin-top:4px;color:var(--h-muted);font:400 14px/1.35 'DM Sans',Arial,sans-serif}
+@media (max-width:420px){.tarot-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px}}
+
 
 /* ---------- 03 fashion design -------------------------------------------- */
 .fashion-section{
