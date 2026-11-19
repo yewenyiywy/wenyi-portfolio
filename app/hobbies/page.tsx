@@ -52,7 +52,8 @@ const tarotCards = [
 ]
 
 type Shot = { src: string; alt: string; title: string; note: string }
-type FashionDesign = { design: string; pattern: string; title: string; subtitle: string; source: string; description: string }
+type TapeKind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+type FashionDesign = { design: string; swatch: string; tape: TapeKind; swatchTape: TapeKind; title: string; subtitle: string; source: string; description: string }
 
 const embroidery: Shot[] = [
   { src: '/hobbies/embroidery-pearl.jpg', alt: 'Blue bird embroidery made with feathers, beads and sequins', title: 'Blue bird', note: 'Sequins · feather · beadwork' },
@@ -66,17 +67,17 @@ const gameStudies: Shot[] = [
 
 const fashionDesigns: FashionDesign[] = [
   {
-    design: '/hobbies/fashion-red-design.png', pattern: '/hobbies/fashion-red-pattern.png', title: 'Vermilion Swallows', subtitle: 'Bold red · swallow & blossom',
+    design: '/hobbies/fashion-red-design.png', swatch: '/hobbies/scrapbook/swatch-red.webp', tape: 4, swatchTape: 7, title: 'Vermilion Swallows', subtitle: 'Bold red · swallow & blossom',
     source: "Pattern language from the founding era of the People's Republic of China, c. 1949.",
     description: 'A deliberately vivid red ground paired with swallows and blossoms, exploring the optimistic, graphic color language of early New China.',
   },
   {
-    design: '/hobbies/fashion-navy-design.png', pattern: '/hobbies/fashion-navy-pattern.png', title: 'Navy Blossoms', subtitle: 'Deep blue · floral medallions',
+    design: '/hobbies/fashion-navy-design.png', swatch: '/hobbies/scrapbook/swatch-navy.webp', tape: 5, swatchTape: 1, title: 'Navy Blossoms', subtitle: 'Deep blue · floral medallions',
     source: "Pattern language from the founding era of the People's Republic of China, c. 1949.",
     description: 'A deep navy ground with a dense floral repeat and circular motifs, using strong contrast to create a more dramatic qipao silhouette.',
   },
   {
-    design: '/hobbies/fashion-snow-plum-design.png', pattern: '/hobbies/fashion-snow-plum-pattern.png', title: 'Snow Plum', subtitle: 'Pale blue · Ming-inspired',
+    design: '/hobbies/fashion-snow-plum-design.png', swatch: '/hobbies/scrapbook/swatch-snow-plum.webp', tape: 6, swatchTape: 2, title: 'Snow Plum', subtitle: 'Pale blue · Ming-inspired',
     source: 'Ming-dynasty 雪梅纹 (snow-plum pattern).',
     description: 'A pale blue interpretation of the traditional snow-plum motif, translated into a quieter contemporary textile repeat.',
   },
@@ -91,7 +92,7 @@ function JournalLeaf({ children, footer, side }: { children: ReactNode; footer: 
 
 type PhotoStyle = 'portrait' | 'tilted' | 'mounted'
 
-function Tape({ kind = 0 }: { kind?: 0 | 1 | 2 | 3 }) {
+function Tape({ kind = 0 }: { kind?: TapeKind }) {
   return <span className={`scrap-tape scrap-tape-${kind}`} aria-hidden="true" />
 }
 
@@ -99,14 +100,14 @@ function Pressed({ kind, className = '' }: { kind: 0 | 1 | 2 | 3 | 4 | 5; classN
   return <span className={`scrap-pressed scrap-pressed-${kind} ${className}`} aria-hidden="true" />
 }
 
-function PressedCollage({ kinds, arrangement = 'pair', tape }: { kinds: (0 | 1 | 2 | 3 | 4 | 5)[]; arrangement?: 'pair' | 'bouquet' | 'single'; tape?: 0 | 1 | 2 | 3 }) {
+function PressedCollage({ kinds, arrangement = 'pair', tape }: { kinds: (0 | 1 | 2 | 3 | 4 | 5)[]; arrangement?: 'pair' | 'bouquet' | 'single'; tape?: TapeKind }) {
   return <div className={`scrap-collage scrap-collage-${arrangement}`} aria-hidden="true">
     {kinds.map((kind, index) => <Pressed key={`${kind}-${index}`} kind={kind} className={`scrap-stem-${index}`} />)}
     {tape !== undefined && <Tape kind={tape} />}
   </div>
 }
 
-function ScrapPhoto({ src, alt, style = 'portrait', tape = 0, contain = false }: { src: string; alt: string; style?: PhotoStyle; tape?: 0 | 1 | 2 | 3; contain?: boolean }) {
+function ScrapPhoto({ src, alt, style = 'portrait', tape = 0, contain = false }: { src: string; alt: string; style?: PhotoStyle; tape?: TapeKind; contain?: boolean }) {
   return <span className={`scrap-photo scrap-${style}${contain ? ' scrap-contain' : ''}`}>
     <span className="scrap-photo-window"><img src={src} alt={alt} loading="lazy" /></span>
     {style === 'mounted' ? <>{[0, 1, 2, 3].map(i => <span key={i} className={`scrap-corner scrap-corner-${i}`} aria-hidden="true" />)}</> : <img className="scrap-paper-frame" src={`/hobbies/scrapbook/${style}.webp`} alt="" aria-hidden="true" />}
@@ -114,7 +115,7 @@ function ScrapPhoto({ src, alt, style = 'portrait', tape = 0, contain = false }:
   </span>
 }
 
-function JournalArt({ item, onOpen, style = 'portrait', tape = 0, contain = false }: { item: Shot; onOpen: (item: Shot) => void; style?: PhotoStyle; tape?: 0 | 1 | 2 | 3; contain?: boolean }) {
+function JournalArt({ item, onOpen, style = 'portrait', tape = 0, contain = false }: { item: Shot; onOpen: (item: Shot) => void; style?: PhotoStyle; tape?: TapeKind; contain?: boolean }) {
   return <figure className="journal-art">
     <button type="button" onClick={() => onOpen(item)} aria-label={`View full size: ${item.title}`}>
       <ScrapPhoto src={item.src} alt={item.alt} style={style} tape={tape} contain={contain} />
@@ -126,7 +127,7 @@ function JournalArt({ item, onOpen, style = 'portrait', tape = 0, contain = fals
 function FashionCard({ item, onOpen }: { item: FashionDesign; onOpen: (item: FashionDesign) => void }) {
   return <article className="journal-fashion-card">
     <button type="button" onClick={() => onOpen(item)} aria-label={`Open ${item.title} qipao design and pattern details`}>
-      <ScrapPhoto src={item.design} alt={`${item.title} qipao front and back design`} style="portrait" tape={2} contain />
+      <ScrapPhoto src={item.design} alt={`${item.title} qipao front and back design`} style="portrait" tape={item.tape} contain />
     </button>
     <h3>{item.title}</h3>
   </article>
@@ -254,7 +255,7 @@ export default function HobbiesPage() {
       {spread(0, <div className="journal-intro">
         <h1>Hobbies</h1>
         <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
-        <PressedCollage kinds={[1, 3, 4]} arrangement="bouquet" tape={2} />
+        <PressedCollage kinds={[1, 3, 4]} arrangement="bouquet" tape={4} />
         <small>Wenyi Ye · 2026</small>
       </div>, <div className="journal-contents">
         <h2>Contents</h2>
@@ -270,7 +271,7 @@ export default function HobbiesPage() {
         <JournalArt item={embroidery[0]} onOpen={open} style="portrait" tape={0} />
         <PressedCollage kinds={[4]} arrangement="single" />
       </>, <>
-        <JournalArt item={embroidery[1]} onOpen={open} style="tilted" tape={2} />
+        <JournalArt item={embroidery[1]} onOpen={open} style="tilted" tape={6} />
         <PressedCollage kinds={[1, 3]} />
       </>)}
 
@@ -280,7 +281,7 @@ export default function HobbiesPage() {
         <JournalArt item={gameStudies[0]} onOpen={open} style="portrait" tape={3} contain />
         <PressedCollage kinds={[0, 3]} />
       </>, <>
-        <JournalArt item={gameStudies[1]} onOpen={open} style="mounted" tape={1} contain />
+        <JournalArt item={gameStudies[1]} onOpen={open} style="mounted" tape={5} contain />
         <div className="journal-game-text"><h3>苏丹的游戏 · Sultan&apos;s Game</h3><p>A card-driven narrative RPG by Double Cross. I create mods that introduce new characters, events, and storylines.</p>
           <a className="journal-link" href={steam} target="_blank" rel="noreferrer">View Sultan&apos;s Game on Steam</a></div>
         <PressedCollage kinds={[2]} arrangement="single" />
@@ -288,7 +289,7 @@ export default function HobbiesPage() {
 
       {spread(3, <>
         <h2>Afterglow</h2>
-        <div className="journal-cover"><ScrapPhoto src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" style="mounted" tape={3} /></div>
+        <div className="journal-cover"><ScrapPhoto src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" style="mounted" tape={7} /></div>
         <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
         <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
         <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
@@ -309,7 +310,7 @@ export default function HobbiesPage() {
             })}
           </ul>
         </details>
-      </section><PressedCollage kinds={[4, 3, 5]} arrangement="bouquet" tape={3} /></>)}
+      </section><PressedCollage kinds={[4, 3, 5]} arrangement="bouquet" tape={2} /></>)}
 
       {spread(4, <>
         <h2>Designing in silk &amp; story</h2>
@@ -318,12 +319,12 @@ export default function HobbiesPage() {
         <PressedCollage kinds={[1]} arrangement="single" />
       </>, <><div className="journal-fashion-grid">
         {fashionDesigns.slice(1).map(item => <FashionCard key={item.title} item={item} onOpen={openFashion} />)}
-      </div><PressedCollage kinds={[1, 5, 4]} arrangement="bouquet" tape={2} /></>)}
+      </div><PressedCollage kinds={[1, 5, 4]} arrangement="bouquet" tape={3} /></>)}
 
       {spread(5, <>
         <h2>Running</h2>
         <p>I love long-distance running, and the version of me that lets my mind go blank out there.</p>
-        <PressedCollage kinds={[0, 3, 2]} arrangement="bouquet" tape={1} />
+        <PressedCollage kinds={[0, 3, 2]} arrangement="bouquet" tape={0} />
       </>, <>
         <figure className="running-scene" data-paused={runningPaused}>
           <div className="running-track" role="img" aria-label="A pixel-art golden snub-nosed monkey running back and forth on all fours"><div className="running-monkey" aria-hidden="true"><span className="running-facing"><span className="running-sprite" /></span></div></div>
@@ -339,7 +340,7 @@ export default function HobbiesPage() {
         <JournalLeaf side="right" footer={<button type="button" onClick={close}>Close detail</button>}>
           {shot ? <><h2>{shot.title}</h2>{shot.src.startsWith(afterglowUrl) && <p>{shot.note}</p>}</> : fashion && <>
             <h2>{fashion.title}</h2>
-            <figure className="journal-detail-pattern"><img src={fashion.pattern} alt={`${fashion.title} textile pattern detail`} /><figcaption>Pattern detail</figcaption></figure>
+            <figure className="journal-detail-pattern"><div className="journal-swatch"><img src={fashion.swatch} alt={`${fashion.title} fabric swatch with frayed edges`} /><Tape kind={fashion.swatchTape} /></div><figcaption>Fabric swatch</figcaption></figure>
             <h3>Source</h3><p>{fashion.source}</p><p>{fashion.description}</p><p>Future clothing label · In preparation</p>
           </>}
           <p className="journal-detail-hint">Press Esc to return</p>

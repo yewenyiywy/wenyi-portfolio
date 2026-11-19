@@ -199,4 +199,21 @@ test.describe('hobbies page', () => {
       await check(page, 'hobbies-menu-open')
     }
   })
+  test('fashion swatches and varied tapes', async ({ page }) => {
+    await page.goto('/hobbies#fashion-design')
+    const grid = page.locator('.journal-fashion-grid')
+    await expect(grid).toBeVisible()
+    await expect(grid.locator('.scrap-tape-5')).toHaveCount(1)
+    await expect(grid.locator('.scrap-tape-6')).toHaveCount(1)
+    const tapes = await grid.locator('.scrap-tape').evaluateAll(els => els.map(el => getComputedStyle(el).getPropertyValue('--tape-angle')))
+    expect(new Set(tapes).size).toBe(2)
+    const top = await grid.locator('.scrap-tape').evaluateAll(els => els.map(el => el.getBoundingClientRect().top))
+    const pageTop = await grid.evaluate(el => el.closest('.journal-leaf-content')!.getBoundingClientRect().top)
+    expect(top.every(y => y >= pageTop)).toBe(true)
+    for (const [title, color] of [['Vermilion Swallows','red'],['Navy Blossoms','navy'],['Snow Plum','snow-plum']]) {
+      await page.getByRole('button', { name: `Open ${title} qipao design and pattern details` }).click()
+      await expect(page.locator('.journal-swatch img')).toHaveAttribute('src', `/hobbies/scrapbook/swatch-${color}.webp`)
+      await page.getByRole('button', { name: 'Back to chapter' }).click()
+    }
+  })
 })
