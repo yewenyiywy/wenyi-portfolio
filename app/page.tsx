@@ -2,11 +2,6 @@
 import { ArrowUpRight, Github, Linkedin, Mail, Instagram } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import rainforest from './rainforest.module.css'
-
-function RainforestPlant({ slot }: { slot: string }) {
-  return <span aria-hidden="true" className={`${rainforest.plant} ${rainforest[slot]}`} />
-}
 
 type Shot = { src: string; alt: string; title: string; note: string }
 
@@ -54,7 +49,7 @@ const research = [
     ],
   },
   { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] },
-  { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>] }
+  { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>,<>Code: <a className="research-demo-link" href="https://github.com/Yolandayx929/imc-prosperity-3-code" target="_blank" rel="noreferrer">GitHub</a>.</>] }
 ]
 
 function Brand({src,alt,className=''}:{src:string,alt:string,className?:string}){return <span className={`brand ${className}`}><img src={src} alt={alt}/></span>}
@@ -259,8 +254,6 @@ export default function Home(){
   </nav>
 
   <header className="fashion-hero wrap">
-    <RainforestPlant slot="heroMonstera" />
-    <RainforestPlant slot="heroVine" />
     <div className="hero-editorial reveal reveal-1">
       <div className="hero-kicker">Quantitative Finance × AI</div>
         <h1>Wenyi <em>Ye</em></h1>
