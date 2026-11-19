@@ -275,7 +275,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
         <h1>Wenyi <em>Ye</em></h1>
       <p className="hero-lede">Building intelligent systems for <strong>alpha discovery, trading, and financial decision-making</strong> — at the intersection of AI and quantitative finance.</p>
       <div className="hero-rule"></div>
-      <div className="hero-meta"><span>Berkeley · MFE 2027</span><span>San Francisco · Ann Arbor · Beijing</span></div>
+      <div className="hero-meta"><span>Bay Area · Ann Arbor · Beijing</span></div>
     </div>
     <div className="hero-gallery archive-gallery reveal reveal-2">
       {gallery.map((g,index) => (
@@ -291,7 +291,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
 
   <section id="about" className="section wrap"><div className="section-label reveal">ABOUT</div><div className="about-prose reveal">
     <p>I’m currently pursuing a <a className="degree-link" href="https://mfe.haas.berkeley.edu/"><strong>Master of Financial Engineering</strong></a> at <InlineInstitution logo={logos.berkeley} alt="UC Berkeley" href="https://www.berkeley.edu/">UC Berkeley</InlineInstitution>, focused on the intersection of <strong>AI, machine learning, and financial markets</strong>.</p>
-    <p>My background is a little unconventional—I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I use <strong>AI and machine learning for quantitative research</strong>, and build the <strong>infrastructure and products</strong> that put that research to work.</p>
+    <p>I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I use <strong>AI and machine learning for quantitative research</strong>, and build the <strong>infrastructure and products</strong> that put that research to work.</p>
   </div></section>
 
   <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">

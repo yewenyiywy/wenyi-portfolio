@@ -182,6 +182,8 @@ test.describe('home page', () => {
     await expect(page.locator('#education')).toBeHidden()
     await page.getByRole('button', { name: 'About', exact:true }).click()
     await expect(page.locator('#about')).toBeVisible()
+    await expect(page.locator('.hero-meta')).toHaveText('Bay Area · Ann Arbor · Beijing')
+    await expect(page.locator('#about')).not.toContainText('unconventional')
     const inlineSeals = page.locator('#about .inline-brand .wax-seal')
     await expect(inlineSeals).toHaveCount(2)
     for (const seal of await inlineSeals.all()) {
