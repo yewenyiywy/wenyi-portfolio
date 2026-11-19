@@ -124,13 +124,13 @@ test.describe('home page', () => {
   })
 
   test('menu open', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/classic')
     await page.getByRole('button', { name: 'Open navigation' }).click()
     await check(page, 'home-menu-open')
   })
 
   test('coursework and workflow expanded', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/classic')
     // Only one coursework panel opens at a time, so check each in turn.
     const toggles = page.getByRole('button', { name: /view coursework/i })
     const count = await toggles.count()
@@ -141,6 +141,23 @@ test.describe('home page', () => {
     }
     await page.getByRole('button', { name: /research workflow/i }).click()
     await check(page, 'home-workflow')
+  })
+  test('alchemy chapter and skip', async ({ page }) => {
+    await page.goto('/')
+    const pet = page.getByRole('button', { name: 'Say hello to the pixel marmoset' })
+    await expect(pet).toBeVisible()
+    await page.getByRole('button', { name: 'Education' }).click()
+    await page.getByRole('button', { name: 'Brew potion' }).click()
+    await expect(page.getByText('Education discovered!')).toBeVisible()
+    await expect(page.locator('#education')).toBeVisible()
+    await expect(page.locator('#experience')).toBeHidden()
+    await expect(pet).toBeVisible()
+    await check(page, 'alchemy-education')
+    await page.getByRole('link', { name: /skip game/i }).click()
+    await expect(page.locator('#experience')).toBeAttached()
+    await expect(page).toHaveURL(/\/classic/)
+    await expect(pet).toBeVisible()
+    await check(page, 'classic')
   })
 })
 
