@@ -23,7 +23,7 @@ const logos = {
   berkeley: '/logos/ucb-seal.png', umich: '/logos/umich.png', bdfz: '/logos/bdfz.png',
   tiktok: '/logos/tiktok.png', csc: '/logos/china-securities.png', boc: '/logos/boc.png',
   imc: '/logos/imc.png', ramify: '/logos/ramify.png', shepherd: '/logos/shepherd.png', selfEvolving: '/logos/self-evolving-agent.png',
-  milltech: '/logos/milltech.png',
+  milltech: '/logos/milltech.png', sig: '/logos/sig.png',
 }
 
 const experience = [
@@ -51,6 +51,12 @@ const research = [
   },
   { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] },
   { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>,<>Code: <a className="research-demo-link" href="https://github.com/Yolandayx929/imc-prosperity-3-code" target="_blank" rel="noreferrer">GitHub</a>.</>] }
+]
+
+const awards = [
+  { name:'Berkeley MFE High-Frequency Trading Competition', org:'UC Berkeley', logo:logos.berkeley, result:<><strong>6th place</strong> among all MFE students</> },
+  { name:'IMC Prosperity 3', org:'IMC', logo:logos.imc, result:<><strong>Top 1%</strong> among 12,620 global teams (7th in China)</> },
+  { name:'SIG Prediction Market Cup', org:'SIG Susquehanna', logo:logos.sig, result:<><strong>Top 5%</strong></> },
 ]
 
 function Brand({src,alt,className=''}:{src:string,alt:string,className?:string}){return <span className={`brand ${className}`}><img src={src} alt={alt}/></span>}
@@ -365,8 +371,9 @@ export default function Home(){
   <section id="awards" className="section wrap">
     <div className="section-label reveal">HONORS & AWARDS</div>
     <div className="focus-lines awards-lines reveal">
-      <div><b>Berkeley MFE High-Frequency Trading Competition</b><span><strong>6th place</strong> among all MFE students</span></div>
-      <div><b>SIG Prediction Market Cup</b><span><strong>Top 5%</strong></span></div>
+      {awards.map(a => (
+        <div key={a.name}><b className="award-name"><Brand src={a.logo} alt={a.org} className="award-brand"/>{a.name}</b><span>{a.result}</span></div>
+      ))}
     </div>
   </section>
 

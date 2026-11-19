@@ -293,9 +293,6 @@ img{max-width:100%}
   font:600 11px/1.6 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--wine-soft);
 }
 .focus-lines span{font:400 13px/1.75 var(--sans);color:#6b6367}
-.awards-lines > div{grid-template-columns:minmax(0,1fr) auto;align-items:baseline}
-.awards-lines b{white-space:normal}
-.awards-lines span{text-align:right}
 
 /* footer */
 .footer{
@@ -377,8 +374,6 @@ img{max-width:100%}
   .date{padding-top:0}
   .title-line{flex-direction:column;gap:5px}
   .focus-lines > div{grid-template-columns:1fr;gap:8px}
-  .awards-lines > div{gap:2px}
-  .awards-lines span{text-align:left}
   .footer{grid-template-columns:1fr;padding-top:56px}
   .copyright{grid-column:1}
 }
@@ -1348,3 +1343,14 @@ img{max-width:100%}
 }
 .research-demo-link{color:var(--wine);border-bottom:1px solid var(--gold-soft);transition:color .3s ease,border-color .3s ease}
 .research-demo-link:hover{color:var(--ink);border-bottom-color:var(--gold)}
+
+/* Honors & Awards: logo + name on the left, result on the right */
+.focus-lines.awards-lines > div{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:1.5rem}
+.focus-lines.awards-lines > div > b.award-name{display:flex;align-items:center;gap:12px;white-space:normal}
+.focus-lines.awards-lines .award-brand{width:28px;height:28px;flex:0 0 28px;font:inherit;line-height:0}
+.focus-lines.awards-lines .award-brand img{border-radius:3px}
+.focus-lines.awards-lines > div > span{text-align:right}
+@media (max-width: 820px){
+  .focus-lines.awards-lines > div{grid-template-columns:1fr;row-gap:.35rem}
+  .focus-lines.awards-lines > div > span{text-align:left;padding-left:40px}
+}
