@@ -1,0 +1,129 @@
+.world {
+  --size: clamp(80px, 12vw, 112px);
+  --pet-height: calc(var(--size) * .64);
+  position: fixed;
+  inset: min(110px, 25dvh) calc(var(--size) + 12px) calc(var(--pet-height) + max(16px, env(safe-area-inset-bottom))) 12px;
+  z-index: 35;
+  pointer-events: none;
+}
+
+:global(body:has([aria-modal='true'])) .world { visibility: hidden; }
+
+.roamer {
+  position: absolute;
+  top: 95%;
+  left: 82%;
+  width: var(--size);
+  animation: roam 42s linear infinite;
+}
+
+.pet {
+  display: block;
+  width: 100%;
+  height: var(--pet-height);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.pet:focus-visible, .greeting a:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 3px;
+}
+
+.facing {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: face 42s step-end infinite;
+}
+
+.sprite {
+  position: absolute;
+  left: 0;
+  top: calc(var(--size) * -.16);
+  width: var(--size);
+  height: var(--size);
+  background: url('/marmoset-sprites.webp') 0 0 / 400% 200% no-repeat;
+  image-rendering: pixelated;
+  animation: walk .48s step-end infinite;
+}
+
+.roamer:is(:has(:focus-visible), [data-hopping='true'], [data-greeting='true']),
+.roamer:is(:has(:focus-visible), [data-hopping='true'], [data-greeting='true']) .facing {
+  animation-play-state: paused;
+}
+
+.pet:focus-visible .sprite, .roamer[data-greeting='true'] .sprite {
+  animation: none;
+  background-position: calc(100% / 3) 100%;
+}
+
+@media (hover: hover) {
+  .roamer:hover, .roamer:hover .facing { animation-play-state: paused; }
+  .pet:hover .sprite {
+    animation: none;
+    background-position: calc(100% / 3) 100%;
+  }
+}
+
+.roamer[data-hopping='true'] .sprite { animation: hop .66s step-end both; }
+
+.greeting {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  width: max-content;
+  max-width: calc(var(--size) + 20px);
+  padding: 6px 8px;
+  transform: translateX(-50%);
+  border: 1px solid var(--gold-soft);
+  border-radius: 7px;
+  background: var(--ivory);
+  box-shadow: 0 3px 8px #231e1f22;
+  color: var(--wine);
+  font: 600 13px/1.3 var(--sans);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.greeting a { text-decoration: underline; text-underline-offset: 2px; }
+
+@keyframes walk {
+  0% { background-position: 0 0; }
+  25% { background-position: calc(100% / 3) 0; }
+  50% { background-position: calc(200% / 3) 0; }
+  75% { background-position: 100% 0; }
+}
+
+@keyframes hop {
+  0% { background-position: calc(200% / 3) 100%; }
+  25% { background-position: 100% 100%; }
+  68% { background-position: calc(200% / 3) 100%; }
+  88%, 100% { background-position: 0 100%; }
+}
+
+@keyframes roam {
+  0%, 100% { left: 82%; top: 95%; }
+  12%, 14% { left: 100%; top: 95%; }
+  40%, 44% { left: 0; top: 76%; }
+  69%, 73% { left: 100%; top: 50%; }
+  94% { left: 35%; top: 83%; }
+}
+
+@keyframes face {
+  0%, 44%, 94% { transform: scaleX(1); }
+  14%, 73% { transform: scaleX(-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roamer { animation: none; left: 100%; top: 100%; }
+  .facing { animation: none; }
+  .sprite { animation: none; background-position: 0 100%; }
+  .roamer[data-hopping='true'] .sprite { animation: none; }
+}
