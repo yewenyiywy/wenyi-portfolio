@@ -373,6 +373,7 @@ export default function HobbiesPage() {
               <h2 id="afterglow-title">Afterglow</h2>
               <p>I designed and built Afterglow, a browser-based romance and life sim. Create a character, choose a career, and build a life across 19 cities.</p>
               <p>Friends can introduce you to someone new, and characters remember shared moments. Where you go and who you spend time with shape the relationships and stories that unfold.</p>
+              <p>I built most of Afterglow through vibe coding. It was also my first time using text-to-image generation at scale.</p>
               <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
             </div>
             <section id="afterglow-tarot" className="afterglow-tarot" aria-labelledby="afterglow-tarot-title">
