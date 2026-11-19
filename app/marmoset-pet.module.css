@@ -112,7 +112,7 @@
 .actions { display: flex; gap: 5px; margin-bottom: 7px; }
 .actions button {
   flex: 1; border: 1px solid var(--gold); background: #f4ede4;
-  color: var(--wine); padding: 6px 4px; font: 600 11px var(--sans); cursor: pointer;
+  color: var(--wine); padding: 6px 4px; font: 600 12px var(--sans); cursor: pointer;
 }
 .actions button:disabled { opacity: .5; cursor: default; }
 .actions button:focus-visible, .petTitle button:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
