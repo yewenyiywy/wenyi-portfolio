@@ -74,6 +74,7 @@ function Sprig({ short = false }: { short?: boolean }) {
 
 export default function HobbiesPage() {
   const pageRef = useRef<HTMLElement>(null)
+  const tarotSpreadRef = useRef<HTMLUListElement>(null)
   const navRef = useRef<HTMLElement>(null)
   const heroImgRef = useRef<HTMLImageElement>(null)
   const [shot, setShot] = useState<Shot | null>(null)
@@ -109,6 +110,11 @@ export default function HobbiesPage() {
 
   const open = useCallback((s: Shot) => setShot(s), [])
   const close = useCallback(() => setShot(null), [])
+
+  function scrollTarotDeck(direction: -1 | 1) {
+    const spread = tarotSpreadRef.current
+    if (spread) spread.scrollBy({ left: direction * spread.clientWidth * 0.7 })
+  }
 
   /* Reveal on scroll. The hiding class is only added by script, so the page
      still reads normally if JS never runs. */
@@ -371,25 +377,40 @@ export default function HobbiesPage() {
             </div>
             <section id="afterglow-tarot" className="afterglow-tarot" aria-labelledby="afterglow-tarot-title">
               <h3 id="afterglow-tarot-title">Character Tarot</h3>
-              <p>I designed 22 Major Arcana cards around characters from Afterglow. Select any card to see the artwork up close.</p>
-              <ul className="tarot-grid">
-                {tarotCards.map(([number, title, character]) => {
-                  const src = `${afterglowUrl}tarot/${number}.jpg`
-                  return (
-                    <li key={number}>
-                      <button
-                        className="tarot-card"
-                        type="button"
-                        onClick={() => open({ src, alt: `${title} tarot card featuring ${character}`, title, note: character })}
-                      >
-                        <img src={src} alt="" width={480} height={720} loading="lazy" decoding="async" />
-                        <span className="tarot-card-title">{title}</span>
-                        <span className="tarot-character">{character}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+              <p>I designed these 22 Major Arcana cards around characters from Afterglow.</p>
+              <details className="tarot-deck">
+                <summary className="tarot-deck-toggle">
+                  <span className="tarot-stack" aria-hidden="true">
+                    <img src={`${afterglowUrl}tarot/06.jpg`} alt="" width={480} height={720} loading="lazy" />
+                  </span>
+                  <span className="tarot-spread-label">Spread the deck</span>
+                  <span className="tarot-stack-label">Gather the deck</span>
+                </summary>
+                <div className="tarot-browse">
+                  <p>Swipe across the spread. Select a card to see its artwork and character.</p>
+                  <div className="tarot-controls">
+                    <button type="button" aria-controls="tarot-spread" onClick={() => scrollTarotDeck(-1)}>Previous</button>
+                    <button type="button" aria-controls="tarot-spread" onClick={() => scrollTarotDeck(1)}>Next</button>
+                  </div>
+                </div>
+                <ul id="tarot-spread" className="tarot-spread" ref={tarotSpreadRef} aria-label="Afterglow tarot cards">
+                  {tarotCards.map(([number, title, character]) => {
+                    const src = `${afterglowUrl}tarot/${number}.jpg`
+                    return (
+                      <li key={number}>
+                        <button
+                          className="tarot-card"
+                          type="button"
+                          aria-label={`${title}, ${character}`}
+                          onClick={() => open({ src, alt: `${title} tarot card featuring ${character}`, title, note: character })}
+                        >
+                          <img src={src} alt="" width={480} height={720} loading="lazy" decoding="async" draggable={false} />
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </details>
             </section>
           </section>
         </div>

@@ -667,33 +667,91 @@ img{max-width:100%}
   font:500 clamp(32px,4vw,46px)/1 'Cormorant Garamond',Georgia,serif;
 }
 .afterglow-tarot p{
-  margin:0 0 24px;
+  margin:0;
   color:var(--h-muted);
   font:400 16px/1.6 'DM Sans',Arial,sans-serif;
 }
-.tarot-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(min(100%,132px),1fr));
-  gap:24px 16px;
+.tarot-deck{margin-top:20px}
+.tarot-deck-toggle{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  width:fit-content;
+  padding:10px;
+  cursor:pointer;
+  list-style:none;
+  color:var(--h-wine);
+  font:600 15px/1.4 'DM Sans',Arial,sans-serif;
+}
+.tarot-deck-toggle::-webkit-details-marker{display:none}
+.tarot-deck-toggle:focus-visible,.tarot-controls button:focus-visible{
+  outline:2px solid var(--h-wine);
+  outline-offset:4px;
+}
+.tarot-stack{position:relative;display:block;width:64px;isolation:isolate}
+.tarot-stack::before,.tarot-stack::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border:1px solid #b99968;
+  border-radius:4px;
+  background:#302039;
+}
+.tarot-stack::before{transform:rotate(-12deg)}
+.tarot-stack::after{transform:rotate(12deg)}
+.tarot-stack img{display:block;width:100%;height:auto;border-radius:4px}
+.tarot-stack-label,.tarot-deck[open] .tarot-spread-label{display:none}
+.tarot-deck[open] .tarot-stack-label{display:inline}
+.tarot-browse{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px 20px;
+  margin-top:16px;
+}
+.tarot-controls{display:flex;gap:8px}
+.tarot-controls button{
+  padding:7px 12px;
+  border:1px solid var(--h-line);
+  background:transparent;
+  color:var(--h-wine);
+  font:600 14px/1.4 'DM Sans',Arial,sans-serif;
+  cursor:pointer;
+}
+.tarot-controls button:hover{background:#f2e7dd}
+.tarot-spread{
+  --tarot-width:clamp(100px,13vw,144px);
+  display:flex;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+  scroll-behavior:smooth;
+  scroll-snap-type:x proximity;
+  scroll-padding-inline:8px;
   margin:0;
-  padding:0;
+  padding:22px 8px 12px;
   list-style:none;
 }
+.tarot-spread li{flex:0 0 var(--tarot-width);position:relative;scroll-snap-align:start}
+.tarot-spread li + li{margin-inline-start:calc(var(--tarot-width) * -.46)}
+.tarot-spread li:hover,.tarot-spread li:focus-within{z-index:1}
 .tarot-card{
   display:block;
   width:100%;
   padding:0;
   border:0;
   background:none;
-  color:var(--h-wine);
-  text-align:left;
   cursor:zoom-in;
+  transition:transform .18s ease;
 }
-.tarot-card img{display:block;width:100%;height:auto;aspect-ratio:2/3;background:#242032}
-.tarot-card:hover img,.tarot-card:focus-visible img{outline:2px solid var(--h-wine);outline-offset:3px}
-.tarot-card-title{display:block;margin-top:8px;font:600 18px/1.15 'Cormorant Garamond',Georgia,serif}
-.tarot-character{display:block;margin-top:4px;color:var(--h-muted);font:400 14px/1.35 'DM Sans',Arial,sans-serif}
-@media (max-width:420px){.tarot-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px}}
+.tarot-card img{
+  display:block;width:100%;height:auto;aspect-ratio:2/3;background:#242032;
+  border-radius:5px;box-shadow:-4px 2px 8px rgba(38,26,28,.24);
+}
+.tarot-card:focus-visible{outline:2px solid var(--h-wine);outline-offset:3px;transform:translateY(-12px)}
+@media (hover:hover){.tarot-card:hover{transform:translateY(-12px)}}
+@media (prefers-reduced-motion:reduce){.tarot-spread{scroll-behavior:auto}.tarot-card{transition:none}}
 
 
 /* ---------- 03 fashion design -------------------------------------------- */
