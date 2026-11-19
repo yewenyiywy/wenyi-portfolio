@@ -1,17 +1,22 @@
 @font-face{
-  font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;
-  src:url('/fonts/pixelify-sans-cyrillic.woff2') format('woff2');
-  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  font-family:'VT323';font-style:normal;font-weight:400;font-display:swap;
+  src:url('/fonts/vt323.woff2') format('woff2');
 }
 @font-face{
-  font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;
-  src:url('/fonts/pixelify-sans-latin-ext.woff2') format('woff2');
-  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF;
+  font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;
+  src:url('/fonts/ibm-plex-mono-400.woff2') format('woff2');
 }
 @font-face{
-  font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;
-  src:url('/fonts/pixelify-sans-latin.woff2') format('woff2');
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  font-family:'IBM Plex Mono';font-style:normal;font-weight:500;font-display:swap;
+  src:url('/fonts/ibm-plex-mono-500.woff2') format('woff2');
+}
+@font-face{
+  font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;
+  src:url('/fonts/ibm-plex-mono-600.woff2') format('woff2');
+}
+@font-face{
+  font-family:'IBM Plex Mono';font-style:normal;font-weight:700;font-display:swap;
+  src:url('/fonts/ibm-plex-mono-700.woff2') format('woff2');
 }
 
 /* ==========================================================================
@@ -29,8 +34,8 @@
   --gold:#b08a52;
   --gold-soft:#cbaa7c;
   --max:1180px;
-  --sans:'Pixelify Sans',system-ui,sans-serif;
-  --display:var(--sans);
+  --sans:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'VT323',var(--sans);
 }
 
 *{box-sizing:border-box}
@@ -48,7 +53,7 @@ img{max-width:100%}
 
 /* small letterspaced label, used across the site */
 .section-label{
-  font:600 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  font:400 23px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;
   color:var(--gold);margin-bottom:24px;
 }
 
@@ -196,7 +201,7 @@ img{max-width:100%}
 .shot-main:hover{transform:scale(1.012)}
 .gallery-caption{
   position:absolute;right:78px;bottom:-42px;
-  font:italic 300 16px/1.4 var(--display);color:#9b9094;
+  font:400 13px/1.4 var(--sans);color:#9b9094;
 }
 
 /* ==========================================================================
@@ -255,13 +260,13 @@ img{max-width:100%}
 .entry-title{min-width:0;flex:1}
 .title-line{display:flex;justify-content:space-between;gap:18px;align-items:baseline}
 .title-line h3{
-  font:400 21px/1.25 var(--display);letter-spacing:.005em;margin:0;color:var(--ink);
+  font:400 26px/1.15 var(--display);letter-spacing:.005em;margin:0;color:var(--ink);
 }
 .location{
   font:500 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   color:#a49b9e;white-space:nowrap;
 }
-.role{font:italic 300 15px/1.5 var(--display);color:#7b7276;margin-top:5px}
+.role{font:400 14px/1.5 var(--sans);color:#7b7276;margin-top:5px}
 .minor-note{
   display:inline-block;font:400 12px/1.5 var(--sans);font-style:normal;
   color:#a49b9e;margin-left:8px;
@@ -376,7 +381,7 @@ img{max-width:100%}
   .hero-editorial h1{font-size:52px}
   .shot-main{height:340px}
   .shot-a,.shot-b{height:170px}
-  .title-line h3{font-size:19px}
+  .title-line h3{font-size:23px}
   .tags{margin-left:0;display:flex;margin-top:8px}
 }
 
@@ -494,7 +499,7 @@ img{max-width:100%}
 .botanic svg{width:100%;height:auto;display:block}
 
 .hobby-eyebrow{
-  font:700 12px/1 var(--sans);
+  font:400 18px/1 var(--display);
   letter-spacing:.09em;text-transform:uppercase;color:var(--h-wine-soft);
 }
 .hobby-eyebrow::after{content:"";display:block;width:38px;height:1px;background:var(--h-gold-soft);margin-top:12px}
@@ -930,7 +935,7 @@ img{max-width:100%}
 /* ---------- other passions ---------------------------------------------- */
 .other-passions{padding:66px 0 58px;text-align:center;border-bottom:1px solid var(--h-line)}
 .other-passions .section-label{
-  font:600 12px/1 var(--sans);letter-spacing:.09em;
+  font:400 23px/1 var(--display);letter-spacing:.06em;
   text-transform:uppercase;color:var(--h-gold);margin-bottom:40px;
 }
 .passion-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:0;max-width:760px;margin:0 auto}
@@ -942,7 +947,7 @@ img{max-width:100%}
 .passion-icon{width:44px;height:44px;flex:0 0 44px;color:var(--h-gold);opacity:.9;margin-top:-2px}
 .passion-icon svg{width:100%;height:100%;display:block}
 .passion-list h3{
-  font:600 12px/1 var(--sans);letter-spacing:.09em;
+  font:400 22px/1 var(--display);letter-spacing:.06em;
   text-transform:uppercase;color:#5d4f52;margin:6px 0 9px;
 }
 .passion-list p{font:400 14px/1.65 var(--sans);color:var(--h-muted);margin:0;max-width:22ch}
@@ -1302,7 +1307,7 @@ img{max-width:100%}
 .qwf-infra-item{padding:.42rem .58rem;background:rgba(255,255,255,.62);border:1px solid rgba(91,69,71,.1);margin-bottom:.34rem}
 .qwf-infra-item b{display:block;font:600 .625rem/1.3 var(--sans);color:#4f4649}
 .qwf-infra-item span{display:block;margin-top:.08rem;font:400 .575rem/1.35 var(--sans);color:#8a7b7f}
-.qwf-foot{grid-column:1/-1;padding-top:17px;font:italic 500 .72rem/1.6 var(--display);color:#76696d}
+.qwf-foot{grid-column:1/-1;padding-top:17px;font:400 .75rem/1.6 var(--sans);color:#76696d}
 @keyframes workflowReveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:760px){
   .stack-row-wide>span{max-width:none}
