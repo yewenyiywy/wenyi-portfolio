@@ -75,16 +75,15 @@ export default function AlchemyGame() {
   return <div className="alchemy-home">
     <nav className="alchemy-nav"><Link href="/" className="alchemy-brand">WENYI YE<span>.</span></Link><div><Link href="/hobbies">Hobbies</Link><Link href="/classic" className="alchemy-skip">Skip game · View portfolio</Link></div></nav>
     <div className="alchemy-shell">
-      <header className="alchemy-heading"><p>THE ALCHEMY ARCHIVE</p><h1>A little magic, a lot of curiosity.</h1><p>Mix two ingredients to uncover a chapter of Wenyi’s story.</p></header>
-      <div className="alchemy-counter" aria-live="polite">{unlocked.length} / {recipes.length} chapters discovered</div>
+      <header className="alchemy-heading"><h1>Mix two ingredients to uncover a chapter of Wenyi’s story.</h1></header>
       <div className="alchemy-scene" aria-label="Alchemy workbench">
-        {ingredients.map(i => <button type="button" key={i.id} className={`alchemy-ingredient ingredient-${i.id}`} disabled={brewing} aria-pressed={selected.includes(i.id)} onClick={() => choose(i.id)} draggable={!brewing} onDragStart={e => { e.dataTransfer.setData('text/plain', i.id); e.dataTransfer.effectAllowed = 'copy' }}><Sprite id={i.id} frames={i.frames}/><span className="ingredient-label">{i.name}</span></button>)}
+        {ingredients.map(i => <button type="button" key={i.id} className={`alchemy-ingredient ingredient-${i.id}`} disabled={brewing} aria-label={i.name} aria-pressed={selected.includes(i.id)} onClick={() => choose(i.id)} draggable={!brewing} onDragStart={e => { e.dataTransfer.setData('text/plain', i.id); e.dataTransfer.effectAllowed = 'copy' }}><Sprite id={i.id} frames={i.frames}/></button>)}
         <div className="alchemy-cauldron" onDragOver={e => { if (!brewing) e.preventDefault() }} onDrop={e => { e.preventDefault(); const id = ingredients.find(i => i.id === e.dataTransfer.getData('text/plain'))?.id; if (id) choose(id, true) }}>
           <Sprite key={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} id={brewing ? 'splash' : selected.length === 2 ? 'purple' : selected.length === 1 ? 'green' : 'empty'} frames={brewing ? 5 : 6} pot />
         </div>
       </div>
       <div className="alchemy-actions">
-        <div className="alchemy-selection" aria-live="polite">{selected.length ? selected.map(id => ingredients.find(i => i.id === id)?.name).join(' + ') : 'Select or drag two ingredients into the cauldron'}</div>
+        <div className="alchemy-selection" aria-live="polite">{selected.length === 2 ? 'Ready to brew' : selected.length === 1 ? 'Choose one more ingredient' : 'Select or drag two ingredients into the cauldron'}</div>
         <button className="alchemy-brew" type="button" onClick={brew} disabled={selected.length !== 2 || brewing}>{brewing ? 'Brewing…' : 'Brew potion'}</button>
         <p className="alchemy-message" role="status">{message}</p>
       </div>

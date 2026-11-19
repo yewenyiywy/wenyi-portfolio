@@ -1,24 +1,26 @@
+@font-face {
+  font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url('/fonts/pixelify-sans-latin.woff2') format('woff2');
+}
 .alchemy-home {
+  --game-font:'Pixelify Sans','VT323',monospace;
   min-height:100vh;
   background:radial-gradient(ellipse at 50% 48%,#493345 0,#2a2233 40%,#191a24 80%);
-  color:#f5e8ca;overflow-x:clip;font-family:var(--sans);
+  color:#f5e8ca;overflow-x:clip;font-family:var(--game-font);
 }
 .alchemy-nav {
   max-width:1200px;width:calc(100% - 48px);margin:auto;display:flex;
   align-items:center;justify-content:space-between;gap:12px;padding:20px 0;
 }
 .alchemy-nav>div{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.alchemy-brand{font:400 24px/1 var(--display);white-space:nowrap}
+.alchemy-brand{font:600 22px/1 var(--game-font);white-space:nowrap}
 .alchemy-brand span{color:#e8b76b}
-.alchemy-nav a{font-size:14px}
+.alchemy-nav a{font-size:17px}
 .alchemy-skip{color:#ffdca2;text-decoration:underline;text-underline-offset:5px}
 .alchemy-nav a:hover,.alchemy-nav a:focus-visible{color:#fff4ce}
 .alchemy-shell{max-width:1160px;width:calc(100% - 48px);margin:auto;padding:16px 0 48px}
 .alchemy-heading{text-align:center}
-.alchemy-heading>p:first-child{color:#e9b670;letter-spacing:.16em;font-size:13px;margin:0}
-.alchemy-heading h1{font:400 clamp(36px,4.4vw,56px)/.98 var(--display);margin:10px 0;color:#ffe9b3;text-shadow:3px 3px #775041}
-.alchemy-heading p:last-child{font-size:14px;color:#e2d4c2;line-height:1.6;max-width:670px;margin:0 auto}
-.alchemy-counter{text-align:center;color:#d8ad75;font-size:12px;margin:16px 0 0;letter-spacing:.05em}
+.alchemy-heading h1{font:600 clamp(25px,3.3vw,40px)/1.2 var(--game-font);max-width:920px;margin:10px auto 18px;color:#ffe9b3;text-shadow:2px 2px #775041}
 
 /* A single open scene: the five objects float around the central cauldron. */
 .alchemy-scene{
@@ -36,7 +38,6 @@
 }
 .alchemy-ingredient:active{cursor:grabbing}
 .alchemy-ingredient:disabled{cursor:default}
-.alchemy-ingredient .ingredient-label{font-size:13px;color:#e6d1b0;text-align:center;line-height:1.4;max-width:140px;overflow-wrap:anywhere}
 .alchemy-sprite{
   display:block;width:124px;max-width:100%;aspect-ratio:1;
   background-image:var(--sheet);background-size:calc(var(--frames) * 100%) 100%;
@@ -46,26 +47,25 @@
 }
 .alchemy-ingredient:hover .alchemy-sprite,.alchemy-ingredient:focus-visible .alchemy-sprite{transform:translateY(-5px);filter:drop-shadow(0 0 10px #f5b85e66)}
 .alchemy-ingredient[aria-pressed=true] .alchemy-sprite{filter:drop-shadow(0 0 7px #ffde91) drop-shadow(0 0 18px #f6ad6866)}
-.alchemy-ingredient[aria-pressed=true] .ingredient-label{color:#ffe29c;text-decoration:underline;text-underline-offset:4px}
 .alchemy-cauldron{grid-area:cauldron;width:min(410px,100%);aspect-ratio:1;position:relative;align-self:end;display:grid;place-items:center;z-index:1;overflow:visible}
 .alchemy-cauldron::before{content:"";position:absolute;inset:auto 5% -1% 5%;height:21%;background:radial-gradient(ellipse,#a25b513b,transparent 68%);filter:blur(5px);pointer-events:none}
 .alchemy-pot{width:100%;animation-duration:1.05s;position:relative;z-index:1}
 .alchemy-actions{text-align:center;margin:12px auto 0;max-width:600px}
-.alchemy-selection{font-size:13px;color:#f5d9a5;min-height:35px;line-height:1.6;padding:0 8px}
-.alchemy-brew{background:none;color:#ffe0a2;border:0;border-bottom:1px solid #d9a759;font:400 31px/1 var(--display);padding:4px 14px 7px;cursor:pointer;transition:color .2s,text-shadow .2s}
+.alchemy-selection{font-size:17px;color:#f5d9a5;min-height:35px;line-height:1.6;padding:0 8px}
+.alchemy-brew{background:none;color:#ffe0a2;border:0;border-bottom:1px solid #d9a759;font:600 25px/1.2 var(--game-font);padding:4px 14px 7px;cursor:pointer;transition:color .2s,text-shadow .2s}
 .alchemy-brew:hover:not(:disabled){color:#fff3d3;text-shadow:0 0 10px #ffc66f}
 .alchemy-brew:disabled{opacity:.45;cursor:not-allowed}
-.alchemy-message{margin:10px 0 0;min-height:20px;color:#d5bea7;font-size:13px;line-height:1.5}
-.alchemy-discoveries{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;margin:24px 0;color:#dbc5b1;font-size:13px}
+.alchemy-message{margin:10px 0 0;min-height:20px;color:#d5bea7;font-size:16px;line-height:1.5}
+.alchemy-discoveries{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;margin:24px 0;color:#dbc5b1;font-size:17px}
 .alchemy-discoveries button{color:#ffe0a2;background:none;border:0;padding:5px 0;text-decoration:underline;text-underline-offset:4px;cursor:pointer;font:inherit}
-.alchemy-note{text-align:center;color:#d6c3ae;font-size:12px;margin:28px 0}
+.alchemy-note{text-align:center;color:#d6c3ae;font-size:16px;margin:28px 0}
 .alchemy-note a{color:#ffe1a0;text-decoration:underline}
 .alchemy-reward{background:var(--ivory);color:var(--ink);scroll-margin-top:12px}
-.alchemy-reward-header{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#503940;color:#ffe0a0;padding:13px 16px;font-size:13px}
+.alchemy-reward-header{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#503940;color:#ffe0a0;padding:13px 16px;font-size:17px}
 .alchemy-reward-header button{border:0;background:transparent;color:inherit;padding:6px 9px;cursor:pointer;white-space:nowrap}
 .chapter-view>.progress,.chapter-view>nav,.chapter-view>header,.chapter-view>section,.chapter-view>footer{display:none}
 .chapter-view[data-chapter=about]>#about,.chapter-view[data-chapter=education]>#education,.chapter-view[data-chapter=skills]>#skills,.chapter-view[data-chapter=experience]>#experience,.chapter-view[data-chapter=projects]>#projects,.chapter-view[data-chapter=awards]>#awards,.chapter-view[data-chapter=contact]>#contact{display:block;padding-top:35px;padding-bottom:35px}
-.chapter-view .reveal{opacity:1;transform:none}.chapter-view{min-height:0}.chapter-view .wrap{width:min(calc(100% - 40px),var(--max))}
+.chapter-view .reveal{opacity:1;transform:none}.chapter-view{min-height:0;font-family:var(--sans)}.chapter-view .wrap{width:min(calc(100% - 40px),var(--max))}
 @keyframes alchemy-frames{from{background-position:0 0}to{background-position:100% 0}}
 @media(max-width:800px){
   .alchemy-nav{width:calc(100% - 32px)}.alchemy-shell{width:calc(100% - 32px)}
@@ -73,11 +73,11 @@
   .alchemy-ingredient .alchemy-sprite{width:100px}
 }
 @media(max-width:520px){
-  .alchemy-nav{align-items:flex-start;padding:16px 0}.alchemy-nav>div{gap:9px 14px}.alchemy-nav a{font-size:12px}.alchemy-brand{padding-top:2px}
-  .alchemy-shell{padding-top:14px}.alchemy-heading h1{font-size:34px}.alchemy-heading p:last-child{font-size:13px}
+  .alchemy-nav{align-items:flex-start;padding:16px 0}.alchemy-nav>div{gap:9px 14px}.alchemy-nav a{font-size:15px}.alchemy-brand{padding-top:2px}
+  .alchemy-shell{padding-top:14px}.alchemy-heading h1{font-size:26px;line-height:1.25}
   .alchemy-scene{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto auto auto;row-gap:2px;grid-template-areas:"coin coin flower flower chip chip" ". tentacle tentacle lace lace ." "cauldron cauldron cauldron cauldron cauldron cauldron";margin-top:10px}
-  .alchemy-ingredient .alchemy-sprite{width:82px}.alchemy-ingredient .ingredient-label{font-size:11px;max-width:100px}
+  .alchemy-ingredient .alchemy-sprite{width:82px}
   .alchemy-cauldron{width:min(300px,100%);align-self:end}
-  .alchemy-actions{margin-top:0}.alchemy-selection{font-size:12px;min-height:30px}.alchemy-message{font-size:12px}
+  .alchemy-actions{margin-top:0}.alchemy-selection{font-size:15px;min-height:30px}.alchemy-message{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){.alchemy-sprite{animation:none}}
