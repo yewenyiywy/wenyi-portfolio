@@ -172,6 +172,17 @@ test.describe('hobbies page', () => {
     await page.goto('/hobbies')
     await check(page, 'hobbies')
   })
+  test('handwriting and non-repeating pressed flowers', async ({ page }) => {
+    await page.goto('/hobbies')
+    await page.evaluate(() => document.fonts.ready)
+    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', '"La Belle Aurore", cursive')
+    const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
+    expect(titleFont).toContain('VT323')
+    const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))
+    for (let i = 1; i < pages.length; i++) expect(pages[i].filter(kind => pages[i - 1].includes(kind))).toEqual([])
+    const tapeCounts = await page.locator('.scrap-collage').evaluateAll(els => els.map(el => ({ taped: el.classList.contains('scrap-collage-taped'), tapes: el.querySelectorAll('.scrap-tape').length })))
+    expect(tapeCounts.every(({taped, tapes}) => taped ? tapes === 1 : tapes === 0)).toBe(true)
+  })
   test('scrapbook assets and running companion', async ({ page }) => {
     await page.goto('/hobbies#embroidery')
     await expect(page.locator('#embroidery')).toBeVisible()
