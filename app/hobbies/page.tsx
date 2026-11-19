@@ -232,7 +232,7 @@ export default function HobbiesPage() {
         <p className="journal-kicker">Natural History Journal</p>
         <h1>Hobbies</h1>
         <p className="journal-kicker">Passions outside of work</p>
-        <p>Beyond research and markets, I find joy in creating with my hands, staying active, and exploring virtual worlds.</p>
+        <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
         <img className="journal-intro-plant" src="/rainforest/orchid.webp" alt="" />
         <small>Wenyi Ye · 2026</small>
       </div>, <div className="journal-contents">
@@ -244,7 +244,7 @@ export default function HobbiesPage() {
 
       {spread(1, <>
         <p className="journal-kicker">01 · Embroidery</p><h2>Stitching stories</h2>
-        <p>Embroidery is my way of slowing down and paying attention to the details. Each stitch is a dialogue between patience and creativity.</p>
+        <p>Growing up, I loved fashion design and tailoring clothes. These days my favorite craft is French embroidery.</p>
         <JournalArt item={embroidery[0]} onOpen={open} />
       </>, <>
         <JournalArt item={embroidery[1]} onOpen={open} />
@@ -253,7 +253,7 @@ export default function HobbiesPage() {
 
       {spread(2, <>
         <p className="journal-kicker">02 · Game design · Modding</p><h2>Reimagining worlds</h2>
-        <p>I enjoy extending games, creating new stories, mechanics, and visual experiences.</p>
+        <p>I love playing games, and I also like making mods and drawing illustrations for them. Here are a few things I&apos;ve made.</p>
         <ul className="journal-keywords"><li>Drawn by hand</li><li>Coded in JavaScript</li></ul>
         <JournalArt item={gameStudies[0]} onOpen={open} />
       </>, <>
@@ -265,9 +265,8 @@ export default function HobbiesPage() {
       {spread(3, <>
         <p className="journal-kicker">02 · Game design · Afterglow</p><h2>Afterglow</h2>
         <img className="journal-cover" src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" width={960} height={640} loading="lazy" />
-        <p>I designed and built Afterglow, a browser-based romance and life sim. Create a character, choose a career, and build a life across 19 cities.</p>
-        <p>Friends can introduce you to someone new, and characters remember shared moments. Where you go and who you spend time with shape the relationships and stories that unfold.</p>
-        <p>I built most of Afterglow through vibe coding. It was also my first time using text-to-image generation at scale.</p>
+        <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
+        <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
         <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
       </>, <section id="afterglow-tarot" className="journal-tarot" aria-labelledby="afterglow-tarot-title">
         <h2 id="afterglow-tarot-title">Character Tarot</h2>
@@ -290,7 +289,6 @@ export default function HobbiesPage() {
       {spread(4, <>
         <p className="journal-kicker">03 · Fashion design</p><h2>Designing in silk &amp; story</h2>
         <p>I want to revive traditional Chinese textile motifs by bringing historic pattern language into contemporary qipao silhouettes and a more daring palette.</p>
-        <p>Currently in preparation — I am developing the visual language, textile patterns, and silhouettes for a future clothing label.</p>
         <FashionCard item={fashionDesigns[0]} onOpen={openFashion} />
       </>, <div className="journal-fashion-grid">
         {fashionDesigns.slice(1).map(item => <FashionCard key={item.title} item={item} onOpen={openFashion} />)}
@@ -298,7 +296,7 @@ export default function HobbiesPage() {
 
       {spread(5, <>
         <p className="journal-kicker">04 · Running</p><h2>Running</h2>
-        <p>Running long distances, clearing my mind.</p>
+        <p>I love long-distance running, and the version of me that lets my mind go blank out there.</p>
         <img className="journal-running-plant" src="/rainforest/fern.webp" alt="" />
       </>, <>
         <figure className="running-scene" data-paused={runningPaused}>
