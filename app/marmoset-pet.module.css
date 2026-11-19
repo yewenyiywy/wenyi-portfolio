@@ -30,7 +30,7 @@
   overflow: hidden;
 }
 
-.pet:focus-visible, .greeting a:focus-visible {
+.pet:focus-visible {
   outline: 2px solid var(--wine);
   outline-offset: 3px;
 }
@@ -117,7 +117,6 @@
 .actions button:disabled { opacity: .5; cursor: default; }
 .actions button:focus-visible, .petTitle button:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
 
-.greeting a { text-decoration: underline; text-underline-offset: 2px; }
 
 @keyframes walk {
   0% { background-position: 0 0; }
