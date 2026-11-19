@@ -15,11 +15,16 @@
 .archive-sheet-back .archive-sheet-label{pointer-events:auto}
 .archive-sheet-front.archive-paper{position:relative;z-index:6;padding-top:7px;padding-inline:var(--sheet-inset);min-height:650px;animation:archive-page-arrive .22s ease-out both}
 .archive-sheet-label{display:flex;justify-content:flex-start;align-items:center;width:100%;height:var(--sheet-step);padding:6px var(--sheet-inset);border:0;background:none;color:#4d392b;text-align:left;cursor:pointer;transition:color .18s}
-.archive-sheet-tape{display:inline-flex;align-items:center;justify-content:center;position:relative;isolation:isolate;min-width:116px;max-width:100%;height:40px;padding:5px 19px;white-space:nowrap;font:400 clamp(20px,3vw,27px)/1 var(--display);transform:rotate(var(--tape-angle,-1deg));transition:transform .18s}
-.archive-sheet-tape::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/hobbies/scrapbook/tape.webp') var(--tape-position,0%) 0/400% 100% no-repeat;opacity:.9}
-.archive-sheet-tape-1{--tape-position:33.333%;--tape-angle:1deg}.archive-sheet-tape-3{--tape-position:100%;--tape-angle:-1.5deg}
-.archive-sheet-tape-4{--tape-angle:1.5deg}.archive-sheet-tape-6{--tape-position:66.666%;--tape-angle:-.6deg}
-.archive-sheet-tape-4::before,.archive-sheet-tape-6::before{background-image:url('/hobbies/scrapbook/tape-botanical.webp')}
+.archive-sheet-tape{display:inline-flex;align-items:center;justify-content:center;position:relative;isolation:isolate;min-width:145px;max-width:100%;height:43px;padding:5px 35px;white-space:nowrap;font:400 clamp(20px,3vw,27px)/1 var(--display);transform:rotate(var(--tape-angle,-1deg));transition:transform .18s}
+.archive-sheet-tape::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/hobbies/scrapbook/tape.webp') var(--tape-position,0%) 0/var(--tape-scale,400%) 100% no-repeat;opacity:.95}
+/* Botanical sprite cells contain unequal transparent margins: fit the actual tape,
+   not the empty cell, so the printed title always stays inside the torn ends. */
+.archive-sheet-tape-1{--tape-position:33.333%;--tape-angle:-1.5deg}
+.archive-sheet-tape-4{--tape-position:6.77%;--tape-scale:754.72%;--tape-angle:1.3deg}
+.archive-sheet-tape-5{--tape-position:33.333%;--tape-angle:-.7deg}
+.archive-sheet-tape-6{--tape-position:65.24%;--tape-scale:549.83%;--tape-angle:1.8deg}
+.archive-sheet-tape-7{--tape-position:96.73%;--tape-scale:506.33%;--tape-angle:-2deg}
+.archive-sheet-tape:is(.archive-sheet-tape-4,.archive-sheet-tape-5,.archive-sheet-tape-6,.archive-sheet-tape-7)::before{background-image:url('/hobbies/scrapbook/tape-botanical.webp')}
 .archive-sheet-label:hover .archive-sheet-tape,.archive-sheet-label:focus-visible .archive-sheet-tape{transform:rotate(0)}
 .archive-sheet-label:hover,.archive-sheet-label:focus-visible{color:#822c3d}.archive-sheet-label:focus-visible{outline:2px solid #8a4d35;outline-offset:-7px}
 .archive-sheet-selected{padding:6px 0;color:#6e1f30;margin-bottom:12px;cursor:default}
@@ -57,8 +62,6 @@
 .archive-photo-3 .archive-photo-tape{background-position:100% 0;transform:rotate(17deg);left:30%}
 .archive-gallery .gallery-caption{position:static;grid-column:1/-1;text-align:right;margin:6px 0 0;color:#795f43}
 .classic-portfolio .hero-editorial,.chapter-view .hero-editorial{min-width:0}
-.classic-portfolio .hero-editorial .socials,.chapter-view .hero-editorial .socials{flex-wrap:wrap;gap:10px 18px;max-width:100%}
-.classic-portfolio .hero-editorial .socials a,.chapter-view .hero-editorial .socials a{flex:0 0 auto}
 
 /* The optional full scroll mode keeps all sections visible as separate sheets. */
 .classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{background:url('/archive/paper.webp') center/100% 100% no-repeat;max-width:1070px;margin:14px auto 28px;padding:clamp(30px,5vw,60px) clamp(24px,5vw,60px);border:0;filter:drop-shadow(0 4px 5px #5e44252b)}
@@ -72,4 +75,4 @@
 @media(max-width:850px){.archive-index{padding-top:24px}.archive-paper{min-height:450px}.chapter-view[data-chapter~="about"]>header,.classic-portfolio>.fashion-hero{display:block}.hero-gallery.archive-gallery{margin:24px auto 0;max-width:460px}.archive-gallery .archive-photo{max-width:215px}.archive-nav{width:calc(100% - 32px)}}
 @media(max-width:520px){.archive-nav{align-items:flex-start;padding:17px 0;font-size:16px}.archive-nav>div{gap:8px 14px}.archive-brand{font-size:22px}.archive-index{width:calc(100% - 32px);padding-bottom:44px}.archive-index>header{margin-bottom:26px}.archive-paper-stack{--sheet-step:45px}.archive-sheet-label{padding-inline:20px}.archive-sheet-label>span{font-size:10px}.archive-sheet-selected{padding-inline:0}.archive-sheet-front.archive-paper{min-height:440px}.archive-paper{padding:27px 20px;min-height:420px}.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{padding:20px 0}.archive-paper .chapter-view .title-line h3{font-size:23px}.classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{width:calc(100% - 22px);padding:32px 22px}.classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:46px;height:46px;flex:0 0 46px}.archive-gallery .archive-photo-tape{width:50%}.hero-gallery.archive-gallery{gap:10px;padding:14px 3px}.archive-paper .chapter-view .inline-institution{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.archive-sheet-front,.archive-photo{animation:none;transition:none}}
-@media(max-width:520px){.archive-paper-stack{--sheet-step:52px;--sheet-inset:20px}.archive-sheet-label>span.archive-sheet-tape{font-size:20px;height:35px;padding-inline:15px}.archive-sheet-front.archive-paper{padding-inline:var(--sheet-inset)}}
+@media(max-width:520px){.archive-paper-stack{--sheet-step:52px;--sheet-inset:20px}.archive-sheet-label>span.archive-sheet-tape{font-size:clamp(17px,4.6vw,20px);height:38px;padding-inline:28px;min-width:130px}.archive-sheet-front.archive-paper{padding-inline:var(--sheet-inset)}}

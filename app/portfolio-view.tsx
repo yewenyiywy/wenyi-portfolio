@@ -276,12 +276,6 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
       <p className="hero-lede">Building intelligent systems for <strong>alpha discovery, trading, and financial decision-making</strong> — at the intersection of AI and quantitative finance.</p>
       <div className="hero-rule"></div>
       <div className="hero-meta"><span>Berkeley · MFE 2027</span><span>San Francisco · Ann Arbor · Beijing</span></div>
-      <div className="socials">
-        <a href="mailto:ywywywy@berkeley.edu">Email</a>
-        <a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer">LinkedIn</a>
-        <a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer">Instagram</a>
-      </div>
     </div>
     <div className="hero-gallery archive-gallery reveal reveal-2">
       {gallery.map((g,index) => (

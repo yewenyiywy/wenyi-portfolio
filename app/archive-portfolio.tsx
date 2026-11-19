@@ -6,11 +6,11 @@ import PortfolioView from './portfolio-view'
 import './archive.css'
 
 const folders = [
-  { id:'personal', title:'About & Contact', chapters:'about contact', tape:0 },
-  { id:'academic', title:'Education & Awards', chapters:'education awards', tape:4 },
-  { id:'technical', title:'Skills', chapters:'skills', tape:1 },
+  { id:'personal', title:'About', chapters:'about contact', tape:7 },
+  { id:'academic', title:'Education & Awards', chapters:'education awards', tape:5 },
+  { id:'technical', title:'Skills', chapters:'skills', tape:4 },
   { id:'professional', title:'Experience', chapters:'experience', tape:6 },
-  { id:'research', title:'Research & Projects', chapters:'projects', tape:3 },
+  { id:'research', title:'Projects', chapters:'projects', tape:1 },
 ] as const
 type Folder = typeof folders[number]
 
