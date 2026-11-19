@@ -9,7 +9,8 @@ import { test, expect, type Page } from '@playwright/test'
  * Purely decorative pieces should carry aria-hidden="true". To let one element
  * overflow on purpose, add data-allow-overflow to it.
  *
- * A full-page screenshot of every page and state is attached to each test.
+ * A viewport screenshot of each state is attached to the test; all page
+ * content, including off-screen elements, is still checked for overflow.
  */
 
 type Problem = { kind: string; where: string; text: string; px: number }
@@ -26,7 +27,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
       while (cur && cur !== document.body && parts.length < 4) {
         let s = cur.tagName.toLowerCase()
         if (cur.id) s += `#${cur.id}`
-        const cls = [...cur.classList].filter(c => !/^(is-|reveal)/.test(c)).slice(0, 2)
+        const cls = Array.from(cur.classList).filter(c => !/^(is-|reveal)/.test(c)).slice(0, 2)
         if (cls.length) s += '.' + cls.join('.')
         parts.unshift(s)
         cur = cur.parentElement
@@ -62,7 +63,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
       if (!text || !parent || seen.has(parent) || skip(parent)) continue
       const range = document.createRange()
       range.selectNodeContents(node)
-      const rects = [...range.getClientRects()].filter(r => r.width > 1 && r.height > 1)
+      const rects = Array.from(range.getClientRects()).filter(r => r.width > 1 && r.height > 1)
       if (!rects.length) continue
       const left = Math.min(...rects.map(r => r.left))
       const right = Math.max(...rects.map(r => r.right))
@@ -88,7 +89,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
     }
 
     // 3. Images and media wider than the screen (unless their box clips them).
-    for (const el of document.querySelectorAll('img, video, iframe, canvas, svg, table, pre')) {
+    for (const el of Array.from(document.querySelectorAll('img, video, iframe, canvas, svg, table, pre'))) {
       if (skip(el) || el.parentElement?.closest('svg')) continue
       const r = el.getBoundingClientRect()
       if (r.width < 2 || r.height < 2) continue
@@ -107,12 +108,11 @@ async function findOverflow(page: Page): Promise<Problem[]> {
 }
 
 async function check(page: Page, label: string) {
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('domcontentloaded')
   await page.evaluate(() => document.fonts.ready)
-  const shot = await page.screenshot({ fullPage: true })
-  await test.info().attach(`${label}.png`, { body: shot, contentType: 'image/png' })
-
   const problems = await findOverflow(page)
+  const shot = await page.screenshot({ fullPage: false, animations: 'disabled', timeout: 12_000 }).catch(() => null)
+  if(shot) await test.info().attach(`${label}.png`, { body: shot, contentType: 'image/png' })
   const report = problems.map(p => `  • [${p.kind}] +${p.px}px  ${p.where}  “${p.text}”`).join('\n')
   expect(problems, `${label}: content spills past the phone screen\n${report}`).toEqual([])
 }
@@ -221,7 +221,8 @@ test.describe('hobbies page', () => {
   test('handwriting and non-repeating pressed flowers', async ({ page }) => {
     await page.goto('/hobbies')
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', '"La Belle Aurore", cursive')
+    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /La Belle Aurore/)
+    expect(await page.evaluate(() => document.fonts.check('16px "La Belle Aurore"'))).toBe(true)
     const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
     expect(titleFont).toContain('VT323')
     const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))

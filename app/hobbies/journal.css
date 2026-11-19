@@ -131,6 +131,9 @@
 /* Reserve no intrinsic height: the collage uses only leftover paper, so
    crowded spreads (or the expanded tarot deck) never lose content space. */
 .scrap-collage { flex:1 1 0px; min-height:0; max-height:390px; width:100%; position:relative; container-type:size; overflow:hidden; }
+/* Running has intentional open paper. Give WebKit an explicit minimum size
+   so its size-contained collage does not collapse to an invisible flex item. */
+#running .scrap-collage{flex:1 1 190px;min-height:190px}
 .scrap-collage > * { visibility:hidden; }
 @container (min-height:150px) {
   .scrap-collage > * { visibility:visible; }
