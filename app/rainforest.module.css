@@ -10,8 +10,6 @@
   user-select: none;
 }
 
-.page > :global(.section) { position: relative; }
-
 .heroMonstera {
   --plant-size: clamp(136px, 16vw, 212px);
   top: -34px;
@@ -19,87 +17,18 @@
   background-image: url('/rainforest/monstera.webp');
   transform: rotate(-9deg);
 }
-.heroFern {
-  --plant-size: clamp(95px, 11vw, 150px);
-  top: 7px;
-  left: 48px;
-  background-image: url('/rainforest/fern.webp');
-  transform: rotate(9deg);
-  z-index: 5;
-}
 .heroVine {
   --plant-size: clamp(125px, 14vw, 185px);
   top: 8px;
   right: 13%;
   background-image: url('/rainforest/vine.webp');
 }
-.heroOrchid {
-  --plant-size: clamp(100px, 12vw, 150px);
-  bottom: -15px;
-  left: -48px;
-  background-image: url('/rainforest/orchid.webp');
-}
-.aboutClimber {
-  --plant-size: 112px;
-  top: 8px;
-  right: -24px;
-  background-image: url('/rainforest/climber.webp');
-}
-.aboutGround {
-  --plant-size: 175px;
-  right: 25px;
-  bottom: -25px;
-  background-image: url('/rainforest/ground.webp');
-}
-.educationBromeliad {
-  --plant-size: 126px;
-  top: -14px;
-  left: -103px;
-  background-image: url('/rainforest/bromeliad.webp');
-  transform: rotate(9deg);
-  z-index: 1;
-}
-.skillsShrub {
-  --plant-size: 140px;
-  top: -44px;
-  right: -58px;
-  background-image: url('/rainforest/shrub.webp');
-}
-.experienceHeliconia {
-  --plant-size: 126px;
-  top: 6px;
-  left: -105px;
-  background-image: url('/rainforest/heliconia.webp');
-  z-index: 1;
-}
-.researchMoss {
-  --plant-size: 160px;
-  right: -59px;
-  bottom: -32px;
-  background-image: url('/rainforest/moss.webp');
-}
-
-@media (max-width: 1080px) {
-  .aboutClimber { --plant-size: 88px; right: -28px; top: -24px; }
-  .aboutGround { --plant-size: 130px; right: -24px; bottom: -36px; }
-  .educationBromeliad, .experienceHeliconia { --plant-size: 92px; left: -60px; top: -22px; }
-  .skillsShrub { --plant-size: 105px; right: -25px; top: -32px; }
-  .researchMoss { --plant-size: 110px; right: -23px; bottom: -27px; }
-}
-
 @media (max-width: 820px) {
   .heroMonstera { --plant-size: 112px; top: -18px; right: -26px; left: auto; }
-  .heroFern { --plant-size: 83px; top: 28px; right: 31px; left: auto; }
   .heroVine { --plant-size: 108px; top: auto; bottom: 188px; right: -29px; }
-  .heroOrchid { --plant-size: 100px; left: -24px; bottom: -17px; }
-  .aboutClimber { --plant-size: 76px; }
-  .aboutGround { --plant-size: 101px; right: -17px; bottom: -24px; }
 }
 
 @media (max-width: 420px) {
   .heroMonstera { --plant-size: 91px; right: -24px; top: -21px; }
-  .heroFern { --plant-size: 65px; right: -1px; top: 22px; }
   .heroVine { --plant-size: 89px; right: -24px; }
-  .heroOrchid { --plant-size: 92px; }
-  .educationBromeliad, .experienceHeliconia { left: -53px; --plant-size: 76px; }
 }
