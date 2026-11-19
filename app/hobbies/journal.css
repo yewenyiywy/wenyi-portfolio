@@ -42,13 +42,6 @@
 .journal-leaf h2 { font-size: clamp(32px, 3.6vw, 48px); }
 .journal-leaf h3 { font-size: clamp(23px, 2.15vw, 29px); margin-bottom: 6px; }
 .journal-leaf p { font: 400 clamp(12px, 1.1vw, 14px)/1.65 var(--sans); color: var(--h-muted); margin: 0 0 12px; }
-.journal-leaf .journal-kicker {
-  font: 600 11px/1.45 var(--sans);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--h-gold);
-  margin-bottom: 11px;
-}
 .journal-leaf-footer {
   flex: 0 0 auto;
   min-height: 35px;
@@ -56,7 +49,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-top: 1px solid var(--h-line);
   padding: 8px 2px 0;
   font: 500 11px/1.35 var(--sans);
   color: var(--h-muted);
@@ -78,27 +70,56 @@
 
 .journal-intro { display: flex; flex-direction: column; gap: 8px; min-height: 100%; align-items: flex-start; justify-content: center; }
 .journal-intro h1 { margin: 0 0 6px; }
-.journal-intro .journal-kicker { margin: 0; }
-.journal-intro > p:not(.journal-kicker) { max-width: 38ch; margin-top: 8px; }
-.journal-intro-plant { width: clamp(105px, 15vw, 170px); margin-top: 3px; height: auto; }
+.journal-intro > p { max-width: 38ch; margin-top: 8px; }
 .journal-intro small { color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
 .journal-contents { padding-top: clamp(8px, 4.5vw, 54px); }
 .journal-contents ol { list-style: none; margin: 24px 0 0; padding: 0; }
-.journal-contents li { border-bottom: 1px dashed var(--h-line); }
 .journal-contents button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; width: 100%; padding: 13px 2px; border: 0; background: transparent; color: var(--h-wine); cursor: pointer; font: 400 clamp(22px, 2.4vw, 30px)/1.15 var(--display); }
 .journal-contents button:hover { background: #8b6b3912; }
 .journal-contents button span:last-child { font: 500 11px/1 var(--sans); color: var(--h-gold); }
 
-.journal-art { margin: 14px 0 12px; }
-.journal-art button,.journal-fashion-card button { position: relative; display: block; width: 100%; padding: 6px; border: 1px solid var(--h-line); background: #fff7df65; cursor: zoom-in; }
-.journal-art img { display: block; width: 100%; height: clamp(155px, 23vw, 322px); object-fit: contain; }
-.journal-view-label { display: inline-block; border-top: 1px solid var(--h-line); margin: 4px 0 0; padding-top: 6px; color: var(--h-wine); font: 500 10px/1.35 var(--sans); }
-.journal-art figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 8px; font: 400 11px/1.4 var(--sans); color: var(--h-muted); }
-.journal-art figcaption strong { font: 400 21px/1.2 var(--display); color: var(--h-wine); }
-.journal-keywords { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; padding: 0; margin: 12px 0 8px; color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
-.journal-keywords li::before { content: '· '; }
-.journal-game-text { border-top: 1px solid var(--h-line); padding-top: 12px; }
-.journal-cover { width: auto; max-width: 100%; height: auto; max-height: clamp(125px, 15vw, 195px); display: block; border: 1px solid var(--h-line); margin-bottom: 14px; }
+.journal-art { margin: 18px 0 12px; }
+.journal-art button,.journal-fashion-card button { display:block; width:min(100%,256px); padding:0; border:0; background:none; cursor:zoom-in; margin:0 auto; }
+.journal-right .journal-art button { width:min(100%,280px); }
+.journal-art button:has(.scrap-mounted) { width:min(100%,205px); }
+.journal-art button:has(.scrap-tilted) { width:min(100%,315px); }
+.journal-art figcaption { text-align:center; margin-top:8px; font:400 21px/1.2 var(--display); color:var(--h-wine); }
+.journal-game-text { padding-top: 12px; }
+.journal-cover { width:min(100%,340px); display:block; margin:12px auto 18px; }
+.journal-cover .scrap-mounted { aspect-ratio:3/2; }
+
+/* Actual cut-out scrapbook assets, not CSS borders. Every photo stays inside
+   the measured transparent opening of its paper frame. */
+.scrap-photo { display:block; width:100%; position:relative; isolation:isolate; transform:rotate(-2deg); }
+.scrap-portrait { aspect-ratio:589/800; }
+.scrap-tilted { aspect-ratio:722/800; transform:rotate(2deg); }
+.scrap-mounted { aspect-ratio:812/1374; transform:rotate(2.5deg); }
+.scrap-photo-window { position:absolute; inset:0; display:block; overflow:hidden; background:#f2e4ce; }
+.scrap-photo-window img { width:100%;height:100%;display:block;object-fit:cover; }
+.scrap-portrait .scrap-photo-window { inset:6.7% 6.7% 17.5% 6.7%; }
+.scrap-tilted .scrap-photo-window { inset:0; clip-path:polygon(17% 7.2%,94% 12.6%,84.2% 80%,8% 73%); }
+.scrap-tilted .scrap-photo-window img { position:absolute; inset:7.5% 6% 19% 9%; width:85%;height:73.5%; transform:rotate(5deg) scale(1.06); }
+.scrap-contain .scrap-photo-window img { object-fit:contain; }
+.scrap-paper-frame { display:block; position:absolute; inset:0; width:100%;height:100%; object-fit:fill;pointer-events:none; }
+.scrap-tape,.scrap-corner,.scrap-pressed { display:block; pointer-events:none;background-repeat:no-repeat; }
+.scrap-tape { position:absolute; z-index:3; width:42%;aspect-ratio:320/108;top:-4%;left:29%;background-image:url('/hobbies/scrapbook/tape.webp');background-size:400% 100%;transform:rotate(-9deg); }
+.scrap-tape-0{background-position:0 0}.scrap-tape-1{background-position:calc(100% / 3) 0}.scrap-tape-2{background-position:calc(200% / 3) 0}.scrap-tape-3{background-position:100% 0}
+.scrap-tilted .scrap-tape{left:47%;top:0;transform:rotate(13deg) scaleX(-1)}
+.scrap-mounted .scrap-tape{left:16%;top:-5%;transform:rotate(-12deg) scaleX(-1)}
+.scrap-corner { position:absolute;z-index:2;width:17%;aspect-ratio:1;background-image:url('/hobbies/scrapbook/corners.webp');background-size:400% 100%; }
+.scrap-corner-0{top:-1%;left:-1%;background-position:0 0}.scrap-corner-1{top:-1%;right:-1%;background-position:calc(100% / 3) 0}.scrap-corner-2{bottom:-1%;left:-1%;background-position:calc(200% / 3) 0}.scrap-corner-3{bottom:-1%;right:-1%;background-position:100% 0}
+.scrap-pressed { width:100px;aspect-ratio:196/240;background-image:url('/hobbies/scrapbook/pressed.webp');background-size:600% 100%; }
+.scrap-pressed-0{background-position:0 0}.scrap-pressed-1{background-position:20% 0}.scrap-pressed-2{background-position:40% 0}.scrap-pressed-3{background-position:60% 0}.scrap-pressed-4{background-position:80% 0}.scrap-pressed-5{background-position:100% 0}
+.scrap-intro-botanicals { position:relative; width:min(100%,260px);height:clamp(110px,15vw,160px);margin:8px 0 5px; }
+.scrap-intro-botanicals .scrap-pressed { position:absolute; width:45%;bottom:0;left:5%;transform:rotate(-20deg); }
+.scrap-intro-botanicals .scrap-pressed-3 { left:32%;bottom:4%;transform:rotate(18deg) scaleX(-1); }
+.scrap-intro-botanicals .scrap-pressed-4 { left:62%;bottom:-1%;width:34%;transform:rotate(27deg); }
+.scrap-intro-botanicals .scrap-tape { top:auto;bottom:1%;left:34%;width:42%;transform:rotate(-8deg); }
+.scrap-contents-botanicals { display:flex; justify-content:flex-end;gap:4px; margin:20px 10px 0; }
+.scrap-contents-botanicals .scrap-pressed{width:clamp(70px,9vw,118px);transform:rotate(-15deg) scaleX(-1)}
+.scrap-contents-botanicals .scrap-pressed-5{transform:rotate(15deg)}
+.scrap-small-botanical { display:flex;justify-content:flex-end;margin:-8px 20px 0; }
+.scrap-small-botanical .scrap-pressed { width:75px;transform:rotate(32deg); }
 .journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; }
 .journal-book .afterglow-cta:hover { background: #49603c; }
 .journal-book .tarot-deck { margin-top: 16px; min-width: 0; }
@@ -109,22 +130,22 @@
 .journal-book .tarot-controls button { padding: 6px 10px; font-size: 11px; }
 
 .journal-fashion-card { margin: 14px 0 0; max-width: 300px; min-width: 0; }
-.journal-fashion-card img { width: 100%; height: clamp(145px, 19vw, 260px); object-fit: contain; display: block; }
+.journal-fashion-card button { width:100%; }
 .journal-fashion-card h3 { font-size: 24px; margin: 8px 0 4px; }
 .journal-fashion-card p { font-size: 11px; margin: 0; }
 .journal-fashion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .journal-fashion-grid .journal-fashion-card { margin-top: 8px; }
-.journal-fashion-grid .journal-fashion-card img { height: clamp(175px, 27vw, 355px); }
+.journal-fashion-grid .journal-fashion-card:nth-child(2) .scrap-photo { transform:rotate(3deg); }
+.journal-fashion-grid .journal-fashion-card:nth-child(2) .scrap-tape { transform:rotate(10deg) scaleX(-1); }
 
-.journal-running-plant { width: clamp(110px, 18vw, 210px); height: auto; margin-top: 16px; }
-.journal-book .running-track { --runner-size: clamp(104px, 16vw, 180px); height: clamp(155px, 22vw, 260px); }
+.journal-book .running-track { --runner-size: clamp(104px, 16vw, 180px); height: clamp(155px, 22vw, 260px); border:0;background:none; }
 .journal-book .running-scene { margin-top: 30px; }
 .journal-book .running-caption { font-size: 11px; flex-wrap: wrap; }
-.journal-book .running-control { color: var(--h-wine); }
+.journal-book .running-control { color: var(--h-wine); border:0; text-decoration:underline; }
 .journal-leaf .journal-copyright { margin-top: 30px; font-size: 11px; color: var(--h-gold); }
 
 .journal-detail-art,.journal-detail-pattern { margin: 0 0 14px; }
-.journal-detail-art img,.journal-detail-pattern img { width: 100%; display: block; object-fit: contain; border: 1px solid var(--h-line); background: #fff7df65; }
+.journal-detail-art img,.journal-detail-pattern img { width: 100%; display: block; object-fit: contain; border:0; background:none; }
 .journal-detail-art img { height: clamp(230px, 39vw, 570px); }
 .journal-detail-pattern img { height: clamp(120px, 19vw, 235px); }
 .journal-detail-art figcaption,.journal-detail-pattern figcaption { font: 500 11px/1.4 var(--sans); color: var(--h-muted); margin-top: 8px; }
@@ -138,8 +159,10 @@
   .journal-leaf-content { padding-right: 4px; }
   .journal-leaf h1 { font-size: clamp(48px, 11vw, 72px); }
   .journal-leaf h2 { font-size: clamp(30px, 7vw, 40px); }
-  .journal-art img { height: clamp(150px, 48vw, 280px); }
-  .journal-fashion-card img,.journal-fashion-grid .journal-fashion-card img { height: clamp(140px, 42vw, 260px); }
+  .journal-art button,.journal-right .journal-art button { width:min(100%,210px); }
+  .journal-art button:has(.scrap-tilted) { width:min(100%,245px); }
+  .journal-art button:has(.scrap-mounted) { width:min(100%,165px); }
+  .journal-leaf-content .journal-fashion-card { max-width:220px; }
   .journal-detail-art img { height: clamp(200px, 64vw, 400px); }
   .journal-detail-pattern img { height: clamp(115px, 37vw, 195px); }
   .journal-contents { padding-top: 6px; }
