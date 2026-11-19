@@ -34,6 +34,20 @@ const experience = [
 
 const research = [
   { company:'Self-Evolving Quantitative Trading Agent', logo:logos.selfEvolving, location:'Independent', role:'Long-term Research Project', date:'Long-term', tags:['Agentic AI','Quantitative Research','Self-Evolution','Portfolio Optimization'], bullets:[<>Built an <strong>autonomous self-evolving quantitative trading agent</strong> that discovers, validates, and evolves trading strategies under statistical and immutable risk controls.</>,<>Designed a closed-loop system integrating LLM-based strategy generation, backtesting, adaptive evolution, risk-adjusted capital allocation, and live/simulated execution.</>,<>Product demo: <a className="research-demo-link" href="https://frontend-six-wheat-17.vercel.app/" target="_blank" rel="noreferrer">Frontend Demo</a>. The product is currently in <strong>self-use</strong>; the backend code and infrastructure are not open-sourced.</>] },
+  {
+    company: 'MillTech (Millennium)',
+    titleSuffix: ' — UCB MFE Industry Project',
+    logo: logos.berkeley,
+    logoAlt: 'UC Berkeley',
+    location: 'Berkeley, CA',
+    role: 'Quantitative Researcher',
+    date: '10/2026 – 12/2026',
+    tags: ['FX Forecasting', 'Time-Series Foundation Models', 'Backtesting', 'Python'],
+    bullets: [
+      <>Benchmarked zero-shot forecasts from <strong>TiRex-2 and Chronos-2</strong> against time-series and cross-sectional momentum strategies across G10 currencies using FX forward returns.</>,
+      <>Developed hybrid momentum signals for FX alpha generation and dynamic currency hedging. Evaluated out-of-sample performance across market regimes with transaction costs included.</>,
+    ],
+  },
   { company:'Ramify', companyUrl:'https://www.ramify.fr/', titleSuffix:' — UCB MFE Industry Project', logo:logos.ramify, location:'Berkeley, CA', role:'Apprenticeship', date:'08/2026 – 10/2026', tags:['Stochastic Control','Optimization','Backtesting'], bullets:[<>Developing a stochastic-control framework for capital allocation across evergreen and closed-end private funds.</>,<>Backtesting optimal allocation policies against heuristic strategies using historical fund-level data.</>] },
   { company:'IMC', companyUrl:'https://www.imc.com/us', titleSuffix:' Prosperity 3', logo:logos.imc, location:'Ann Arbor, MI', role:'Participant', date:'04/2025 – 05/2025', tags:['Algorithmic Trading','Market Making','Multi-Asset'], bullets:[<>Built multi-asset trading agents across pair trading, ETF arbitrage, delta/gamma hedging, and market making.</>,<>Ranked <strong>Top 1% among 12,620 global teams</strong> (7th in China) across algorithmic and manual rounds.</>] }
 ]
@@ -45,7 +59,7 @@ function Tags({items}:{items:string[]}){return <span className="tags">{items.map
 function Entry({item}:{item:any}){return <article className="timeline-entry reveal">
   <div className="date">{item.date}</div>
   <div className="entry-content">
-    <div className="entry-top"><Brand src={item.logo} alt={item.company || item.title}/><div className="entry-title"><div className="title-line"><h3>{item.companyUrl ? <a className="company-link" href={item.companyUrl} target="_blank" rel="noreferrer">{item.company}</a> : item.company}{item.titleSuffix}</h3><span className="location">{item.location}</span></div><div className="role">{item.role} <Tags items={item.tags}/></div></div></div>
+    <div className="entry-top"><Brand src={item.logo} alt={item.logoAlt ?? (item.company || item.title)}/><div className="entry-title"><div className="title-line"><h3>{item.companyUrl ? <a className="company-link" href={item.companyUrl} target="_blank" rel="noreferrer">{item.company}</a> : item.company}{item.titleSuffix}</h3><span className="location">{item.location}</span></div><div className="role">{item.role} <Tags items={item.tags}/></div></div></div>
     <ul>{item.bullets.map((b:ReactNode,i:number)=><li key={i}>{b}</li>)}</ul>
   </div>
 </article>}
