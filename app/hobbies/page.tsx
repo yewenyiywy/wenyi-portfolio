@@ -8,13 +8,22 @@ import './journal.css'
 const steam = 'https://store.steampowered.com/app/3117820/Sultans_Game/'
 const afterglowUrl = 'https://afterglow-gray-five.vercel.app/'
 
+// One entry per two-page spread of the book.
 const chapters = [
   { anchor: '', title: 'Contents' },
   { anchor: 'embroidery', title: 'Embroidery' },
-  { anchor: 'game-modding', title: 'Game modding' },
-  { anchor: 'game-design', title: 'Afterglow & Character Tarot' },
+  { anchor: 'game-design', title: 'Game design · Modding' },
+  { anchor: 'afterglow', title: 'Game design · Afterglow' },
   { anchor: 'fashion-design', title: 'Fashion design' },
   { anchor: 'running', title: 'Running' },
+]
+
+// The table of contents: a chapter can span several spreads.
+const contents = [
+  { title: 'Embroidery', spread: 1 },
+  { title: 'Game design', spread: 2 },
+  { title: 'Fashion design', spread: 4 },
+  { title: 'Running', spread: 5 },
 ]
 
 const tarotCards = [
@@ -103,6 +112,7 @@ function FashionCard({ item, onOpen }: { item: FashionDesign; onOpen: (item: Fas
 function spreadFromHash() {
   const anchor = window.location.hash.slice(1)
   if (anchor === 'afterglow-tarot') return 3
+  if (anchor === 'game-modding') return 2 // old link
   const index = chapters.findIndex(chapter => chapter.anchor === anchor)
   return index < 0 ? 0 : index
 }
@@ -227,8 +237,8 @@ export default function HobbiesPage() {
         <small>Wenyi Ye · 2026</small>
       </div>, <div className="journal-contents">
         <h2>Contents</h2>
-        <ol>{chapters.slice(1).map((chapter, index) => <li key={chapter.anchor}>
-          <button type="button" onClick={() => turnTo(index + 1)}><span>{chapter.title}</span><span>{String((index + 1) * 2 + 1).padStart(2, '0')}</span></button>
+        <ol>{contents.map(entry => <li key={entry.title}>
+          <button type="button" onClick={() => turnTo(entry.spread)}><span>{entry.title}</span><span>{String(entry.spread * 2 + 1).padStart(2, '0')}</span></button>
         </li>)}</ol>
       </div>)}
 
@@ -242,7 +252,7 @@ export default function HobbiesPage() {
       </>)}
 
       {spread(2, <>
-        <p className="journal-kicker">02 · Game modding</p><h2>Reimagining worlds</h2>
+        <p className="journal-kicker">02 · Game design · Modding</p><h2>Reimagining worlds</h2>
         <p>I enjoy extending games, creating new stories, mechanics, and visual experiences.</p>
         <ul className="journal-keywords"><li>Drawn by hand</li><li>Coded in JavaScript</li></ul>
         <JournalArt item={gameStudies[0]} onOpen={open} />
@@ -253,7 +263,7 @@ export default function HobbiesPage() {
       </>)}
 
       {spread(3, <>
-        <p className="journal-kicker">02 · Game design</p><h2>Afterglow</h2>
+        <p className="journal-kicker">02 · Game design · Afterglow</p><h2>Afterglow</h2>
         <img className="journal-cover" src="/hobbies/afterglow-cover.webp" alt="Afterglow cover art with pixel-art characters against a city skyline at dusk" width={960} height={640} loading="lazy" />
         <p>I designed and built Afterglow, a browser-based romance and life sim. Create a character, choose a career, and build a life across 19 cities.</p>
         <p>Friends can introduce you to someone new, and characters remember shared moments. Where you go and who you spend time with shape the relationships and stories that unfold.</p>
