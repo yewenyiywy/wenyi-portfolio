@@ -1,0 +1,151 @@
+.journal-page {
+  --h-wine: #314b31;
+  --h-wine-soft: #58734b;
+  --h-ink: #3c3427;
+  --h-muted: #655746;
+  --h-line: #a98b5c65;
+  --h-gold: #8b6b39;
+  background: #e8e3d7;
+}
+.journal-page::before { display: none; }
+
+.journal-book {
+  position: relative;
+  width: min(calc(100% - 28px), 1280px);
+  aspect-ratio: 3 / 2;
+  margin: 2px auto 38px;
+  background: url('/hobbies/field-journal.webp') center / 100% 100% no-repeat;
+  scroll-margin-top: 76px;
+}
+.journal-spread {
+  position: absolute;
+  inset: 11.5% 8.2% 10.5%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6%;
+}
+.journal-spread[hidden] { display: none; }
+.journal-leaf { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.journal-leaf-content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 2px 8px 14px 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #ad8c60 transparent;
+  overflow-wrap: anywhere;
+}
+.journal-leaf h1,.journal-leaf h2,.journal-leaf h3 { font: 400 1em/1.02 var(--display); color: var(--h-wine); margin: 0 0 14px; }
+.journal-leaf h1 { font-size: clamp(56px, 7vw, 90px); }
+.journal-leaf h2 { font-size: clamp(32px, 3.6vw, 48px); }
+.journal-leaf h3 { font-size: clamp(23px, 2.15vw, 29px); margin-bottom: 6px; }
+.journal-leaf p { font: 400 clamp(12px, 1.1vw, 14px)/1.65 var(--sans); color: var(--h-muted); margin: 0 0 12px; }
+.journal-leaf .journal-kicker {
+  font: 600 11px/1.45 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--h-gold);
+  margin-bottom: 11px;
+}
+.journal-leaf-footer {
+  flex: 0 0 auto;
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--h-line);
+  padding: 8px 2px 0;
+  font: 500 11px/1.35 var(--sans);
+  color: var(--h-muted);
+}
+.journal-page-number { color: var(--h-gold); }
+.journal-page-actions { display: flex; flex-wrap: wrap; gap: 9px 14px; justify-content: flex-end; }
+.journal-leaf-footer :is(button,a), .journal-link {
+  border: 0;
+  background: none;
+  color: var(--h-wine);
+  font: 600 11px/1.4 var(--sans);
+  cursor: pointer;
+  padding: 5px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.journal-book :is(button,a,summary):focus-visible { outline: 2px solid var(--h-wine); outline-offset: 2px; }
+.journal-leaf-footer :is(button,a):hover,.journal-link:hover { color: #8d472e; }
+
+.journal-intro { display: flex; flex-direction: column; gap: 8px; min-height: 100%; align-items: flex-start; justify-content: center; }
+.journal-intro h1 { margin: 0 0 6px; }
+.journal-intro .journal-kicker { margin: 0; }
+.journal-intro > p:not(.journal-kicker) { max-width: 38ch; margin-top: 8px; }
+.journal-intro-plant { width: clamp(105px, 15vw, 170px); margin-top: 3px; height: auto; }
+.journal-intro small { color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
+.journal-contents { padding-top: clamp(8px, 4.5vw, 54px); }
+.journal-contents ol { list-style: none; margin: 24px 0 0; padding: 0; }
+.journal-contents li { border-bottom: 1px dashed var(--h-line); }
+.journal-contents button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; width: 100%; padding: 13px 2px; border: 0; background: transparent; color: var(--h-wine); cursor: pointer; font: 400 clamp(22px, 2.4vw, 30px)/1.15 var(--display); }
+.journal-contents button:hover { background: #8b6b3912; }
+.journal-contents button span:last-child { font: 500 11px/1 var(--sans); color: var(--h-gold); }
+
+.journal-art { margin: 14px 0 12px; }
+.journal-art button,.journal-fashion-card button { position: relative; display: block; width: 100%; padding: 6px; border: 1px solid var(--h-line); background: #fff7df65; cursor: zoom-in; }
+.journal-art img { display: block; width: 100%; height: clamp(155px, 23vw, 322px); object-fit: contain; }
+.journal-view-label { display: inline-block; border-top: 1px solid var(--h-line); margin: 4px 0 0; padding-top: 6px; color: var(--h-wine); font: 500 10px/1.35 var(--sans); }
+.journal-art figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 8px; font: 400 11px/1.4 var(--sans); color: var(--h-muted); }
+.journal-art figcaption strong { font: 400 21px/1.2 var(--display); color: var(--h-wine); }
+.journal-keywords { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; padding: 0; margin: 12px 0 8px; color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
+.journal-keywords li::before { content: '· '; }
+.journal-game-text { border-top: 1px solid var(--h-line); padding-top: 12px; }
+.journal-cover { width: 100%; height: auto; display: block; border: 1px solid var(--h-line); margin-bottom: 14px; }
+.journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; }
+.journal-book .afterglow-cta:hover { background: #49603c; }
+.journal-book .tarot-deck { margin-top: 16px; min-width: 0; }
+.journal-book .tarot-deck-toggle { gap: 16px; padding: 8px; font-size: 12px; }
+.journal-book .tarot-stack { width: 70px; }
+.journal-book .tarot-spread { --tarot-width: clamp(84px, 10vw, 118px); }
+.journal-book .tarot-browse { margin-top: 10px; gap: 4px; }
+.journal-book .tarot-controls button { padding: 6px 10px; font-size: 11px; }
+
+.journal-fashion-card { margin: 14px 0 0; max-width: 300px; min-width: 0; }
+.journal-fashion-card img { width: 100%; height: clamp(145px, 21vw, 285px); object-fit: contain; display: block; }
+.journal-fashion-card h3 { font-size: 24px; margin: 8px 0 4px; }
+.journal-fashion-card p { font-size: 11px; margin: 0; }
+.journal-fashion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.journal-fashion-grid .journal-fashion-card { margin-top: 8px; }
+.journal-fashion-grid .journal-fashion-card img { height: clamp(175px, 27vw, 355px); }
+
+.journal-running-plant { width: clamp(110px, 18vw, 210px); height: auto; margin-top: 16px; }
+.journal-book .running-track { --runner-size: clamp(104px, 16vw, 180px); height: clamp(155px, 22vw, 260px); }
+.journal-book .running-scene { margin-top: 30px; }
+.journal-book .running-caption { font-size: 11px; flex-wrap: wrap; }
+.journal-book .running-control { color: var(--h-wine); }
+.journal-leaf .journal-copyright { margin-top: 30px; font-size: 11px; color: var(--h-gold); }
+
+.journal-detail-art,.journal-detail-pattern { margin: 0 0 14px; }
+.journal-detail-art img,.journal-detail-pattern img { width: 100%; display: block; object-fit: contain; border: 1px solid var(--h-line); background: #fff7df65; }
+.journal-detail-art img { height: clamp(230px, 39vw, 570px); }
+.journal-detail-pattern img { height: clamp(120px, 19vw, 235px); }
+.journal-detail-art figcaption,.journal-detail-pattern figcaption { font: 500 11px/1.4 var(--sans); color: var(--h-muted); margin-top: 8px; }
+.journal-leaf .journal-detail-hint { font-size: 11px; color: var(--h-gold); margin-top: 20px; }
+
+@media (max-width: 850px) {
+  .journal-book { width: min(calc(100% - 20px), 540px); aspect-ratio: auto; background: none; }
+  .journal-spread { position: relative; inset: auto; grid-template-columns: 1fr; gap: 2px; }
+  .journal-leaf { aspect-ratio: 3 / 4; background: url('/hobbies/field-journal.webp') 0 0 / 200% 100% no-repeat; padding: 15.3% 8% 14% 14%; }
+  .journal-right { background-position: 100% 0; padding-inline: 8% 14%; }
+  .journal-leaf-content { padding-right: 4px; }
+  .journal-leaf h1 { font-size: clamp(48px, 11vw, 72px); }
+  .journal-leaf h2 { font-size: clamp(30px, 7vw, 40px); }
+  .journal-art img { height: clamp(150px, 48vw, 280px); }
+  .journal-fashion-card img,.journal-fashion-grid .journal-fashion-card img { height: clamp(140px, 42vw, 260px); }
+  .journal-detail-art img { height: clamp(200px, 64vw, 400px); }
+  .journal-detail-pattern img { height: clamp(115px, 37vw, 195px); }
+  .journal-contents { padding-top: 6px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .journal-spread:not([hidden]) { animation: journal-turn .22s ease-out both; }
+  @keyframes journal-turn { from { opacity: .5; } to { opacity: 1; } }
+}
