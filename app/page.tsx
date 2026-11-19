@@ -2,6 +2,11 @@
 import { ArrowUpRight, Github, Linkedin, Mail, Instagram } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import rainforest from './rainforest.module.css'
+
+function RainforestPlant({ slot }: { slot: string }) {
+  return <span aria-hidden="true" className={`${rainforest.plant} ${rainforest[slot]}`} />
+}
 
 type Shot = { src: string; alt: string; title: string; note: string }
 
@@ -221,7 +226,7 @@ export default function Home(){
     return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey) }
   }, [shot, close])
 
-  return <main id="top" ref={pageRef}>
+  return <main id="top" className={rainforest.page} ref={pageRef}>
   <div className="progress" ref={barRef} aria-hidden="true"></div>
 
   <nav className="nav wrap" ref={navRef}>
@@ -254,6 +259,12 @@ export default function Home(){
   </nav>
 
   <header className="fashion-hero wrap">
+    <RainforestPlant slot="heroMonstera" />
+    <RainforestPlant slot="heroFern" />
+    <RainforestPlant slot="heroVine" />
+    <RainforestPlant slot="heroBanana" />
+    <RainforestPlant slot="heroBromeliad" />
+    <RainforestPlant slot="heroOrchid" />
     <div className="hero-editorial reveal reveal-1">
       <div className="hero-kicker">Quantitative Finance × AI</div>
         <h1>Wenyi <em>Ye</em></h1>
@@ -277,18 +288,19 @@ export default function Home(){
     </div>
   </header>
 
-  <section id="about" className="section wrap"><div className="section-label reveal">ABOUT</div><div className="about-prose reveal">
+  <section id="about" className="section wrap"><RainforestPlant slot="aboutClimber" /><RainforestPlant slot="aboutGround" /><div className="section-label reveal">ABOUT</div><div className="about-prose reveal">
     <p>I’m currently pursuing a <a className="degree-link" href="https://mfe.haas.berkeley.edu/"><strong>Master of Financial Engineering</strong></a> at <InlineInstitution logo={logos.berkeley} alt="UC Berkeley" href="https://www.berkeley.edu/">UC Berkeley</InlineInstitution>, focused on the intersection of <strong>AI, machine learning, and financial markets</strong>.</p>
     <p>My background is a little unconventional—I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I’ve worked across <strong>AI product, quantitative research, and risk management</strong>, with a particular interest in <strong>healthcare, biotech, and complex biological data</strong>.</p>
   </div></section>
 
-  <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">
+  <section id="education" className="section wrap"><RainforestPlant slot="educationPalm" /><div className="section-label reveal">EDUCATION</div><div className="timeline">
     <article className="timeline-entry edu"><div className="date">03/2026 – 03/2027</div><div className="entry-content"><div className="entry-top"><Brand src={logos.berkeley} alt="UC Berkeley"/><div className="entry-title"><div className="title-line"><h3>University of California, Berkeley · Haas School of Business</h3><span className="location">Berkeley, CA</span></div><div className="role">Master of Financial Engineering</div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="berkeley" open={openCoursework === "berkeley"} onToggle={() => setOpenCoursework(openCoursework === "berkeley" ? null : "berkeley")} /></div></article>
     <article className="timeline-entry edu"><div className="date">08/2021 – 05/2025</div><div className="entry-content"><div className="entry-top"><Brand src={logos.umich} alt="University of Michigan"/><div className="entry-title"><div className="title-line"><h3>University of Michigan, Ann Arbor</h3><span className="location">Ann Arbor, MI</span></div><div className="role">B.S. Mathematics · B.S. Human Origins, Biology, and Behavior <span className="minor-note">GPA 3.9/4.0 · University Honors · Math Merit Scholarship</span></div></div></div></div><div className="coursework-anchor"><CourseworkPanel school="umich" open={openCoursework === "umich"} onToggle={() => setOpenCoursework(openCoursework === "umich" ? null : "umich")} /></div></article>
     <article className="timeline-entry edu"><div className="date">09/2018 – 07/2021</div><div className="entry-content"><div className="entry-top"><Brand src={logos.bdfz} alt="The Affiliated High School of Peking University"/><div className="entry-title"><div className="title-line"><h3>The Affiliated High School of Peking University</h3><span className="location">Beijing, China</span></div><div className="role">High School</div></div></div></div></article>
   </div></section>
 
   <section id="skills" className="section wrap">
+    <RainforestPlant slot="skillsShrub" />
     <div className="section-label reveal">SKILLS</div>
     <div className="focus-lines reveal">
       <div><b>Programming</b><span>Python (Pandas · NumPy · SciPy · PyTorch · scikit-learn) · C++ · SQL · R</span></div>
@@ -358,8 +370,8 @@ export default function Home(){
     )}
   </section>
 
-  <section id="experience" className="section wrap"><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
-  <section id="research" className="section wrap"><div className="section-label reveal">RESEARCH & PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.company}/>)}</div></section>
+  <section id="experience" className="section wrap"><RainforestPlant slot="experienceHeliconia" /><div className="section-label reveal">EXPERIENCE</div><div className="timeline">{experience.map(item=><Entry item={item} key={item.company}/>)}</div></section>
+  <section id="research" className="section wrap"><RainforestPlant slot="researchMoss" /><div className="section-label reveal">RESEARCH & PROJECTS</div><div className="timeline">{research.map(item=><Entry item={item} key={item.company}/>)}</div></section>
 
   <footer id="contact" className="footer wrap reveal"><div><div className="section-label reveal">CONTACT</div><h2>Say hello.</h2></div><div className="footer-links"><a href="mailto:ywywywy@berkeley.edu"><Mail size={14}/>ywywywy@berkeley.edu</a><a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer"><Linkedin size={14}/> LinkedIn</a><a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer"><Github size={14}/> GitHub / yewenyiywy</a><a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer"><Instagram size={14}/> Instagram / ye_wen_yi</a></div><div className="copyright">© 2026 Wenyi Ye</div></footer>
 
