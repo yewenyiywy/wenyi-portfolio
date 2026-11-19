@@ -101,7 +101,7 @@ function Pressed({ kind, className = '' }: { kind: 0 | 1 | 2 | 3 | 4 | 5; classN
 }
 
 function PressedCollage({ kinds, arrangement = 'pair', tape }: { kinds: (0 | 1 | 2 | 3 | 4 | 5)[]; arrangement?: 'pair' | 'bouquet' | 'single'; tape?: TapeKind }) {
-  return <div className={`scrap-collage scrap-collage-${arrangement}`} aria-hidden="true">
+  return <div className={`scrap-collage scrap-collage-${arrangement}${tape !== undefined ? ' scrap-collage-taped' : ''}`} aria-hidden="true">
     {kinds.map((kind, index) => <Pressed key={`${kind}-${index}`} kind={kind} className={`scrap-stem-${index}`} />)}
     {tape !== undefined && <Tape kind={tape} />}
   </div>
@@ -262,7 +262,7 @@ export default function HobbiesPage() {
         <ol>{contents.map(entry => <li key={entry.title}>
           <button type="button" onClick={() => turnTo(entry.spread)}><span>{entry.title}</span><span>{String(entry.spread * 2 + 1).padStart(2, '0')}</span></button>
         </li>)}</ol>
-        <PressedCollage kinds={[0, 5]} tape={1} />
+        <PressedCollage kinds={[0, 2, 5]} arrangement="bouquet" tape={1} />
       </div>)}
 
       {spread(1, <>
@@ -279,12 +279,12 @@ export default function HobbiesPage() {
         <h2>Reimagining worlds</h2>
         <p>I love playing games, and I also like making mods and drawing illustrations for them. Here are a few things I&apos;ve made.</p>
         <JournalArt item={gameStudies[0]} onOpen={open} style="portrait" tape={3} contain />
-        <PressedCollage kinds={[0, 3]} />
+        <PressedCollage kinds={[0, 2]} />
       </>, <>
         <JournalArt item={gameStudies[1]} onOpen={open} style="mounted" tape={5} contain />
         <div className="journal-game-text"><h3>苏丹的游戏 · Sultan&apos;s Game</h3><p>A card-driven narrative RPG by Double Cross. I create mods that introduce new characters, events, and storylines.</p>
           <a className="journal-link" href={steam} target="_blank" rel="noreferrer">View Sultan&apos;s Game on Steam</a></div>
-        <PressedCollage kinds={[2]} arrangement="single" />
+        <PressedCollage kinds={[5]} arrangement="single" />
       </>)}
 
       {spread(3, <>
@@ -293,7 +293,7 @@ export default function HobbiesPage() {
         <p>Afterglow is a life-sim game I made. I vibe coded the game itself. Apart from the original illustrations, which I drew by hand, about 80% of the art was generated with AI models.</p>
         <p>Building it taught me a lot of text-to-image shortcuts, and where each model tends to go wrong.</p>
         <a className="afterglow-cta" href={afterglowUrl} target="_blank" rel="noreferrer">Play Afterglow</a>
-        <PressedCollage kinds={[4, 3]} />
+        <PressedCollage kinds={[1, 4]} />
       </>, <><section id="afterglow-tarot" className="journal-tarot" aria-labelledby="afterglow-tarot-title">
         <h2 id="afterglow-tarot-title">Character Tarot</h2>
         <p>I designed these 22 Major Arcana cards around characters from Afterglow.</p>
@@ -310,21 +310,21 @@ export default function HobbiesPage() {
             })}
           </ul>
         </details>
-      </section><PressedCollage kinds={[4, 3, 5]} arrangement="bouquet" tape={2} /></>)}
+      </section><PressedCollage kinds={[0, 2, 3]} arrangement="bouquet" tape={2} /></>)}
 
       {spread(4, <>
         <h2>Designing in silk &amp; story</h2>
         <p>I want to revive traditional Chinese textile motifs by bringing historic pattern language into contemporary qipao silhouettes and a more daring palette.</p>
         <FashionCard item={fashionDesigns[0]} onOpen={openFashion} />
-        <PressedCollage kinds={[1]} arrangement="single" />
+        <PressedCollage kinds={[5]} arrangement="single" />
       </>, <><div className="journal-fashion-grid">
         {fashionDesigns.slice(1).map(item => <FashionCard key={item.title} item={item} onOpen={openFashion} />)}
-      </div><PressedCollage kinds={[1, 5, 4]} arrangement="bouquet" tape={3} /></>)}
+      </div><PressedCollage kinds={[1, 3, 4]} arrangement="bouquet" tape={3} /></>)}
 
       {spread(5, <>
         <h2>Running</h2>
         <p>I love long-distance running, and the version of me that lets my mind go blank out there.</p>
-        <PressedCollage kinds={[0, 3, 2]} arrangement="bouquet" tape={0} />
+        <PressedCollage kinds={[0, 2, 5]} arrangement="bouquet" tape={0} />
       </>, <>
         <figure className="running-scene" data-paused={runningPaused}>
           <div className="running-track" role="img" aria-label="A pixel-art golden snub-nosed monkey running back and forth on all fours"><div className="running-monkey" aria-hidden="true"><span className="running-facing"><span className="running-sprite" /></span></div></div>
