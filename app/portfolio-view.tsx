@@ -3,6 +3,7 @@ import { ArrowUpRight, Github, Linkedin, Mail, Instagram } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import './archive.css'
 
 type Shot = { src: string; alt: string; title: string; note: string }
 
@@ -59,7 +60,11 @@ const awards = [
   { name:'SIG Prediction Market Cup', org:'SIG Susquehanna', logo:logos.sig, result:<><strong>Top 5%</strong></> },
 ]
 
-function Brand({src,alt,className=''}:{src:string,alt:string,className?:string}){return <span className={`brand ${className}`}><img src={src} alt={alt}/></span>}
+const waxOrder = [logos.berkeley,logos.umich,logos.bdfz,logos.tiktok,logos.shepherd,logos.csc,logos.boc,logos.selfEvolving,logos.milltech,logos.ramify,logos.imc,logos.sig]
+function Brand({src,alt,className=''}:{src:string,alt:string,className?:string}){
+  const index=waxOrder.indexOf(src)
+  return <span className={`brand ${className}`}>{index<0?<img src={src} alt={alt}/>:<span className="wax-seal" role="img" aria-label={alt} style={{backgroundPosition:`${index%4*100/3}% ${Math.floor(index/4)*50}%`}}/>}</span>
+}
 function InlineInstitution({children,logo,alt,href}:{children:ReactNode,logo:string,alt:string,href:string}){return <a className="inline-institution" href={href} target="_blank" rel="noreferrer"><Brand src={logo} alt={alt} className="inline-brand"/><strong>{children}</strong></a>}
 function Tags({items}:{items:string[]}){return <span className="tags">{items.map(t=><span key={t}>{t}</span>)}</span>}
 
@@ -235,6 +240,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
     <a href="#top" className="logo">WENYI YE<span>.</span></a>
     <div className="navlinks">
       <Link href="/">Play game</Link>
+      <Link href="/classic">Archives</Link>
       {navItems.map(n => (
         <a key={n.id} href={`#${n.id}`} className={active === n.id ? 'active' : undefined}>{n.label}</a>
       ))}
@@ -253,6 +259,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
     {mobileMenu && (
       <div className="mobile-menu">
         <Link href="/">Play game</Link>
+        <Link href="/classic">Archives</Link>
         {navItems.map(n => (
           <a key={n.id} href={`#${n.id}`} onClick={() => setMobileMenu(false)}>{n.label}</a>
         ))}
@@ -276,10 +283,12 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
         <a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer">Instagram</a>
       </div>
     </div>
-    <div className="hero-gallery reveal reveal-2">
-      {gallery.map(g => (
-        <button key={g.src} type="button" className={`shot ${g.cls}`} onClick={() => setShot(g)}>
-          <img src={g.src} alt={g.alt}/>
+    <div className="hero-gallery archive-gallery reveal reveal-2">
+      {gallery.map((g,index) => (
+        <button key={g.src} type="button" className={`shot ${g.cls} archive-photo archive-photo-${index}`} onClick={() => setShot(g)} aria-label={`View ${g.note} photograph`}>
+          <span className="archive-photo-window"><img src={g.src} alt={g.alt}/></span>
+          <img className="archive-photo-frame" src="/hobbies/scrapbook/portrait.webp" alt="" aria-hidden="true"/>
+          <span className="archive-photo-tape" aria-hidden="true" />
         </button>
       ))}
       <div className="gallery-caption">A personal archive / 2026</div>

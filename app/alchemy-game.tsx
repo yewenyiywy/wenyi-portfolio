@@ -68,7 +68,7 @@ export default function AlchemyGame() {
       if (!match) { setMessage('A mysterious potion… Try a different pair.'); return }
       setUnlocked(prev => prev.includes(match.id) ? prev : [...prev, match.id])
       setMessage(`${match.title} discovered!`)
-      openChapter(match.id)
+      setChapter(null)
     }, 1100)
   }
 
@@ -87,9 +87,9 @@ export default function AlchemyGame() {
         <button className="alchemy-brew" type="button" onClick={brew} disabled={selected.length !== 2 || brewing}>{brewing ? 'Brewing…' : 'Brew potion'}</button>
         <p className="alchemy-message" role="status">{message}</p>
       </div>
-      {unlocked.length > 0 && <div className="alchemy-discoveries"><span>Discovered:</span>{recipes.filter(r => unlocked.includes(r.id)).map(r => <button key={r.id} onClick={() => openChapter(r.id)} type="button">{r.title}</button>)}</div>}
-      <p className="alchemy-note">Prefer a traditional introduction? <Link href="/classic">Read the complete portfolio.</Link></p>
-      {chapter && <div ref={reward} className="alchemy-reward"><div className="alchemy-reward-header"><span>CHAPTER UNLOCKED · {recipes.find(r => r.id === chapter)?.title}</span><button onClick={() => setChapter(null)} type="button">Close ×</button></div><PortfolioView key={chapter} chapter={chapter}/></div>}
+      {unlocked.length > 0 && <div className="alchemy-discoveries" aria-label="Discovered archive papers">{recipes.filter(r => unlocked.includes(r.id)).map((r,index) => <button key={r.id} className="alchemy-archive-slip" style={{'--slip-angle':`${index%2===0?-2:2}deg`} as CSSProperties} aria-pressed={chapter===r.id} onClick={() => openChapter(r.id)} type="button">{r.title}</button>)}</div>}
+      <p className="alchemy-note">Prefer a traditional introduction? <Link href="/classic/full">Read the complete portfolio.</Link></p>
+      {chapter && <div ref={reward} className="alchemy-reward"><div className="alchemy-reward-header"><span>{recipes.find(r => r.id === chapter)?.title}</span><button onClick={() => setChapter(null)} type="button">Close ×</button></div><div className="archive-paper"><PortfolioView key={chapter} chapter={chapter}/></div></div>}
     </div>
   </div>
 }

@@ -56,16 +56,14 @@
 .alchemy-brew:hover:not(:disabled){color:#fff3d3;text-shadow:0 0 10px #ffc66f}
 .alchemy-brew:disabled{opacity:.45;cursor:not-allowed}
 .alchemy-message{margin:10px 0 0;min-height:20px;color:#d5bea7;font-size:16px;line-height:1.5}
-.alchemy-discoveries{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;margin:24px 0;color:#dbc5b1;font-size:17px}
-.alchemy-discoveries button{color:#ffe0a2;background:none;border:0;padding:5px 0;text-decoration:underline;text-underline-offset:4px;cursor:pointer;font:inherit}
+.alchemy-discoveries{display:flex;flex-wrap:wrap;gap:15px 18px;justify-content:center;align-items:center;margin:24px auto;max-width:900px;color:#dbc5b1;font-size:17px}
+.alchemy-discoveries .alchemy-archive-slip{position:relative;display:grid;place-items:center;width:min(205px,44%);aspect-ratio:960/303;background:url('/archive/slip.webp') center/100% 100% no-repeat;color:#5c3928;border:0;padding:9px 10px;cursor:pointer;font:600 clamp(14px,1.7vw,19px)/1.1 var(--game-font);text-align:center;text-decoration:none;transform:rotate(var(--slip-angle));filter:drop-shadow(1px 3px 3px #100d17a0);transition:transform .2s,filter .2s;overflow-wrap:anywhere}
+.alchemy-discoveries .alchemy-archive-slip:hover,.alchemy-discoveries .alchemy-archive-slip:focus-visible,.alchemy-discoveries .alchemy-archive-slip[aria-pressed=true]{transform:translateY(-4px) rotate(0);filter:drop-shadow(0 0 7px #ffdc8b8a)}
 .alchemy-note{text-align:center;color:#d6c3ae;font-size:16px;margin:28px 0}
 .alchemy-note a{color:#ffe1a0;text-decoration:underline}
-.alchemy-reward{background:var(--ivory);color:var(--ink);scroll-margin-top:12px}
-.alchemy-reward-header{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#503940;color:#ffe0a0;padding:13px 16px;font-size:17px}
+.alchemy-reward{max-width:1000px;margin:auto;color:var(--ink);scroll-margin-top:12px}
+.alchemy-reward-header{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#ffe0a0;padding:13px 16px;font-size:17px}
 .alchemy-reward-header button{border:0;background:transparent;color:inherit;padding:6px 9px;cursor:pointer;white-space:nowrap}
-.chapter-view>.progress,.chapter-view>nav,.chapter-view>header,.chapter-view>section,.chapter-view>footer{display:none}
-.chapter-view[data-chapter=about]>#about,.chapter-view[data-chapter=education]>#education,.chapter-view[data-chapter=skills]>#skills,.chapter-view[data-chapter=experience]>#experience,.chapter-view[data-chapter=projects]>#projects,.chapter-view[data-chapter=awards]>#awards,.chapter-view[data-chapter=contact]>#contact{display:block;padding-top:35px;padding-bottom:35px}
-.chapter-view .reveal{opacity:1;transform:none}.chapter-view{min-height:0;font-family:var(--sans)}.chapter-view .wrap{width:min(calc(100% - 40px),var(--max))}
 @keyframes alchemy-frames{from{background-position:0 0}to{background-position:100% 0}}
 @media(max-width:800px){
   .alchemy-nav{width:calc(100% - 32px)}.alchemy-shell{width:calc(100% - 32px)}
