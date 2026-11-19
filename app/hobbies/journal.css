@@ -98,7 +98,7 @@
 .journal-keywords { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; padding: 0; margin: 12px 0 8px; color: var(--h-gold); font: 500 11px/1.4 var(--sans); }
 .journal-keywords li::before { content: '· '; }
 .journal-game-text { border-top: 1px solid var(--h-line); padding-top: 12px; }
-.journal-cover { width: 100%; height: auto; display: block; border: 1px solid var(--h-line); margin-bottom: 14px; }
+.journal-cover { width: auto; max-width: 100%; height: auto; max-height: clamp(125px, 15vw, 195px); display: block; border: 1px solid var(--h-line); margin-bottom: 14px; }
 .journal-book .afterglow-cta { background: var(--h-wine); padding: 9px 13px; margin: 0; }
 .journal-book .afterglow-cta:hover { background: #49603c; }
 .journal-book .tarot-deck { margin-top: 16px; min-width: 0; }
@@ -109,7 +109,7 @@
 .journal-book .tarot-controls button { padding: 6px 10px; font-size: 11px; }
 
 .journal-fashion-card { margin: 14px 0 0; max-width: 300px; min-width: 0; }
-.journal-fashion-card img { width: 100%; height: clamp(145px, 21vw, 285px); object-fit: contain; display: block; }
+.journal-fashion-card img { width: 100%; height: clamp(145px, 19vw, 260px); object-fit: contain; display: block; }
 .journal-fashion-card h3 { font-size: 24px; margin: 8px 0 4px; }
 .journal-fashion-card p { font-size: 11px; margin: 0; }
 .journal-fashion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
