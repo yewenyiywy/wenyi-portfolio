@@ -131,6 +131,9 @@
 /* Reserve no intrinsic height: the collage uses only leftover paper, so
    crowded spreads (or the expanded tarot deck) never lose content space. */
 .scrap-collage { flex:1 1 0px; min-height:0; max-height:390px; width:100%; position:relative; container-type:size; overflow:hidden; }
+/* Running has intentional open paper. Give WebKit an explicit minimum size
+   so its size-contained collage does not collapse to an invisible flex item. */
+#running .scrap-collage{flex:1 1 190px;min-height:190px}
 .scrap-collage > * { visibility:hidden; }
 @container (min-height:150px) {
   .scrap-collage > * { visibility:visible; }
@@ -186,7 +189,6 @@
 .journal-detail-pattern figcaption { text-align:center; }
 .journal-detail-art figcaption,.journal-detail-pattern figcaption { font: 400 17px/1.4 var(--sans); color: var(--h-muted); margin-top: 8px; }
 .journal-leaf .journal-detail-hint { font-size: 16px; color: var(--h-gold); margin-top: 20px; }
-.journal-page .navlinks,.journal-page .nav-contact,.journal-page .mobile-menu a {font-size:16px;}
 
 @media (max-width: 850px) {
   .journal-book { width: min(calc(100% - 20px), 540px); aspect-ratio: auto; background: none; }

@@ -9,7 +9,8 @@ import { test, expect, type Page } from '@playwright/test'
  * Purely decorative pieces should carry aria-hidden="true". To let one element
  * overflow on purpose, add data-allow-overflow to it.
  *
- * A full-page screenshot of every page and state is attached to each test.
+ * A viewport screenshot of each state is attached to the test; all page
+ * content, including off-screen elements, is still checked for overflow.
  */
 
 type Problem = { kind: string; where: string; text: string; px: number }
@@ -26,7 +27,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
       while (cur && cur !== document.body && parts.length < 4) {
         let s = cur.tagName.toLowerCase()
         if (cur.id) s += `#${cur.id}`
-        const cls = [...cur.classList].filter(c => !/^(is-|reveal)/.test(c)).slice(0, 2)
+        const cls = Array.from(cur.classList).filter(c => !/^(is-|reveal)/.test(c)).slice(0, 2)
         if (cls.length) s += '.' + cls.join('.')
         parts.unshift(s)
         cur = cur.parentElement
@@ -62,7 +63,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
       if (!text || !parent || seen.has(parent) || skip(parent)) continue
       const range = document.createRange()
       range.selectNodeContents(node)
-      const rects = [...range.getClientRects()].filter(r => r.width > 1 && r.height > 1)
+      const rects = Array.from(range.getClientRects()).filter(r => r.width > 1 && r.height > 1)
       if (!rects.length) continue
       const left = Math.min(...rects.map(r => r.left))
       const right = Math.max(...rects.map(r => r.right))
@@ -88,7 +89,7 @@ async function findOverflow(page: Page): Promise<Problem[]> {
     }
 
     // 3. Images and media wider than the screen (unless their box clips them).
-    for (const el of document.querySelectorAll('img, video, iframe, canvas, svg, table, pre')) {
+    for (const el of Array.from(document.querySelectorAll('img, video, iframe, canvas, svg, table, pre'))) {
       if (skip(el) || el.parentElement?.closest('svg')) continue
       const r = el.getBoundingClientRect()
       if (r.width < 2 || r.height < 2) continue
@@ -107,12 +108,11 @@ async function findOverflow(page: Page): Promise<Problem[]> {
 }
 
 async function check(page: Page, label: string) {
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('domcontentloaded')
   await page.evaluate(() => document.fonts.ready)
-  const shot = await page.screenshot({ fullPage: true })
-  await test.info().attach(`${label}.png`, { body: shot, contentType: 'image/png' })
-
   const problems = await findOverflow(page)
+  const shot = await page.screenshot({ fullPage: false, animations: 'disabled', timeout: 12_000 }).catch(() => null)
+  if(shot) await test.info().attach(`${label}.png`, { body: shot, contentType: 'image/png' })
   const report = problems.map(p => `  • [${p.kind}] +${p.px}px  ${p.where}  “${p.text}”`).join('\n')
   expect(problems, `${label}: content spills past the phone screen\n${report}`).toEqual([])
 }
@@ -140,6 +140,10 @@ test.describe('home page', () => {
       await page.getByRole('button', { name: /hide coursework/i }).click()
     }
     await page.getByRole('button', { name: /research workflow/i }).click()
+    await expect(page.locator('.research-system-title')).toHaveText('AI-Native Research & Product System')
+    await expect(page.locator('.research-steps li')).toHaveCount(6)
+    await expect(page.locator('.research-notes')).toContainText('Foundation models')
+    await expect(page.locator('.research-notes')).toContainText('RLHF')
     await check(page, 'home-workflow')
   })
   test('alchemy chapter and skip', async ({ page }) => {
@@ -168,13 +172,33 @@ test.describe('home page', () => {
     await expect(page.locator('.archive-paper-stack .archive-sheet')).toHaveCount(5)
     await expect(pet).toBeVisible()
     await check(page, 'classic')
-    await page.getByRole('button', { name: /Professional Experience/ }).click()
+    await expect(page.locator('.archive-sheet-label .archive-sheet-tape')).toHaveCount(5)
+    await expect(page.locator('.archive-sheet-label')).toHaveText(['Education & Awards','Skills','Experience','Projects','About'])
+    const titleTapes = await page.locator('.archive-sheet-tape').evaluateAll(tapes => tapes.map(tape => {
+      const range = document.createRange(); range.selectNodeContents(tape)
+      return {classes:tape.className,margin:tape.getBoundingClientRect().width-range.getBoundingClientRect().width}
+    }))
+    expect(new Set(titleTapes.map(t => t.classes)).size).toBe(5)
+    expect(titleTapes.every(t => t.margin >= 40)).toBe(true)
+    await page.getByRole('button', { name: 'Experience', exact:true }).click()
     await expect(page.locator('#experience')).toBeVisible()
     await expect(page.locator('#experience .wax-seal')).toHaveCount(5)
     await expect(page.locator('#education')).toBeHidden()
-    await page.getByRole('button', { name: /Personal About/ }).click()
+    await page.getByRole('button', { name: 'About', exact:true }).click()
     await expect(page.locator('#about')).toBeVisible()
+    await expect(page.locator('.hero-meta')).toHaveText('Bay Area · Ann Arbor · Beijing')
+    await expect(page.locator('#about')).not.toContainText('unconventional')
+    const inlineSeals = page.locator('#about .inline-brand .wax-seal')
+    await expect(inlineSeals).toHaveCount(2)
+    for (const seal of await inlineSeals.all()) {
+      const box=await seal.boundingBox()
+      expect(box).not.toBeNull()
+      expect(box!.width).toBeCloseTo(box!.height, 1)
+      expect(box!.width).toBeCloseTo(20, 1)
+    }
     await expect(page.locator('#contact')).toBeVisible()
+    await expect(page.locator('.hero-editorial .socials')).toHaveCount(0)
+    await expect(page.locator('#contact .footer-links a')).toHaveCount(4)
     await expect(page.locator('.archive-photo-frame')).toHaveCount(4)
     await expect(page.locator('.archive-photo-tape')).toHaveCount(4)
     await expect(page.locator('.archive-paper-stack .archive-sheet')).toHaveCount(5)
@@ -221,7 +245,8 @@ test.describe('hobbies page', () => {
   test('handwriting and non-repeating pressed flowers', async ({ page }) => {
     await page.goto('/hobbies')
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', '"La Belle Aurore", cursive')
+    await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /La Belle Aurore/)
+    expect(await page.evaluate(() => document.fonts.check('16px "La Belle Aurore"'))).toBe(true)
     const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
     expect(titleFont).toContain('VT323')
     const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))
@@ -256,6 +281,17 @@ test.describe('hobbies page', () => {
       await menu.click()
       await check(page, 'hobbies-menu-open')
     }
+  })
+  test('matching pixel navigation and return to archive', async ({ page }) => {
+    await page.goto('/hobbies')
+    const nav=page.getByRole('navigation',{name:'Portfolio navigation'})
+    await expect(nav).toHaveCSS('font-family', /VT323/)
+    const labels=await nav.locator('.portfolio-topnav-links a').allTextContents()
+    await page.locator('.journal-spread:not([hidden])').getByRole('link',{name:'Back to portfolio'}).click()
+    await expect(page).toHaveURL(/\/classic$/)
+    await expect(nav).toHaveCSS('font-family', /VT323/)
+    expect(await nav.locator('.portfolio-topnav-links a').allTextContents()).toEqual(labels)
+    await expect(page.locator('.archive-paper-stack')).toBeVisible()
   })
   test('fashion swatches and varied tapes', async ({ page }) => {
     await page.goto('/hobbies#fashion-design')

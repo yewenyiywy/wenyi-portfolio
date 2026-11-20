@@ -1,18 +1,22 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import PortfolioView from './portfolio-view'
+import PortfolioNav from './portfolio-nav'
 import './archive.css'
 
 const folders = [
-  { id:'personal', title:'Personal', subtitle:'About & contact', chapters:'about contact' },
-  { id:'academic', title:'Academic', subtitle:'Education & awards', chapters:'education awards' },
-  { id:'technical', title:'Technical', subtitle:'Skills', chapters:'skills' },
-  { id:'professional', title:'Professional', subtitle:'Experience', chapters:'experience' },
-  { id:'research', title:'Research', subtitle:'Projects', chapters:'projects' },
+  { id:'personal', title:'About', chapters:'about contact', tape:7 },
+  { id:'academic', title:'Education & Awards', chapters:'education awards', tape:5 },
+  { id:'technical', title:'Skills', chapters:'skills', tape:4 },
+  { id:'professional', title:'Experience', chapters:'experience', tape:6 },
+  { id:'research', title:'Projects', chapters:'projects', tape:1 },
 ] as const
 type Folder = typeof folders[number]
+
+function SheetTitle({folder}:{folder:Folder}) {
+  return <span className={`archive-sheet-tape archive-sheet-tape-${folder.tape}`}>{folder.title}</span>
+}
 
 export default function ArchivePortfolio() {
   const [active, setActive] = useState<Folder>(folders[0])
@@ -49,13 +53,24 @@ export default function ArchivePortfolio() {
     requestAnimationFrame(() => window.scrollTo({top:0,behavior:'smooth'}))
   }
 
+  function navigateSection(section:string) {
+    const folder=folders.find(f=>f.chapters.split(' ').includes(section))
+    if(!folder)return
+    setActive(folder)
+    window.history.pushState(null,'',`/classic#${section}`)
+    requestAnimationFrame(()=>{
+      if(section==='contact')document.getElementById(section)?.scrollIntoView({behavior:'smooth',block:'start'})
+      else stackRef.current?.scrollIntoView({behavior:'smooth',block:'start'})
+    })
+  }
+
   return <div className="archive-home">
-    <nav className="archive-nav"><Link href="/classic" className="archive-brand" onClick={e=>{e.preventDefault();close()}}>WENYI YE<span>.</span></Link><div><Link href="/">Play game</Link><Link href="/hobbies">Hobbies</Link><Link href="/classic/full" className="archive-full-link">View full portfolio</Link></div></nav>
+    <PortfolioNav page="archive" activeSection={active.chapters.split(' ')[0]} onHome={close} onSection={navigateSection}/>
     <div className="archive-index">
       <div className="archive-paper-stack" ref={stackRef} aria-label="Five overlapping portfolio papers">
-        {ordered.slice(0,4).map((folder,index)=><div key={folder.id} className="archive-sheet archive-sheet-back" style={{'--sheet-index':index} as CSSProperties}><button className="archive-sheet-label" type="button" aria-pressed={false} onClick={()=>open(folder)}><strong>{folder.title}</strong><span>{folder.subtitle}</span></button></div>)}
+        {ordered.slice(0,4).map((folder,index)=><div key={folder.id} className="archive-sheet archive-sheet-back" style={{'--sheet-index':index} as CSSProperties}><button className="archive-sheet-label" type="button" aria-pressed={false} onClick={()=>open(folder)}><SheetTitle folder={folder}/></button></div>)}
         <div className="archive-sheet archive-sheet-front archive-paper" key={active.id}>
-          <button className="archive-sheet-label archive-sheet-selected" type="button" aria-pressed={true} onClick={()=>open(active)}><strong>{active.title}</strong><span>{active.subtitle}</span></button>
+          <button className="archive-sheet-label archive-sheet-selected" type="button" aria-pressed={true} onClick={()=>open(active)}><SheetTitle folder={active}/></button>
           <PortfolioView chapter={active.chapters}/>
         </div>
       </div>

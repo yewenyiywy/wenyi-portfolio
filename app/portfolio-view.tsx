@@ -275,13 +275,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
         <h1>Wenyi <em>Ye</em></h1>
       <p className="hero-lede">Building intelligent systems for <strong>alpha discovery, trading, and financial decision-making</strong> — at the intersection of AI and quantitative finance.</p>
       <div className="hero-rule"></div>
-      <div className="hero-meta"><span>Berkeley · MFE 2027</span><span>San Francisco · Ann Arbor · Beijing</span></div>
-      <div className="socials">
-        <a href="mailto:ywywywy@berkeley.edu">Email</a>
-        <a href="https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/" target="_blank" rel="noreferrer">LinkedIn</a>
-        <a href="https://github.com/yewenyiywy" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="https://www.instagram.com/ye_wen_yi/" target="_blank" rel="noreferrer">Instagram</a>
-      </div>
+      <div className="hero-meta"><span>Bay Area · Ann Arbor · Beijing</span></div>
     </div>
     <div className="hero-gallery archive-gallery reveal reveal-2">
       {gallery.map((g,index) => (
@@ -297,7 +291,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
 
   <section id="about" className="section wrap"><div className="section-label reveal">ABOUT</div><div className="about-prose reveal">
     <p>I’m currently pursuing a <a className="degree-link" href="https://mfe.haas.berkeley.edu/"><strong>Master of Financial Engineering</strong></a> at <InlineInstitution logo={logos.berkeley} alt="UC Berkeley" href="https://www.berkeley.edu/">UC Berkeley</InlineInstitution>, focused on the intersection of <strong>AI, machine learning, and financial markets</strong>.</p>
-    <p>My background is a little unconventional—I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I use <strong>AI and machine learning for quantitative research</strong>, and build the <strong>infrastructure and products</strong> that put that research to work.</p>
+    <p>I studied <strong>Mathematics</strong> alongside <strong>Human Origins, Biology, and Behavior</strong> at <InlineInstitution logo={logos.umich} alt="University of Michigan" href="https://umich.edu/">the University of Michigan</InlineInstitution>. I use <strong>AI and machine learning for quantitative research</strong>, and build the <strong>infrastructure and products</strong> that put that research to work.</p>
   </div></section>
 
   <section id="education" className="section wrap"><div className="section-label reveal">EDUCATION</div><div className="timeline">
@@ -325,52 +319,26 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
     </div>
 
     {showWorkflow && (
-      <div className="qwf reveal is-in" aria-label="AI-native quant research workflow">
-        <div className="qwf-grid">
-          <div className="qwf-head">AI Layer</div>
-          <div className="qwf-head">Research Loop</div>
-          <div className="qwf-head">Infrastructure</div>
-
-          <div className="qwf-ai is-first"><b>Claude &middot; GPT &middot; Gemini</b><span>Literature scan, prior framing</span></div>
-          <div className="qwf-stage is-first"><b>Hypothesis</b><span>Research question, prior</span></div>
-          <div className="qwf-infra">
-            <div className="qwf-infra-grp is-first">Serving</div>
-            <div className="qwf-infra-item"><b>FastAPI</b><span>Model &amp; signal endpoints</span></div>
-            <div className="qwf-infra-item"><b>REST APIs</b><span>Vendor &amp; internal data</span></div>
-            <div className="qwf-infra-item"><b>Next.js &middot; Streamlit</b><span>Research dashboards</span></div>
-            <div className="qwf-infra-grp">Storage</div>
-            <div className="qwf-infra-item"><b>PostgreSQL</b><span>Time series, fund data</span></div>
-            <div className="qwf-infra-item"><b>Redis</b><span>Backtest result caching</span></div>
-            <div className="qwf-infra-item"><b>Vector store</b><span>Text feature embeddings</span></div>
-            <div className="qwf-infra-grp">Compute &amp; Deploy</div>
-            <div className="qwf-infra-item"><b>Docker</b><span>Reproducible environments</span></div>
-            <div className="qwf-infra-item"><b>AWS</b><span>Sweep &amp; batch compute</span></div>
-            <div className="qwf-infra-item"><b>Vercel</b><span>Dashboard hosting</span></div>
-            <div className="qwf-infra-grp">Versioning</div>
-            <div className="qwf-infra-item"><b>Git &middot; GitHub</b><span>Experiment &amp; code history</span></div>
+      <div className="qwf research-system reveal is-in" aria-label="AI-native research and product system">
+        <h3 className="research-system-title">AI-Native Research &amp; Product System</h3>
+        <div className="research-system-grid">
+          <div className="research-cycle" aria-label="Research and development feedback loop">
+            <ol className="research-steps">
+              <li><h4>Research Question / Product Goal</h4><p>Define the problem, constraints, and success metrics.</p></li>
+              <li><h4>AI Research &amp; Planning</h4><p>Gather evidence, generate hypotheses, decompose tasks.</p></li>
+              <li><h4>Multi-Agent Execution</h4><p>Data preparation, modeling, implementation, and experiments.</p></li>
+              <li><h4>Evaluation &amp; Validation</h4><p>Benchmarks, backtesting, A/B tests, robustness, and risk checks.</p></li>
+              <li className="research-review"><h4>Human Review</h4><p>Review evidence, prioritize trade-offs, approve or revise.</p></li>
+              <li><h4>Deployment &amp; Monitoring</h4><p>Release approved solutions, track outcomes and drift.</p></li>
+            </ol>
+            <div className="research-feedback">↻ Feedback &amp; diagnostics refine the next research question</div>
           </div>
-
-          <div className="qwf-ai"><b>MCP</b><span>Repo and data access</span></div>
-          <div className="qwf-stage"><b>Data</b><span>Market, fund-level, vendor APIs</span></div>
-
-          <div className="qwf-ai"><b>Embeddings &middot; RAGAS</b><span>Text-derived features, retrieval scored on precision and recall</span></div>
-          <div className="qwf-stage"><b>Signal &amp; Features</b><span>Factor construction</span></div>
-
-          <div className="qwf-ai qwf-span"><b>Claude Code &middot; Codex</b><span>Implementation, derivation checks, backtest harness</span></div>
-          <div className="qwf-stage"><b>Model</b><span>Stochastic control, ML, RL</span></div>
-
-          <div className="qwf-stage"><b>Backtest</b><span>Walk-forward, costs, benchmark</span></div>
-
-          <div className="qwf-ai"><b>Agent &amp; Human Review</b><span>Agent flags anomalies, human makes the call</span></div>
-          <div className="qwf-stage"><b>Risk &amp; Diagnostics</b><span>Sharpe, drawdown, overfitting</span></div>
-
-          <div className="qwf-band"><b>LangGraph</b><span>Chains the steps above into repeatable agent runs</span></div>
-          <div></div>
-
-          <div className="qwf-band"><b>AI Security &amp; Safety</b><span>Sandboxed execution, injection guards, no proprietary data in prompts</span></div>
-          <div></div>
-
-          <div className="qwf-foot">&#8635; Diagnostics feed back to hypothesis &mdash; infrastructure supports every stage.</div>
+          <aside className="research-notes" aria-label="Supporting capabilities">
+            <section><h4>Adaptive Intelligence</h4><p>Machine learning models · Deep learning models · Foundation models</p></section>
+            <section><h4>Agent Orchestration</h4><p>Multi-agent collaboration · LangGraph · MCP · Tool use</p></section>
+            <section><h4>Memory &amp; Feedback Learning</h4><p>Knowledge retrieval · Experiment memory · Human feedback · RLHF and preference optimization</p></section>
+            <section><h4>Infrastructure &amp; Governance</h4><p>Data and compute · Versioned experiments · Reproducibility · Sandboxed execution · Human approval gates</p></section>
+          </aside>
         </div>
       </div>
     )}

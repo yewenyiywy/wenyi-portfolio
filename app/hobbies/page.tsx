@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import PortfolioNav from '../portfolio-nav'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, CSSProperties, Ref } from 'react'
 import './journal.css'
@@ -181,13 +182,11 @@ function spreadFromHash() {
 
 export default function HobbiesPage() {
   const bookRef = useRef<HTMLDivElement>(null)
-  const navRef = useRef<HTMLElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
   const detailCloseRef = useRef<HTMLButtonElement>(null)
   const [activeSpread, setActiveSpread] = useState(0)
   const [shot, setShot] = useState<Shot | null>(null)
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
-  const [mobileMenu, setMobileMenu] = useState(false)
 
   const scrollBook = useCallback(() => {
     requestAnimationFrame(() => bookRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }))
@@ -205,13 +204,6 @@ export default function HobbiesPage() {
     window.addEventListener('popstate', sync)
     return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync) }
   }, [scrollBook])
-
-  useEffect(() => {
-    const onScroll = () => navRef.current?.classList.toggle('is-stuck', window.scrollY > 12)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   function turnTo(index: number) {
     if (index < 0 || index >= chapters.length) return
@@ -257,12 +249,12 @@ export default function HobbiesPage() {
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
         <span className="journal-page-number">{String(index * 2 + 1).padStart(2, '0')}</span>
-        {index > 0 ? <div className="journal-page-actions"><PageTape label="Previous" kind={previousTape} onClick={() => turnTo(index - 1)}/><PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/></div> : <PageTape label="Back to portfolio" kind={previousTape} href="/"/>}
+        {index > 0 ? <div className="journal-page-actions"><PageTape label="Previous" kind={previousTape} onClick={() => turnTo(index - 1)}/><PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/></div> : <PageTape label="Back to portfolio" kind={previousTape} href="/classic"/>}
       </>}>
         {left}
       </JournalLeaf>
       <JournalLeaf side="right" footer={<>
-        {index < chapters.length - 1 ? <PageTape label="Next page" kind={nextTape} onClick={() => turnTo(index + 1)}/> : <PageTape label="Back to portfolio" kind={nextTape} href="/"/>}
+        {index < chapters.length - 1 ? <PageTape label="Next page" kind={nextTape} onClick={() => turnTo(index + 1)}/> : <PageTape label="Back to portfolio" kind={nextTape} href="/classic"/>}
         <span className="journal-page-number">{String(index * 2 + 2).padStart(2, '0')}</span>
       </>}>
         {right}
@@ -271,17 +263,7 @@ export default function HobbiesPage() {
   }
 
   return <main className="hobbies-page journal-page">
-    <nav className="nav wrap" ref={navRef}>
-      <Link href="/" className="logo">WENYI YE<span>.</span></Link>
-      <div className="navlinks">
-        <Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/hobbies" className="active">Hobbies</Link>
-      </div>
-      <Link href="/classic#contact" className="nav-contact">Get in touch <span aria-hidden="true">↗</span></Link>
-      <button type="button" className="mobile-menu-toggle" aria-label={mobileMenu ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileMenu} onClick={() => setMobileMenu(v => !v)}><span></span><span></span></button>
-      {mobileMenu && <div className="mobile-menu">
-        <Link href="/classic#about" onClick={() => setMobileMenu(false)}>About</Link><Link href="/classic#education" onClick={() => setMobileMenu(false)}>Education</Link><Link href="/classic#experience" onClick={() => setMobileMenu(false)}>Experience</Link><Link href="/classic#projects" onClick={() => setMobileMenu(false)}>Projects</Link><Link href="/hobbies" onClick={() => setMobileMenu(false)}>Hobbies</Link><Link href="/classic#contact" onClick={() => setMobileMenu(false)}>Get in touch ↗</Link>
-      </div>}
-    </nav>
+    <PortfolioNav page="hobbies"/>
 
     <div className="journal-book" ref={bookRef}>
       {spread(0, <div className="journal-intro">

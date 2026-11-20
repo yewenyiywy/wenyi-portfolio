@@ -9,29 +9,42 @@
 .archive-index>header{text-align:center;margin-bottom:32px}.archive-index>header h1{font:400 clamp(45px,6vw,72px)/1 var(--display);color:#3d3025;margin:0 0 9px}.archive-index>header p{font:400 14px/1.5 var(--sans);color:#786043;margin:0}
 /* One physical pile. Four sheets peek out from behind the active sheet;
    selecting a visible edge moves that exact sheet to the front. */
-.archive-paper-stack{--sheet-step:50px;--stack-rise:calc(4 * var(--sheet-step));position:relative;isolation:isolate;padding-top:var(--stack-rise);margin:0 auto;scroll-margin-top:12px;width:100%}
+.archive-paper-stack{--sheet-step:58px;--sheet-inset:clamp(22px,6vw,80px);--stack-rise:calc(4 * var(--sheet-step));position:relative;isolation:isolate;padding-top:var(--stack-rise);margin:0 auto;scroll-margin-top:76px;width:100%}
 .archive-sheet{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#563e29;filter:drop-shadow(0 3px 3px #6f4e324d)}
 .archive-sheet-back{position:absolute;top:calc(var(--sheet-index) * var(--sheet-step));left:calc((var(--sheet-index) - 2) * 1.5px);width:100%;height:calc(100% - var(--stack-rise));z-index:calc(var(--sheet-index) + 1);pointer-events:none}
 .archive-sheet-back .archive-sheet-label{pointer-events:auto}
-.archive-sheet-front.archive-paper{position:relative;z-index:6;padding-top:15px;min-height:650px;animation:archive-page-arrive .22s ease-out both}
-.archive-sheet-label{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;height:var(--sheet-step);padding:7px clamp(20px,5vw,65px) 9px;border:0;background:none;color:#65452d;text-align:left;cursor:pointer;transition:color .18s}
-.archive-sheet-label strong{font:400 clamp(22px,3vw,30px)/1 var(--display);overflow-wrap:anywhere}.archive-sheet-label>span{font:400 11px/1.35 var(--sans);text-align:right;overflow-wrap:anywhere}
+.archive-sheet-front.archive-paper{position:relative;z-index:6;padding-top:7px;padding-inline:var(--sheet-inset);min-height:650px;animation:archive-page-arrive .22s ease-out both}
+.archive-sheet-label{display:flex;justify-content:flex-start;align-items:center;width:100%;height:var(--sheet-step);padding:6px var(--sheet-inset);border:0;background:none;color:#4d392b;text-align:left;cursor:pointer;transition:color .18s}
+.archive-sheet-tape{display:inline-flex;align-items:center;justify-content:center;position:relative;isolation:isolate;min-width:145px;max-width:100%;height:43px;padding:5px 35px;white-space:nowrap;font:400 clamp(20px,3vw,27px)/1 var(--display);transform:rotate(var(--tape-angle,-1deg));transition:transform .18s}
+.archive-sheet-tape::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/hobbies/scrapbook/tape.webp') var(--tape-position,0%) 0/var(--tape-scale,400%) 100% no-repeat;opacity:.95}
+/* Botanical sprite cells contain unequal transparent margins: fit the actual tape,
+   not the empty cell, so the printed title always stays inside the torn ends. */
+.archive-sheet-tape-1{--tape-position:33.333%;--tape-angle:-1.5deg}
+.archive-sheet-tape-4{--tape-position:6.77%;--tape-scale:754.72%;--tape-angle:1.3deg}
+.archive-sheet-tape-5{--tape-position:33.333%;--tape-angle:-.7deg}
+.archive-sheet-tape-6{--tape-position:65.24%;--tape-scale:549.83%;--tape-angle:1.8deg}
+.archive-sheet-tape-7{--tape-position:96.73%;--tape-scale:506.33%;--tape-angle:-2deg}
+.archive-sheet-tape:is(.archive-sheet-tape-4,.archive-sheet-tape-5,.archive-sheet-tape-6,.archive-sheet-tape-7)::before{background-image:url('/hobbies/scrapbook/tape-botanical.webp')}
+.archive-sheet-label:hover .archive-sheet-tape,.archive-sheet-label:focus-visible .archive-sheet-tape{transform:rotate(0)}
 .archive-sheet-label:hover,.archive-sheet-label:focus-visible{color:#822c3d}.archive-sheet-label:focus-visible{outline:2px solid #8a4d35;outline-offset:-7px}
-.archive-sheet-selected{padding:12px 0 14px;color:#6e1f30;border-bottom:1px solid #af8e5f50;margin-bottom:12px;height:auto;min-height:48px;cursor:default}
+.archive-sheet-selected{padding:6px 0;color:#6e1f30;margin-bottom:12px;cursor:default}
 @keyframes archive-page-arrive{from{opacity:.7;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 .archive-paper{background:url('/archive/paper.webp') center/100% 100% no-repeat;color:#3a2c21;padding:clamp(26px,5vw,68px) clamp(22px,6vw,80px);min-height:560px;filter:drop-shadow(0 7px 8px #4d35222c)}
 .archive-paper .chapter-view .wrap{width:100%;max-width:none}
+.archive-paper .chapter-view>[id]{scroll-margin-top:80px}
 .chapter-view>.progress,.chapter-view>nav,.chapter-view>header,.chapter-view>section,.chapter-view>footer{display:none}
 .chapter-view[data-chapter~="about"]>header{display:grid}
 .chapter-view[data-chapter~="about"]>#about,.chapter-view[data-chapter~="education"]>#education,.chapter-view[data-chapter~="skills"]>#skills,.chapter-view[data-chapter~="experience"]>#experience,.chapter-view[data-chapter~="projects"]>#projects,.chapter-view[data-chapter~="awards"]>#awards,.chapter-view[data-chapter~="contact"]>#contact{display:block;padding:24px 0}
 .chapter-view .reveal{opacity:1;transform:none}.chapter-view{min-height:0;font-family:var(--sans)}
-.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{border-color:#ad895d50}
+.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{border-top:0}
 .archive-paper .chapter-view>.section:first-of-type{border-top:0}
 .archive-paper .chapter-view>.fashion-hero{padding:10px 0 28px}
 .archive-paper .chapter-view .footer-links{padding-bottom:12px}
 
 /* Every organization uses a normalized, individually bounded wax sprite. */
 .wax-seal{display:block;flex:none;width:100%;height:100%;aspect-ratio:1;background-image:url('/archive/wax-seals.webp');background-size:400% 300%;background-repeat:no-repeat;filter:drop-shadow(1px 2px 1px #68483245)}
+.inline-institution .inline-brand{width:20px!important;height:20px!important;min-width:20px;min-height:20px;max-width:20px;max-height:20px;flex:none;aspect-ratio:1;align-self:center}
+.inline-institution .inline-brand .wax-seal{width:20px;height:20px;min-width:20px;min-height:20px;max-width:20px;max-height:20px;flex:none;aspect-ratio:1}
 .classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:58px;height:58px;flex:0 0 58px}
 .classic-portfolio .awards-lines .award-brand,.chapter-view .awards-lines .award-brand{width:38px;height:38px;flex:0 0 38px}
 
@@ -51,15 +64,18 @@
 .archive-photo-2 .archive-photo-tape{background-position:calc(200% / 3) 0;transform:rotate(-6deg);left:20%}
 .archive-photo-3 .archive-photo-tape{background-position:100% 0;transform:rotate(17deg);left:30%}
 .archive-gallery .gallery-caption{position:static;grid-column:1/-1;text-align:right;margin:6px 0 0;color:#795f43}
+.classic-portfolio .hero-editorial,.chapter-view .hero-editorial{min-width:0}
 
 /* The optional full scroll mode keeps all sections visible as separate sheets. */
 .classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{background:url('/archive/paper.webp') center/100% 100% no-repeat;max-width:1070px;margin:14px auto 28px;padding:clamp(30px,5vw,60px) clamp(24px,5vw,60px);border:0;filter:drop-shadow(0 4px 5px #5e44252b)}
 .classic-portfolio>.nav::before{background:#e6d7bb}
 .classic-portfolio .navlinks{gap:18px;margin-right:20px}
-.classic-portfolio .timeline,.chapter-view .timeline{border-color:#b2926a50}.classic-portfolio .timeline-entry,.chapter-view .timeline-entry{border-color:#b2926a45}
+.classic-portfolio .timeline,.chapter-view .timeline,.classic-portfolio .focus-lines,.chapter-view .focus-lines{border-top:0}.classic-portfolio .timeline-entry,.chapter-view .timeline-entry{border-color:#b2926a45}
 .classic-portfolio .section-label,.chapter-view .section-label{color:#846035}
-.classic-portfolio .hero-rule,.chapter-view .hero-rule{background:#b1916855}
+.classic-portfolio .hero-rule,.chapter-view .hero-rule{height:0;background:none;margin:24px 0 14px}
+.classic-portfolio .copyright,.chapter-view .copyright{border-top:0}
 
 @media(max-width:850px){.archive-index{padding-top:24px}.archive-paper{min-height:450px}.chapter-view[data-chapter~="about"]>header,.classic-portfolio>.fashion-hero{display:block}.hero-gallery.archive-gallery{margin:24px auto 0;max-width:460px}.archive-gallery .archive-photo{max-width:215px}.archive-nav{width:calc(100% - 32px)}}
 @media(max-width:520px){.archive-nav{align-items:flex-start;padding:17px 0;font-size:16px}.archive-nav>div{gap:8px 14px}.archive-brand{font-size:22px}.archive-index{width:calc(100% - 32px);padding-bottom:44px}.archive-index>header{margin-bottom:26px}.archive-paper-stack{--sheet-step:45px}.archive-sheet-label{padding-inline:20px}.archive-sheet-label>span{font-size:10px}.archive-sheet-selected{padding-inline:0}.archive-sheet-front.archive-paper{min-height:440px}.archive-paper{padding:27px 20px;min-height:420px}.archive-paper .chapter-view>.section,.archive-paper .chapter-view>.footer{padding:20px 0}.archive-paper .chapter-view .title-line h3{font-size:23px}.classic-portfolio>.section,.classic-portfolio>.fashion-hero,.classic-portfolio>.footer{width:calc(100% - 22px);padding:32px 22px}.classic-portfolio .entry-top .brand,.chapter-view .entry-top .brand{width:46px;height:46px;flex:0 0 46px}.archive-gallery .archive-photo-tape{width:50%}.hero-gallery.archive-gallery{gap:10px;padding:14px 3px}.archive-paper .chapter-view .inline-institution{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.archive-sheet-front,.archive-photo{animation:none;transition:none}}
+@media(max-width:520px){.archive-paper-stack{--sheet-step:52px;--sheet-inset:20px}.archive-sheet-label>span.archive-sheet-tape{font-size:clamp(17px,4.6vw,20px);height:38px;padding-inline:28px;min-width:130px}.archive-sheet-front.archive-paper{padding-inline:var(--sheet-inset)}}
