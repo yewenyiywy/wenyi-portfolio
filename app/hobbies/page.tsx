@@ -5,6 +5,7 @@ import PortfolioNav from '../portfolio-nav'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, CSSProperties, Ref } from 'react'
 import './journal.css'
+import Lenis from 'lenis'
 
 const steam = 'https://store.steampowered.com/app/3117820/Sultans_Game/'
 const afterglowUrl = 'https://afterglow-gray-five.vercel.app/'
@@ -187,6 +188,16 @@ export default function HobbiesPage() {
   const [activeSpread, setActiveSpread] = useState(0)
   const [shot, setShot] = useState<Shot | null>(null)
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
+  const [turning, setTurning] = useState(false)
+  const turnLock = useRef(false)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const lenis = new Lenis({ autoRaf: true, prevent: node => Boolean(node.closest('.journal-leaf-content, .journal-orbit-grip, .journal-tarot-ring')) })
+    return () => lenis.destroy()
+  }, [])
 
   const scrollBook = useCallback(() => {
     requestAnimationFrame(() => bookRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }))
@@ -205,15 +216,27 @@ export default function HobbiesPage() {
     return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync) }
   }, [scrollBook])
 
-  function turnTo(index: number) {
-    if (index < 0 || index >= chapters.length) return
-    setActiveSpread(index)
-    setShot(null)
-    setFashion(null)
-    const anchor = chapters[index].anchor
-    const url = `${window.location.pathname}${window.location.search}${anchor ? '#' + anchor : ''}`
-    if (window.location.href !== new URL(url, window.location.href).href) window.history.pushState(null, '', url)
-    scrollBook()
+  async function turnTo(index: number) {
+    if (index < 0 || index >= chapters.length || index === activeSpread || turnLock.current) return
+    const reveal = () => {
+      setActiveSpread(index)
+      setShot(null)
+      setFashion(null)
+      const anchor = chapters[index].anchor
+      const url = `${window.location.pathname}${window.location.search}${anchor ? '#' + anchor : ''}`
+      if (window.location.href !== new URL(url, window.location.href).href) window.history.pushState(null, '', url)
+      scrollBook()
+    }
+    turnLock.current = true
+    setTurning(true)
+    try {
+      const book = bookRef.current
+      if (book && window.innerWidth > 850 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const { flipLeaf } = await import('./book-motion')
+        await flipLeaf(book, index > activeSpread ? 1 : -1, reveal)
+      } else reveal()
+    } catch { reveal() }
+    finally { turnLock.current = false; setTurning(false) }
   }
 
   function open(item: Shot) {
@@ -265,7 +288,12 @@ export default function HobbiesPage() {
   return <main className="hobbies-page journal-page">
     <PortfolioNav page="hobbies"/>
 
-    <div className="journal-book" ref={bookRef}>
+    <div className="journal-orbit-controls">
+      <button type="button" className="journal-orbit-grip" aria-label="Rotate book: drag or use arrow keys" onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY, rx: tilt.x, ry: tilt.y }; e.currentTarget.setPointerCapture(e.pointerId) }} onPointerMove={e => { if (!drag.current) return; const d=drag.current; setTilt({x:Math.max(-22,Math.min(22,d.rx-(e.clientY-d.y)*.25)),y:Math.max(-38,Math.min(38,d.ry+(e.clientX-d.x)*.3))}) }} onPointerUp={() => { drag.current=null }} onPointerCancel={() => { drag.current=null }} onKeyDown={e => { if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return; e.preventDefault(); setTilt(t=>({x:Math.max(-22,Math.min(22,t.x+(e.key==='ArrowUp'?5:e.key==='ArrowDown'?-5:0))),y:Math.max(-38,Math.min(38,t.y+(e.key==='ArrowRight'?5:e.key==='ArrowLeft'?-5:0)))})) }}>✥ Drag to rotate</button>
+      <button type="button" onClick={() => setTilt({x:0,y:0})}>Reset view</button>
+    </div>
+    <div className="journal-stage">
+    <div className={`journal-book${turning ? ' journal-turning' : ''}`} ref={bookRef} style={{'--book-rx':`${tilt.x}deg`,'--book-ry':`${tilt.y}deg`} as CSSProperties}>
       {spread(0, <div className="journal-intro">
         <h1>Hobbies</h1>
         <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
@@ -346,6 +374,8 @@ export default function HobbiesPage() {
           <PressedCollage kinds={[5, 3]} tape={0} />
         </JournalLeaf>
       </section>}
+      {!shot && !fashion && <div className="journal-edge-controls"><button type="button" aria-label="Flip previous page" disabled={turning || activeSpread===0} onClick={()=>turnTo(activeSpread-1)}>‹</button><button type="button" aria-label="Flip next page" disabled={turning || activeSpread===chapters.length-1} onClick={()=>turnTo(activeSpread+1)}>›</button></div>}
+    </div>
     </div>
   </main>
 }
