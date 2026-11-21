@@ -120,12 +120,17 @@ async function check(page: Page, label: string) {
 test.describe('home page', () => {
   test('default view', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading',{name:'Welcome to my studio.'})).toBeVisible()
+    const index=page.getByRole('navigation',{name:'Portfolio sections'})
+    await expect(index.getByRole('link',{name:'Hobbies'})).toHaveAttribute('href','/hobbies')
+    await expect(index.getByRole('link',{name:'Alchemy'})).toHaveAttribute('href','/game')
     await check(page, 'home')
   })
 
-  test('menu open', async ({ page }) => {
+  test('new professional navigation', async ({ page }) => {
     await page.goto('/classic/full')
-    await page.getByRole('button', { name: 'Open navigation' }).click()
+    await expect(page.getByRole('navigation',{name:'Portfolio sections'})).toBeVisible()
+    await expect(page.getByRole('link',{name:'Back to studio'}).first()).toBeVisible()
     await check(page, 'home-menu-open')
   })
 
@@ -147,7 +152,7 @@ test.describe('home page', () => {
     await check(page, 'home-workflow')
   })
   test('alchemy chapter and skip', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/game')
     const pet = page.getByRole('button', { name: 'Say hello to the pixel marmoset' })
     await expect(pet).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Mix two ingredients to uncover a chapter of Wenyi’s story.' })).toBeVisible()
@@ -168,18 +173,12 @@ test.describe('home page', () => {
     await check(page, 'alchemy-education')
     await page.getByRole('link', { name: /skip game/i }).click()
     await expect(page).toHaveURL(/\/classic/)
-    await expect(page.locator('.archive-paper-stack')).toHaveCount(1)
-    await expect(page.locator('.archive-paper-stack .archive-sheet')).toHaveCount(5)
+    await expect(page.locator('.professional-dossier')).toHaveCount(1)
+    await expect(page.locator('.archive-paper-stack')).toHaveCount(0)
     await expect(pet).toBeVisible()
     await check(page, 'classic')
-    await expect(page.locator('.archive-sheet-label .archive-sheet-tape')).toHaveCount(5)
-    await expect(page.locator('.archive-sheet-label')).toHaveText(['Education & Awards','Skills','Experience','Projects','About'])
-    const titleTapes = await page.locator('.archive-sheet-tape').evaluateAll(tapes => tapes.map(tape => {
-      const range = document.createRange(); range.selectNodeContents(tape)
-      return {classes:tape.className,margin:tape.getBoundingClientRect().width-range.getBoundingClientRect().width}
-    }))
-    expect(new Set(titleTapes.map(t => t.classes)).size).toBe(5)
-    expect(titleTapes.every(t => t.margin >= 40)).toBe(true)
+    await expect(page.locator('.professional-tabs button')).toHaveCount(5)
+    await expect(page.locator('.professional-tabs button')).toHaveText(['About','Education & Awards','Experience','Projects','Skills'])
     await page.getByRole('button', { name: 'Experience', exact:true }).click()
     await expect(page.locator('#experience')).toBeVisible()
     await expect(page.locator('#experience .wax-seal')).toHaveCount(5)
@@ -199,9 +198,9 @@ test.describe('home page', () => {
     await expect(page.locator('#contact')).toBeVisible()
     await expect(page.locator('.hero-editorial .socials')).toHaveCount(0)
     await expect(page.locator('#contact .footer-links a')).toHaveCount(4)
-    await expect(page.locator('.archive-photo-frame')).toHaveCount(4)
-    await expect(page.locator('.archive-photo-tape')).toHaveCount(4)
-    await expect(page.locator('.archive-paper-stack .archive-sheet')).toHaveCount(5)
+    await expect(page.locator('.archive-photo-frame').first()).toBeHidden()
+    await expect(page.locator('.archive-photo-tape').first()).toBeHidden()
+    await expect(page.locator('.professional-dossier')).toHaveCount(1)
     await page.getByRole('link', { name:'View full portfolio' }).click()
     await expect(page).toHaveURL(/\/classic\/full/)
     await expect(page.locator('#experience')).toBeAttached()
@@ -213,12 +212,26 @@ test.describe('hobbies page', () => {
     await page.goto('/hobbies')
     await check(page, 'hobbies')
   })
-  test('page navigation uses tape', async ({ page }) => {
+  test('journal pages fit the paper without internal scrolling', async ({ page }) => {
+    for (const hash of ['', '#embroidery', '#game-design', '#afterglow', '#fashion-design', '#running']) {
+      await page.goto(`/hobbies${hash}`)
+      await page.evaluate(()=>document.fonts.ready)
+      const visible=page.locator('.journal-spread:not([hidden]) .journal-leaf-content')
+      await expect.poll(()=>visible.evaluateAll(els=>els.every(el=>getComputedStyle(el).overflowY==='hidden'&&el.scrollHeight<=el.clientHeight+2))).toBe(true)
+    }
+  })
+  test('page navigation uses paper corners without visible navigation controls', async ({ page }) => {
     await page.goto('/hobbies#embroidery')
     const footer=page.locator('#embroidery .journal-leaf-footer')
-    await expect(footer.locator('.journal-page-tape')).toHaveCount(3)
-    await expect(footer.getByRole('button',{name:'Previous'})).toHaveCSS('text-decoration-line','none')
-    await footer.getByRole('button',{name:'Next page'}).click()
+    await expect(footer.locator('.journal-page-tape')).toHaveCount(1)
+    await expect(footer.getByRole('button',{name:'Previous'})).toHaveCount(0)
+    await expect(footer.getByRole('button',{name:'Next page'})).toHaveCount(0)
+    await page.locator('.journal-paper-corner-right').tap()
+    await expect(page.locator('#game-design')).toBeVisible()
+    await page.locator('.journal-paper-corner-left').tap()
+    await expect(page.locator('#embroidery')).toBeVisible()
+    await page.locator('.journal-book').focus()
+    await page.locator('.journal-book').press('ArrowRight')
     await expect(page.locator('#game-design')).toBeVisible()
     await page.locator('#game-design .journal-leaf-footer').getByRole('button',{name:'Contents'}).click()
     await expect(page.locator('.journal-intro')).toBeVisible()
@@ -248,7 +261,7 @@ test.describe('hobbies page', () => {
     await expect(page.locator('.journal-intro p')).toHaveCSS('font-family', /La Belle Aurore/)
     expect(await page.evaluate(() => document.fonts.check('16px "La Belle Aurore"'))).toBe(true)
     const titleFont = await page.locator('.journal-intro h1').evaluate(el => getComputedStyle(el).fontFamily)
-    expect(titleFont).toContain('VT323')
+    expect(titleFont).toContain('Georgia')
     const pages = await page.locator('.journal-spread:not(.journal-detail) .journal-leaf').evaluateAll(els => els.map(el => Array.from(el.querySelectorAll('.scrap-pressed')).map(stem => Array.from(stem.classList).find(c => /^scrap-pressed-\d$/.test(c)))))
     for (let i = 1; i < pages.length; i++) expect(pages[i].filter(kind => pages[i - 1].includes(kind))).toEqual([])
     const tapeCounts = await page.locator('.scrap-collage').evaluateAll(els => els.map(el => ({ taped: el.classList.contains('scrap-collage-taped'), tapes: el.querySelectorAll('.scrap-tape').length })))
@@ -282,16 +295,14 @@ test.describe('hobbies page', () => {
       await check(page, 'hobbies-menu-open')
     }
   })
-  test('matching pixel navigation and return to archive', async ({ page }) => {
+  test('realistic journal navigation and return to studio', async ({ page }) => {
     await page.goto('/hobbies')
     const nav=page.getByRole('navigation',{name:'Portfolio navigation'})
-    await expect(nav).toHaveCSS('font-family', /VT323/)
-    const labels=await nav.locator('.portfolio-topnav-links a').allTextContents()
-    await page.locator('.journal-spread:not([hidden])').getByRole('link',{name:'Back to portfolio'}).click()
-    await expect(page).toHaveURL(/\/classic$/)
-    await expect(nav).toHaveCSS('font-family', /VT323/)
-    expect(await nav.locator('.portfolio-topnav-links a').allTextContents()).toEqual(labels)
-    await expect(page.locator('.archive-paper-stack')).toBeVisible()
+    await expect(nav).toHaveCSS('font-family', /Arial/)
+    await expect(nav.getByRole('link',{name:'Back to studio'})).toBeVisible()
+    await page.locator('.journal-spread:not([hidden])').getByRole('link',{name:'Back to studio'}).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('.studio-home')).toBeVisible()
   })
   test('fashion swatches and varied tapes', async ({ page }) => {
     await page.goto('/hobbies#fashion-design')

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import MarmosetPet from './marmoset-pet'
+import PortfolioEffects from './portfolio-effects'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}<MarmosetPet /></body></html>
+  return <html lang="en"><body>{children}<MarmosetPet /><PortfolioEffects /></body></html>
 }

@@ -5,6 +5,7 @@ import PortfolioNav from '../portfolio-nav'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, CSSProperties, Ref } from 'react'
 import './journal.css'
+import Lenis from 'lenis'
 
 const steam = 'https://store.steampowered.com/app/3117820/Sultans_Game/'
 const afterglowUrl = 'https://afterglow-gray-five.vercel.app/'
@@ -85,8 +86,36 @@ const fashionDesigns: FashionDesign[] = [
 ]
 
 function JournalLeaf({ children, footer, side }: { children: ReactNode; footer: ReactNode; side: 'left' | 'right' }) {
-  return <div className={`journal-leaf journal-${side}`}>
-    <div className="journal-leaf-content">{children}</div>
+  const leafRef=useRef<HTMLDivElement>(null)
+  const contentRef=useRef<HTMLDivElement>(null)
+  useEffect(()=>{
+    const leaf=leafRef.current,content=contentRef.current
+    if(!leaf||!content)return
+    let frame=0,disposed=false
+    const fit=()=>{
+      if(disposed||!leaf.offsetHeight||!content.clientHeight)return
+      const set=(scale:number)=>content.style.setProperty('zoom',String(scale))
+      const fits=()=>content.scrollHeight<=content.clientHeight+1&&content.scrollWidth<=content.clientWidth+1
+      set(1)
+      if(fits())return
+      // Keep each spread at its original paper size. Only crowded pages shrink.
+      let low=.25,high=1
+      for(let i=0;i<9;i++){
+        const mid=(low+high)/2;set(mid)
+        if(fits())low=mid;else high=mid
+      }
+      set(low)
+    }
+    const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(fit)}
+    const observer=new ResizeObserver(schedule)
+    observer.observe(leaf)
+    content.addEventListener('load',schedule,true)
+    void document.fonts.ready.then(schedule)
+    schedule()
+    return()=>{disposed=true;observer.disconnect();cancelAnimationFrame(frame);content.removeEventListener('load',schedule,true)}
+  },[children])
+  return <div className={`journal-leaf journal-${side}`} ref={leafRef}>
+    <div className="journal-leaf-content" ref={contentRef}>{children}</div>
     <div className="journal-leaf-footer">{footer}</div>
   </div>
 }
@@ -187,6 +216,15 @@ export default function HobbiesPage() {
   const [activeSpread, setActiveSpread] = useState(0)
   const [shot, setShot] = useState<Shot | null>(null)
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
+  const [turning, setTurning] = useState(false)
+  const turnLock = useRef(false)
+  const gesture = useRef<{ x: number; y: number; direction: number } | null>(null)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const lenis = new Lenis({ autoRaf: true, prevent: node => Boolean(node.closest('.journal-leaf-content, .journal-tarot-ring')) })
+    return () => lenis.destroy()
+  }, [])
 
   const scrollBook = useCallback(() => {
     requestAnimationFrame(() => bookRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }))
@@ -205,15 +243,33 @@ export default function HobbiesPage() {
     return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync) }
   }, [scrollBook])
 
-  function turnTo(index: number) {
-    if (index < 0 || index >= chapters.length) return
-    setActiveSpread(index)
-    setShot(null)
-    setFashion(null)
-    const anchor = chapters[index].anchor
-    const url = `${window.location.pathname}${window.location.search}${anchor ? '#' + anchor : ''}`
-    if (window.location.href !== new URL(url, window.location.href).href) window.history.pushState(null, '', url)
-    scrollBook()
+  async function turnTo(index: number) {
+    if (index < 0 || index >= chapters.length || index === activeSpread || turnLock.current) return
+    const reveal = () => {
+      setActiveSpread(index)
+      setShot(null)
+      setFashion(null)
+      const anchor = chapters[index].anchor
+      const url = `${window.location.pathname}${window.location.search}${anchor ? '#' + anchor : ''}`
+      if (window.location.href !== new URL(url, window.location.href).href) window.history.pushState(null, '', url)
+      scrollBook()
+    }
+    turnLock.current = true
+    setTurning(true)
+    try {
+      const book = bookRef.current
+      if (book && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (window.innerWidth > 850) {
+          const { flipLeaf } = await import('./book-motion')
+          await flipLeaf(book, index > activeSpread ? 1 : -1, index, reveal)
+        } else {
+          const leaf=book.querySelector<HTMLElement>(`.journal-spread:not([hidden]) .journal-${index>activeSpread?'right':'left'}`)
+          if(leaf)await leaf.animate([{transform:'perspective(900px) rotateY(0deg)'},{transform:`perspective(900px) rotateY(${index>activeSpread?-80:80}deg)`,opacity:.4}],{duration:280,easing:'steps(9)'}).finished.catch(()=>{})
+          reveal()
+        }
+      } else reveal()
+    } catch { reveal() }
+    finally { turnLock.current = false; setTurning(false) }
   }
 
   function open(item: Shot) {
@@ -249,12 +305,12 @@ export default function HobbiesPage() {
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
         <span className="journal-page-number">{String(index * 2 + 1).padStart(2, '0')}</span>
-        {index > 0 ? <div className="journal-page-actions"><PageTape label="Previous" kind={previousTape} onClick={() => turnTo(index - 1)}/><PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/></div> : <PageTape label="Back to portfolio" kind={previousTape} href="/classic"/>}
+        {index > 0 ? <PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/> : <PageTape label="Back to studio" kind={previousTape} href="/"/>}
       </>}>
         {left}
       </JournalLeaf>
       <JournalLeaf side="right" footer={<>
-        {index < chapters.length - 1 ? <PageTape label="Next page" kind={nextTape} onClick={() => turnTo(index + 1)}/> : <PageTape label="Back to portfolio" kind={nextTape} href="/classic"/>}
+        {index === chapters.length - 1 && <PageTape label="Back to studio" kind={nextTape} href="/"/>}
         <span className="journal-page-number">{String(index * 2 + 2).padStart(2, '0')}</span>
       </>}>
         {right}
@@ -265,7 +321,25 @@ export default function HobbiesPage() {
   return <main className="hobbies-page journal-page">
     <PortfolioNav page="hobbies"/>
 
-    <div className="journal-book" ref={bookRef}>
+    <div className="journal-stage" onPointerMove={e=>{
+      const book=bookRef.current
+      if(!book || e.pointerType!=='mouse' || turnLock.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const box=e.currentTarget.getBoundingClientRect()
+      book.style.setProperty('--book-rx',`${Math.max(-5,Math.min(5,-(e.clientY-box.top-box.height/2)/box.height*10))}deg`)
+      book.style.setProperty('--book-ry',`${Math.max(-9,Math.min(9,(e.clientX-box.left-box.width/2)/box.width*18))}deg`)
+    }} onPointerLeave={()=>{bookRef.current?.style.setProperty('--book-rx','0deg');bookRef.current?.style.setProperty('--book-ry','0deg')}}>
+    <div className={`journal-book${turning ? ' journal-turning' : ''}`} ref={bookRef} tabIndex={0} aria-label="Hobbies journal. Turn pages by swiping, clicking a paper corner, or pressing the left and right arrow keys." onKeyDown={e=>{if(e.target!==e.currentTarget || shot || fashion) return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();void turnTo(activeSpread+(e.key==='ArrowRight'?1:-1))}}}
+      onPointerDown={e=>{
+        if(shot||fashion||turnLock.current||e.button!==0||(e.target as HTMLElement).closest('button,a,.journal-tarot-ring')) return
+        const corner=(e.target as HTMLElement).closest<HTMLElement>('.journal-paper-corner')
+        gesture.current={x:e.clientX,y:e.clientY,direction:corner?Number(corner.dataset.direction):0}
+        if(corner)e.currentTarget.setPointerCapture(e.pointerId)
+      }} onPointerUp={e=>{
+        const start=gesture.current;gesture.current=null;if(!start)return
+        const dx=e.clientX-start.x,dy=e.clientY-start.y
+        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)void turnTo(activeSpread+(dx<0?1:-1))
+        else if(start.direction&&Math.abs(dx)<20&&Math.abs(dy)<20)void turnTo(activeSpread+start.direction)
+      }} onPointerCancel={()=>{gesture.current=null}}>
       {spread(0, <div className="journal-intro">
         <h1>Hobbies</h1>
         <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
@@ -346,6 +420,8 @@ export default function HobbiesPage() {
           <PressedCollage kinds={[5, 3]} tape={0} />
         </JournalLeaf>
       </section>}
+      {!shot && !fashion && <>{activeSpread>0&&<span className="journal-paper-corner journal-paper-corner-left" data-direction="-1" aria-hidden="true"/>}{activeSpread<chapters.length-1&&<span className="journal-paper-corner journal-paper-corner-right" data-direction="1" aria-hidden="true"/>}</>}
+    </div>
     </div>
   </main>
 }
