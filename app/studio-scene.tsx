@@ -42,17 +42,18 @@ function bookTexture(color:string,heading:string,subtitle:string){return canvasT
   title(ctx,'✦',w/2,h*.28,32,'#d5b575');title(ctx,'W. Y.',w/2,h*.79,28,'#d5b575')
 })}
 function degreeTexture(michigan:boolean){
-  const color=michigan?'#00274c':'#003262'
+  const color='#302a23'
   const texture=canvasTexture((ctx,w,h)=>{
-    ctx.fillStyle='#fbf7ec';ctx.fillRect(0,0,w,h);border(ctx,w,h,michigan?'#c59931':'#bc9a52',22)
-    title(ctx,michigan?'UNIVERSITY OF MICHIGAN':'UNIVERSITY OF CALIFORNIA, BERKELEY',w/2,h*.25,michigan?32:26,color)
-    title(ctx,michigan?'Ann Arbor':'Haas School of Business',w/2,h*.32,24,color)
-    title(ctx,'Wenyi Ye',w/2,h*.46,42,'#50412c','Georgia')
-    if(michigan){title(ctx,'B.S. Financial Mathematics',w/2,h*.60,29,color);title(ctx,'B.S. Human Origins, Biology, and Behavior',w/2,h*.69,23,color)}
-    else title(ctx,'Master of Financial Engineering',w/2,h*.63,29,color)
-    title(ctx,michigan?'Class of 2025':'Class of 2027 · Expected',w/2,h*.83,21,'#665c4a')
+    ctx.fillStyle='#fffcf3';ctx.fillRect(0,0,w,h)
+    title(ctx,michigan?'The University of Michigan':'University of California, Berkeley',w/2,h*(michigan?.25:.16),michigan?47:39,color,'Georgia')
+    title(ctx,michigan?'Ann Arbor · College of Literature, Science, and the Arts':'Haas School of Business',w/2,h*(michigan?.31:.23),22,color)
+    ctx.fillStyle='#332c25';ctx.font='italic 52px Georgia';ctx.textAlign='center';ctx.fillText('Wenyi Ye',w/2,h*(michigan?.45:.39))
+    if(michigan){title(ctx,'Bachelor of Science',w/2,h*.51,35,color);title(ctx,'Financial Mathematics',w/2,h*.60,25,color);title(ctx,'Human Origins, Biology, and Behavior',w/2,h*.67,25,color)}
+    else title(ctx,'Master of Financial Engineering',w/2,h*.54,32,color)
+    title(ctx,michigan?'Class of 2025':'Expected March 2027',w/2,h*.77,23,color)
+    title(ctx,'PERSONAL ACADEMIC DISPLAY · NOT AN OFFICIAL DOCUMENT',w/2,h*.95,12,'#847562','Arial')
   },1024,640)
-  const logo=new Image();logo.onload=()=>{const c=texture.image as HTMLCanvasElement,ctx=c.getContext('2d')!;const max=76,ratio=Math.min(max/logo.width,max/logo.height);ctx.drawImage(logo,(c.width-logo.width*ratio)/2,48,logo.width*ratio,logo.height*ratio);texture.needsUpdate=true}
+  const logo=new Image();logo.onload=()=>{const c=texture.image as HTMLCanvasElement,ctx=c.getContext('2d')!;const max=70,ratio=Math.min(max/logo.width,max/logo.height);ctx.drawImage(logo,(c.width-logo.width*ratio)/2,michigan?36:515,logo.width*ratio,logo.height*ratio);texture.needsUpdate=true}
   logo.src=michigan?'/logos/umich.png':'/logos/ucb-seal.png'
   return texture
 }
@@ -85,6 +86,7 @@ function woodTexture(){return canvasTexture((ctx,w,h)=>{
     image.data[i]=99+n;image.data[i+1]=55+n*.69;image.data[i+2]=32+n*.42;image.data[i+3]=255
   }ctx.putImageData(image,0,0)
 },768,256)}
+function surfaceGrain(){const t=canvasTexture((ctx,w,h)=>{const im=ctx.createImageData(w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,v=140+Math.sin(x*127.1+y*311.7)*30+Math.sin(y*.73+Math.sin(x*.41)*3)*8;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}ctx.putImageData(im,0,0)},256,256);t.colorSpace=THREE.NoColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);return t}
 
 export default function StudioScene(){
   const mount=useRef<HTMLDivElement>(null)
@@ -183,7 +185,7 @@ export default function StudioScene(){
       const sunlight=new THREE.DirectionalLight('#ffd4a0',3.1);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
-      const lamp=new THREE.PointLight('#ffc278',12,3,.8);lamp.position.set(-3.57,2.58,.44);scene.add(lamp)
+      const lamp=new THREE.PointLight('#ffdfae',9,3,.8);lamp.position.set(-3.28,2.48,.35);scene.add(lamp)
       const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const textureLoader=new THREE.TextureLoader()
@@ -199,12 +201,13 @@ export default function StudioScene(){
           const buffer=signature[0]===0x67&&signature[1]===0x6c?encoded:await new Response(new Blob([encoded]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
           const gltf=await loader.parseAsync(buffer,'/');if(!alive)return
           model=gltf.scene
-          const wood=woodTexture();textures.push(wood)
+          const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
             obj.castShadow=true;obj.receiveShadow=true
             const m=obj.material as THREE.MeshStandardMaterial
             if(m.name==='Walnut'){m.map=wood;m.color.set('#ffffff');m.roughness=.53;m.needsUpdate=true}
+            if(obj.geometry.attributes.uv&&['Walnut','Desk mat leather','Forest green cloth','Warm plaster','Ivory paper','Aged ABS plastic'].includes(m.name)){m.bumpMap=grain;m.bumpScale=m.name==='Warm plaster'?.014:m.name==='Desk mat leather'?.009:.004;m.needsUpdate=true}
             const name=obj.name
             if(name==='computer_screen'){apply(obj,screenTexture(),true);obj.castShadow=false}
             else if(name.startsWith('keyboard_label_')){
