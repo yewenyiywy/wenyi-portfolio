@@ -169,7 +169,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
      reads in full if JS never runs. */
   useEffect(() => {
     const page = pageRef.current
-    if (!page || chapter) return
+    if (!page) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const items = Array.from(page.querySelectorAll<HTMLElement>('.reveal'))
     if (reduce || !('IntersectionObserver' in window)) {

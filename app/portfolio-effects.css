@@ -1,0 +1,47 @@
+/* Quiet, decorative motion; content and navigation stay in normal flow. */
+:root{--ambient-x:0;--ambient-y:0;--light-x:50%;--light-y:30%}
+.portfolio-ink-transition{position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0;background:#8e6d4550;mix-blend-mode:multiply;animation:ink-lift .52s steps(12,end) both}
+.portfolio-ink-transition[data-dark=true]{background:#d9b87b32;mix-blend-mode:screen}
+@keyframes ink-lift{
+  0%{opacity:.42;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+  40%{opacity:.27;clip-path:polygon(0 0,100% 0,100% 80%,92% 80%,92% 88%,74% 88%,74% 76%,52% 76%,52% 92%,31% 92%,31% 80%,12% 80%,12% 66%,0 66%)}
+  100%{opacity:0;clip-path:polygon(0 0,100% 0,100% 0,0 0)}
+}
+
+/* The light is an overlay, never another interactive element. */
+.archive-sheet-front.archive-paper::after,.journal-book::after{content:'';position:absolute;inset:3% 5%;pointer-events:none;z-index:2;background:radial-gradient(ellipse at var(--light-x) var(--light-y),#fff6cc36 0%,#f8e8bd15 32%,transparent 62%);mix-blend-mode:soft-light;opacity:.78}
+.journal-book::after{inset:7% 6%;z-index:4}
+.alchemy-cauldron::after{content:'';position:absolute;inset:4%;pointer-events:none;background:radial-gradient(ellipse at var(--light-x) var(--light-y),#efbd6430,transparent 62%);mix-blend-mode:screen;z-index:2}
+
+@media (hover:hover) and (pointer:fine) and (min-width:851px){
+  .archive-paper-stack .archive-sheet-back{translate:calc(var(--ambient-x) * (4 - var(--sheet-index)) * 1px) calc(var(--ambient-y) * (4 - var(--sheet-index)) * .65px);transition:translate .34s cubic-bezier(.2,.7,.2,1)}
+  .archive-gallery .archive-photo{translate:calc(var(--ambient-x) * 2px) calc(var(--ambient-y) * 2px);transition:translate .35s ease,transform .35s ease}
+  .journal-page .scrap-collage .scrap-pressed{translate:calc(var(--ambient-x) * 1.5px) calc(var(--ambient-y) * 1.5px);transition:translate .35s ease}
+  .alchemy-scene .alchemy-cauldron{translate:calc(var(--ambient-x) * 3px) calc(var(--ambient-y) * 2px);transition:translate .35s ease}
+  .alchemy-scene .alchemy-ingredient{translate:calc(var(--ambient-x) * -2px) calc(var(--ambient-y) * -2px);transition:translate .35s ease}
+  .wax-seal{transition:scale .3s cubic-bezier(.2,.8,.2,1),filter .3s ease}
+  .brand:hover .wax-seal,.award-brand:hover .wax-seal{scale:1.055;filter:drop-shadow(2px 4px 1px #68483250) brightness(1.04)}
+  .archive-sheet-label:active .archive-sheet-tape,.journal-page-tape:active{scale:.97}
+  .journal-art button:active .scrap-photo,.journal-fashion-card button:active .scrap-photo{scale:.98}
+}
+
+.archive-paper-stack .archive-sheet-front.archive-paper{animation:paper-settle .48s cubic-bezier(.18,.72,.22,1) both}
+@keyframes paper-settle{from{opacity:.8;transform:translateY(9px) rotateX(-2deg)}to{opacity:1;transform:none}}
+
+.chapter-view.reveal-on .reveal{opacity:.72;transform:translateY(10px);transition:opacity .55s ease,transform .55s cubic-bezier(.22,.7,.2,1)}
+.chapter-view.reveal-on .reveal.is-in,.chapter-view.reveal-on .reveal:focus-within{opacity:1;transform:none}
+@supports(animation-timeline:view()){
+  @media(prefers-reduced-motion:no-preference){
+    .classic-portfolio>.section,.classic-portfolio>.footer{animation:sheet-scroll-in linear both;animation-timeline:view();animation-range:entry 0% entry 24%}
+    @keyframes sheet-scroll-in{from{translate:0 12px;opacity:.86}to{translate:0 0;opacity:1}}
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .portfolio-ink-transition{display:none}
+  .archive-paper-stack .archive-sheet-front.archive-paper{animation:none}
+  .chapter-view.reveal-on .reveal{opacity:1;transform:none;transition:none}
+  .archive-sheet-front.archive-paper::after,.journal-book::after,.alchemy-cauldron::after{display:none}
+  .archive-paper-stack .archive-sheet-back,.archive-gallery .archive-photo,.journal-page .scrap-collage .scrap-pressed,.alchemy-scene .alchemy-cauldron,.alchemy-scene .alchemy-ingredient{translate:none;transition:none}
+  .wax-seal,.brand:hover .wax-seal,.award-brand:hover .wax-seal,.archive-sheet-label:active .archive-sheet-tape,.journal-page-tape:active,.journal-art button:active .scrap-photo,.journal-fashion-card button:active .scrap-photo{scale:none;transition:none}
+}
