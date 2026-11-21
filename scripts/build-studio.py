@@ -54,6 +54,38 @@ def rod(name,a,b,r,material,parent=None):
     a,b=Vector(a),Vector(b);ob=cylinder(name,(a+b)/2,r,(b-a).length,material,parent)
     ob.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler();return ob
 
+def cable(name,points,radius,material,parent=None):
+    curve=bpy.data.curves.new(name,'CURVE');curve.dimensions='3D';curve.resolution_u=16;curve.bevel_depth=radius;curve.bevel_resolution=3
+    spline=curve.splines.new('BEZIER');spline.bezier_points.add(len(points)-1)
+    for point,location in zip(spline.bezier_points,points):
+        point.co=location;point.handle_left_type='AUTO';point.handle_right_type='AUTO'
+    ob=bpy.data.objects.new(name,curve);bpy.context.collection.objects.link(ob);curve.materials.append(material)
+    bpy.ops.object.select_all(action='DESELECT');ob.select_set(True);bpy.context.view_layer.objects.active=ob
+    bpy.ops.object.convert(target='MESH');ob=bpy.context.object;ob.name=name
+    if parent:ob.parent=parent
+    return ob
+
+def mouse_shell(parent):
+    # A tapered, softly domed mouse with a low rear palm rest and rounded nose.
+    count=40;verts=[];faces=[]
+    rings=[(1.373,.84),(1.386,.97),(1.414,1),(1.463,.98),(1.508,.83),(1.536,.57),(1.548,.24),(1.55,.018)]
+    for z,scale in rings:
+        for i in range(count):
+            a=2*math.pi*i/count;si,co=math.sin(a),math.cos(a)
+            shape=lambda v:math.copysign(abs(v)**.73,v)
+            verts.append((1.22+.175*scale*shape(co)*(1-.12*si),-1.19+.285*scale*shape(si),z))
+    for j in range(len(rings)-1):
+        for i in range(count):faces.append((j*count+i,j*count+(i+1)%count,(j+1)*count+(i+1)%count,(j+1)*count+i))
+    faces.append(tuple(reversed(range(count))));faces.append(tuple((len(rings)-1)*count+i for i in range(count)))
+    mesh=bpy.data.meshes.new('Mouse shell');mesh.from_pydata(verts,[],faces);mesh.update()
+    ob=bpy.data.objects.new('Mouse shell',mesh);bpy.context.collection.objects.link(ob);ob.parent=parent;mesh.materials.append(ivory)
+    for polygon in mesh.polygons:polygon.use_smooth=True
+    for i,x in enumerate((1.142,1.298)):
+        button=box(f'Mouse button {i}',(x,-1.02,1.507),(.137,.16,.023),ivory,.026,parent)
+        button.rotation_euler.x=-.18
+    box('Mouse button seam',(1.22,-1.038,1.516),(.008,.13,.012),keycap,.002,parent)
+    box('Mouse cable strain relief',(1.22,-.901,1.42),(.055,.06,.045),keycap,.01,parent)
+
 def surface(name,loc,w,h,material,vertical=True,parent=None):
     x,y,z=loc
     if vertical:verts=[(x-w/2,y,z-h/2),(x+w/2,y,z-h/2),(x+w/2,y,z+h/2),(x-w/2,y,z+h/2)]
@@ -107,17 +139,18 @@ for r,n in enumerate((14,14,13,12)):
         box('Keyboard key',(x,y,1.49),(.103,.102,.076),keycap,.009,computer)
         surface(f'keyboard_label_{r}_{c}',(x,y,1.529),.09,.09,keycap,False,computer)
 box('Spacebar',(0,-1.39,1.49),(.75,.105,.075),keycap,.012,computer)
-box('Mouse',(1.2,-1.18,1.42),(.32,.48,.16),ivory,.065,computer)
-box('Mouse button',(1.2,-1.03,1.51),(.25,.15,.025),keycap,.016,computer)
+mouse_shell(computer)
 for i in range(12):cylinder('Coiled keyboard cable',(-.7+i*.033,-.56,1.40),.047,.025,ivory,computer,(0,math.pi/2,0),12)
-rod('Mouse cable',(1.2,-.94,1.38),(1.14,.10,1.38),.014,keycap,computer)
+box('Mouse port',(.831,.43,1.53),(.04,.10,.078),dark,.008,computer)
+cable('Mouse cable',[(1.22,-.88,1.42),(1.25,-.74,1.38),(1.38,-.47,1.37),(1.46,-.10,1.37),(1.32,.25,1.38),(1.02,.42,1.40),(.90,.43,1.49),(.849,.43,1.53)],.014,keycap,computer)
 
-# Degrees as a pair of framed certificates resting on the desk.
+# Degrees as a pair of horizontally framed certificates hung below the photos.
 education=group('target_education')
-for i,(x,y) in enumerate([(-2.43,-.44),(-2.43,.53)]):
-    box('Degree frame',(x,y,1.39),(1.19,.76,.08),edge,.025,education)
-    box('Degree paper',(x,y,1.438),(1.10,.68,.025),paper,.005,education)
-    surface(f'degree_texture_{i}',(x,y,1.454),1.04,.62,paper,False,education)
+for i,x in enumerate((-2.05,2.05)):
+    z=2.47
+    box(f'Degree frame_{i}',(x,2.20,z),(1.24,.11,.79),edge,.025,education)
+    box(f'Degree paper_{i}',(x,2.132,z),(1.15,.025,.70),paper,.005,education)
+    surface(f'degree_texture_{i}',(x,2.115,z),1.08,.63,paper,True,education)
 
 # A substantial cloth-bound hobby book, gold rules and an ivory page block.
 hobbies=group('target_hobbies')

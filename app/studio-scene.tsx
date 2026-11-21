@@ -8,10 +8,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
-  target_about:{label:'About · Photographs',href:'/classic#about'},
-  target_education:{label:'Education & awards',href:'/classic#education'},
-  target_experience:{label:'Professional experience',href:'/classic#experience'},
-  target_projects:{label:'Research projects & skills',href:'/classic#projects'},
+  target_about:{label:'Photographs · About me',href:'/classic#about'},
+  target_education:{label:'Degree certificate · Education & awards',href:'/classic#education'},
+  target_experience:{label:'Résumé · Professional experience',href:'/classic#experience'},
+  target_projects:{label:'Research notebook · Projects & skills',href:'/classic#projects'},
   target_hobbies:{label:'Hobbies · Personal journal',href:'/hobbies'},
   target_computer:{label:'Alchemy · Play game',href:'/game'},
 }
@@ -78,6 +78,7 @@ function woodTexture(){return canvasTexture((ctx,w,h)=>{
 
 export default function StudioScene(){
   const mount=useRef<HTMLDivElement>(null)
+  const tooltip=useRef<HTMLDivElement>(null)
   const router=useRouter()
   const [status,setStatus]=useState<'loading'|'ready'|'fallback'>('loading')
   const [hover,setHover]=useState('')
@@ -109,11 +110,30 @@ export default function StudioScene(){
       const hit=intersections[0];if(!hit)return null
       let object:THREE.Object3D|null=hit.object
       while(object&&!destinations[object.name])object=object.parent
-      if(!object)return null
-      const route=object.name==='target_computer'&&hit.object.name==='computer_screen'&&hit.uv&&hit.uv.x>.5?{label:'Afterglow · Play game',href:'https://afterglow-gray-five.vercel.app/'}:destinations[object.name]
-      return {route,object:hit.object}
+      const name=hit.object.name.toLowerCase()
+      const route=object?.name==='target_computer'&&hit.object.name==='computer_screen'&&hit.uv&&hit.uv.x>.5?{label:'Afterglow · Play game',href:'https://afterglow-gray-five.vercel.app/'}:object?destinations[object.name]:null
+      let label=route?.label??''
+      if(object?.name==='target_education')label=name.endsWith('_0')?'University of Michigan · Education':name.endsWith('_1')?'UC Berkeley · Education':'Degree certificate · Education'
+      else if(object?.name==='target_computer'){
+        if(name.startsWith('mouse'))label='Wired mouse · Computer'
+        else if(name.includes('keyboard')||name.includes('spacebar'))label='Keyboard · Computer'
+        else if(name!=='computer_screen')label='Retro CRT computer · Games'
+      }else if(!route){
+        if(name.includes('lamp'))label='Reading lamp'
+        else if(name.includes('plant')||name.includes('planter')||name.includes('soil'))label='Potted plant'
+        else if(name.includes('shelf book'))label='Books'
+        else if(name.includes('desk pad')||name.includes('mat edge'))label='Leather desk mat'
+      }
+      return {route,label,object:hit.object}
     }
-    const updateHover=(text:string)=>{if(hovered===text)return;hovered=text;setHover(text);if(renderer)renderer.domElement.style.cursor=text?'pointer':'grab'}
+    const updateHover=(text:string,clickable=false)=>{if(hovered!==text){hovered=text;setHover(text)}if(renderer)renderer.domElement.style.cursor=clickable?'pointer':'grab'}
+    const positionTooltip=(e:PointerEvent)=>{
+      const box=host.getBoundingClientRect(),node=tooltip.current;if(!node)return
+      const w=Math.min(300,box.width-16),h=Math.max(node.offsetHeight,40)
+      const x=e.clientX-box.left,y=e.clientY-box.top
+      node.style.left=`${Math.max(8,Math.min(box.width-w-8,x+17))}px`
+      node.style.top=`${Math.max(8,Math.min(box.height-h-8,y+20))}px`
+    }
     const move=(e:PointerEvent)=>{
       if(moving)return
       const bounds=host.getBoundingClientRect()
@@ -123,16 +143,17 @@ export default function StudioScene(){
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5)updateHover('')
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
-        yaw=x*.065;pitch=-y*.035;updateHover(choose(e)?.route.label??'')
+        yaw=x*.065;pitch=-y*.035;const hit=choose(e);updateHover(hit?.label??'',Boolean(hit?.route));positionTooltip(e)
       }
     }
     const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch};renderer?.domElement.setPointerCapture(e.pointerId)}
     const up=(e:PointerEvent)=>{
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
-      const hit=choose(e);if(!hit)return
-      moving=true;updateHover(hit.route.label)
+      const hit=choose(e);if(!hit?.route)return
+      const route=hit.route
+      moving=true;updateHover('')
       if(!reduced){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
-      const navigate=()=>{if(hit.route.href.startsWith('https:'))window.location.assign(hit.route.href);else router.push(hit.route.href)}
+      const navigate=()=>{if(route.href.startsWith('https:'))window.location.assign(route.href);else router.push(route.href)}
       if(reduced)navigate();else transition=setTimeout(navigate,580)
     }
     const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('')}}
@@ -213,7 +234,8 @@ export default function StudioScene(){
       <div className="studio-render" ref={mount}/>
       {status==='loading'&&<p className="studio-state" role="status">Opening the studio…</p>}
       {status==='fallback'&&<p className="studio-state">The 3D studio is unavailable on this device. All sections are available below.</p>}
-      {status==='ready'&&<div className="studio-scene-caption" aria-live="polite">{hover||'Explore the desk · Drag to look around'}</div>}
+      {status==='ready'&&<div className="studio-scene-caption">Explore the desk · Drag to look around</div>}
+      <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
     </div>
     <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/">Afterglow</a></nav>
   </main>
