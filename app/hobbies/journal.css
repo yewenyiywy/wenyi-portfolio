@@ -24,10 +24,9 @@
 .journal-paper-corner { position:absolute; bottom:8%; width:7%; height:10%; z-index:21; cursor:grab; touch-action:none; }
 .journal-paper-corner:active { cursor:grabbing; }
 .journal-paper-corner-right { right:6%; }
-.journal-paper-corner-left { left:6%; transform:scaleX(-1); }
-.journal-paper-corner::after { content:''; position:absolute; right:0; bottom:0; width:28%; aspect-ratio:1; background:#d7b985; clip-path:polygon(0 100%,0 75%,25% 75%,25% 50%,50% 50%,50% 25%,75% 25%,75% 0,100% 0,100% 100%); opacity:.45; transition:width .15s; }
-.journal-paper-corner:hover::after { width:65%; opacity:.85; background:linear-gradient(135deg,#f0dfb3 45%,#b39461 46%,#b39461 55%,#dcc294 56%); }
-.journal-turning .journal-paper-corner { pointer-events:none; opacity:0; }
+.journal-paper-corner-left { left:6%; }
+/* Invisible gesture targets: let the original pixel-art paper edge show. */
+.journal-turning .journal-paper-corner { pointer-events:none; }
 @media(min-width:851px) {
   .journal-book::before { content:''; position:absolute; inset:0; background:inherit; transform:translateZ(-7px); filter:brightness(.84) drop-shadow(3px 7px 0 #55422b30); z-index:-1; pointer-events:none; }
 }
