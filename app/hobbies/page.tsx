@@ -190,12 +190,11 @@ export default function HobbiesPage() {
   const [fashion, setFashion] = useState<FashionDesign | null>(null)
   const [turning, setTurning] = useState(false)
   const turnLock = useRef(false)
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
-  const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null)
+  const gesture = useRef<{ x: number; y: number; direction: number } | null>(null)
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const lenis = new Lenis({ autoRaf: true, prevent: node => Boolean(node.closest('.journal-leaf-content, .journal-orbit-grip, .journal-tarot-ring')) })
+    const lenis = new Lenis({ autoRaf: true, prevent: node => Boolean(node.closest('.journal-leaf-content, .journal-tarot-ring')) })
     return () => lenis.destroy()
   }, [])
 
@@ -231,9 +230,15 @@ export default function HobbiesPage() {
     setTurning(true)
     try {
       const book = bookRef.current
-      if (book && window.innerWidth > 850 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const { flipLeaf } = await import('./book-motion')
-        await flipLeaf(book, index > activeSpread ? 1 : -1, reveal)
+      if (book && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (window.innerWidth > 850) {
+          const { flipLeaf } = await import('./book-motion')
+          await flipLeaf(book, index > activeSpread ? 1 : -1, index, reveal)
+        } else {
+          const leaf=book.querySelector<HTMLElement>(`.journal-spread:not([hidden]) .journal-${index>activeSpread?'right':'left'}`)
+          if(leaf)await leaf.animate([{transform:'perspective(900px) rotateY(0deg)'},{transform:`perspective(900px) rotateY(${index>activeSpread?-80:80}deg)`,opacity:.4}],{duration:280,easing:'steps(9)'}).finished.catch(()=>{})
+          reveal()
+        }
       } else reveal()
     } catch { reveal() }
     finally { turnLock.current = false; setTurning(false) }
@@ -272,12 +277,12 @@ export default function HobbiesPage() {
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
         <span className="journal-page-number">{String(index * 2 + 1).padStart(2, '0')}</span>
-        {index > 0 ? <div className="journal-page-actions"><PageTape label="Previous" kind={previousTape} onClick={() => turnTo(index - 1)}/><PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/></div> : <PageTape label="Back to portfolio" kind={previousTape} href="/classic"/>}
+        {index > 0 ? <PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/> : <PageTape label="Back to portfolio" kind={previousTape} href="/classic"/>}
       </>}>
         {left}
       </JournalLeaf>
       <JournalLeaf side="right" footer={<>
-        {index < chapters.length - 1 ? <PageTape label="Next page" kind={nextTape} onClick={() => turnTo(index + 1)}/> : <PageTape label="Back to portfolio" kind={nextTape} href="/classic"/>}
+        {index === chapters.length - 1 && <PageTape label="Back to portfolio" kind={nextTape} href="/classic"/>}
         <span className="journal-page-number">{String(index * 2 + 2).padStart(2, '0')}</span>
       </>}>
         {right}
@@ -288,12 +293,25 @@ export default function HobbiesPage() {
   return <main className="hobbies-page journal-page">
     <PortfolioNav page="hobbies"/>
 
-    <div className="journal-orbit-controls">
-      <button type="button" className="journal-orbit-grip" aria-label="Rotate book: drag or use arrow keys" onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY, rx: tilt.x, ry: tilt.y }; e.currentTarget.setPointerCapture(e.pointerId) }} onPointerMove={e => { if (!drag.current) return; const d=drag.current; setTilt({x:Math.max(-22,Math.min(22,d.rx-(e.clientY-d.y)*.25)),y:Math.max(-38,Math.min(38,d.ry+(e.clientX-d.x)*.3))}) }} onPointerUp={() => { drag.current=null }} onPointerCancel={() => { drag.current=null }} onKeyDown={e => { if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return; e.preventDefault(); setTilt(t=>({x:Math.max(-22,Math.min(22,t.x+(e.key==='ArrowUp'?5:e.key==='ArrowDown'?-5:0))),y:Math.max(-38,Math.min(38,t.y+(e.key==='ArrowRight'?5:e.key==='ArrowLeft'?-5:0)))})) }}>✥ Drag to rotate</button>
-      <button type="button" onClick={() => setTilt({x:0,y:0})}>Reset view</button>
-    </div>
-    <div className="journal-stage">
-    <div className={`journal-book${turning ? ' journal-turning' : ''}`} ref={bookRef} style={{'--book-rx':`${tilt.x}deg`,'--book-ry':`${tilt.y}deg`} as CSSProperties}>
+    <div className="journal-stage" onPointerMove={e=>{
+      const book=bookRef.current
+      if(!book || e.pointerType!=='mouse' || turnLock.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const box=e.currentTarget.getBoundingClientRect()
+      book.style.setProperty('--book-rx',`${Math.max(-5,Math.min(5,-(e.clientY-box.top-box.height/2)/box.height*10))}deg`)
+      book.style.setProperty('--book-ry',`${Math.max(-9,Math.min(9,(e.clientX-box.left-box.width/2)/box.width*18))}deg`)
+    }} onPointerLeave={()=>{bookRef.current?.style.setProperty('--book-rx','0deg');bookRef.current?.style.setProperty('--book-ry','0deg')}}>
+    <div className={`journal-book${turning ? ' journal-turning' : ''}`} ref={bookRef} tabIndex={0} aria-label="Hobbies journal. Turn pages by swiping, clicking a paper corner, or pressing the left and right arrow keys." onKeyDown={e=>{if(e.target!==e.currentTarget || shot || fashion) return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();void turnTo(activeSpread+(e.key==='ArrowRight'?1:-1))}}}
+      onPointerDown={e=>{
+        if(shot||fashion||turnLock.current||e.button!==0||(e.target as HTMLElement).closest('button,a,.journal-tarot-ring')) return
+        const corner=(e.target as HTMLElement).closest<HTMLElement>('.journal-paper-corner')
+        gesture.current={x:e.clientX,y:e.clientY,direction:corner?Number(corner.dataset.direction):0}
+        if(corner)e.currentTarget.setPointerCapture(e.pointerId)
+      }} onPointerUp={e=>{
+        const start=gesture.current;gesture.current=null;if(!start)return
+        const dx=e.clientX-start.x,dy=e.clientY-start.y
+        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)void turnTo(activeSpread+(dx<0?1:-1))
+        else if(start.direction&&Math.abs(dx)<20&&Math.abs(dy)<20)void turnTo(activeSpread+start.direction)
+      }} onPointerCancel={()=>{gesture.current=null}}>
       {spread(0, <div className="journal-intro">
         <h1>Hobbies</h1>
         <p>Beyond models and markets, I have plenty of other hobbies. Three I keep coming back to: art, vibe coding, and running.</p>
@@ -374,7 +392,7 @@ export default function HobbiesPage() {
           <PressedCollage kinds={[5, 3]} tape={0} />
         </JournalLeaf>
       </section>}
-      {!shot && !fashion && <div className="journal-edge-controls"><button type="button" aria-label="Flip previous page" disabled={turning || activeSpread===0} onClick={()=>turnTo(activeSpread-1)}>‹</button><button type="button" aria-label="Flip next page" disabled={turning || activeSpread===chapters.length-1} onClick={()=>turnTo(activeSpread+1)}>›</button></div>}
+      {!shot && !fashion && <>{activeSpread>0&&<span className="journal-paper-corner journal-paper-corner-left" data-direction="-1" aria-hidden="true"/>}{activeSpread<chapters.length-1&&<span className="journal-paper-corner journal-paper-corner-right" data-direction="1" aria-hidden="true"/>}</>}
     </div>
     </div>
   </main>
