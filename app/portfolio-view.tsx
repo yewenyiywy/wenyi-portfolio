@@ -237,9 +237,9 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
   <div className="progress" ref={barRef} aria-hidden="true"></div>
 
   <nav className="nav wrap" ref={navRef}>
-    <a href="#top" className="logo">WENYI YE<span>.</span></a>
+    <Link href="/" className="logo">WENYI YE<span>.</span></Link>
     <div className="navlinks">
-      <Link href="/">Play game</Link>
+      <Link href="/game">Play game</Link>
       <Link href="/classic">Archives</Link>
       {navItems.map(n => (
         <a key={n.id} href={`#${n.id}`} className={active === n.id ? 'active' : undefined}>{n.label}</a>
@@ -258,7 +258,7 @@ export default function PortfolioView({ chapter }: { chapter?: string }){
     </button>
     {mobileMenu && (
       <div className="mobile-menu">
-        <Link href="/">Play game</Link>
+        <Link href="/game">Play game</Link>
         <Link href="/classic">Archives</Link>
         {navItems.map(n => (
           <a key={n.id} href={`#${n.id}`} onClick={() => setMobileMenu(false)}>{n.label}</a>

@@ -1,5 +1,5 @@
-import AlchemyGame from './alchemy-game'
+import StudioScene from './studio-scene'
 
 export default function Home() {
-  return <AlchemyGame />
+  return <StudioScene />
 }

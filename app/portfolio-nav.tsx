@@ -22,11 +22,11 @@ export default function PortfolioNav({page, activeSection, onHome, onSection}:{
   const links=()=> <>
     {sections.map(({id,label})=><Link key={id} href={`/classic#${id}`} className={activeSection===id?'active':undefined} onClick={e=>{closeMenu();if(onSection){e.preventDefault();onSection(id)}}}>{label}</Link>)}
     <Link href="/hobbies" className={page==='hobbies'?'active':undefined} onClick={closeMenu}>Hobbies</Link>
-    <Link href="/" onClick={closeMenu}>Play game</Link>
+    <Link href="/game" onClick={closeMenu}>Play game</Link>
     <Link href="/classic#contact" onClick={e=>{closeMenu();if(onSection){e.preventDefault();onSection('contact')}}}>Get in touch</Link>
   </>
   return <nav className="portfolio-topnav" aria-label="Portfolio navigation">
-    <Link href="/classic" className="portfolio-topnav-brand" onClick={e=>{closeMenu();if(onHome){e.preventDefault();onHome()}}}>WENYI YE<span>.</span></Link>
+    <Link href="/" className="portfolio-topnav-brand" onClick={closeMenu}>WENYI YE<span>.</span></Link>
     <div className="portfolio-topnav-links">{links()}</div>
     <Link href="/classic/full" className="portfolio-topnav-full" onClick={closeMenu}>View full portfolio</Link>
     <button type="button" className="portfolio-topnav-toggle" aria-label={menu?'Close navigation':'Open navigation'} aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><span/><span/></button>

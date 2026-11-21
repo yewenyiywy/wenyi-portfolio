@@ -37,5 +37,5 @@ export default function PortfolioEffects() {
     const lenis=new Lenis({autoRaf:true, duration:.75, prevent:node=>Boolean(node.closest('[role="dialog"],textarea,.journal-tarot-ring'))})
     return()=>lenis.destroy()
   },[pathname])
-  return <div key={pathname} className="portfolio-ink-transition" data-dark={pathname==='/'?'true':undefined} aria-hidden="true"/>
+  return <div key={pathname} className="portfolio-ink-transition" data-dark={pathname==='/game'?'true':undefined} aria-hidden="true"/>
 }

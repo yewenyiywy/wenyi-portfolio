@@ -120,6 +120,10 @@ async function check(page: Page, label: string) {
 test.describe('home page', () => {
   test('default view', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading',{name:'Welcome to my studio.'})).toBeVisible()
+    const index=page.getByRole('navigation',{name:'Portfolio sections'})
+    await expect(index.getByRole('link',{name:'Hobbies'})).toHaveAttribute('href','/hobbies')
+    await expect(index.getByRole('link',{name:'Alchemy'})).toHaveAttribute('href','/game')
     await check(page, 'home')
   })
 
@@ -147,7 +151,7 @@ test.describe('home page', () => {
     await check(page, 'home-workflow')
   })
   test('alchemy chapter and skip', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/game')
     const pet = page.getByRole('button', { name: 'Say hello to the pixel marmoset' })
     await expect(pet).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Mix two ingredients to uncover a chapter of Wenyi’s story.' })).toBeVisible()
