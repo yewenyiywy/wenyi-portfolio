@@ -61,10 +61,8 @@
   display: flex;
   flex-direction: column;
   padding: 2px 8px 14px 2px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #ad8c60 transparent;
+  overflow: hidden;
+  scrollbar-width: none;
   overflow-wrap: anywhere;
 }
 .journal-leaf-content > * { flex-shrink: 0; }

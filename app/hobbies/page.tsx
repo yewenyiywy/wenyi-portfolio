@@ -86,8 +86,36 @@ const fashionDesigns: FashionDesign[] = [
 ]
 
 function JournalLeaf({ children, footer, side }: { children: ReactNode; footer: ReactNode; side: 'left' | 'right' }) {
-  return <div className={`journal-leaf journal-${side}`}>
-    <div className="journal-leaf-content">{children}</div>
+  const leafRef=useRef<HTMLDivElement>(null)
+  const contentRef=useRef<HTMLDivElement>(null)
+  useEffect(()=>{
+    const leaf=leafRef.current,content=contentRef.current
+    if(!leaf||!content)return
+    let frame=0,disposed=false
+    const fit=()=>{
+      if(disposed||!leaf.offsetHeight||!content.clientHeight)return
+      const set=(scale:number)=>content.style.setProperty('zoom',String(scale))
+      const fits=()=>content.scrollHeight<=content.clientHeight+1&&content.scrollWidth<=content.clientWidth+1
+      set(1)
+      if(fits())return
+      // Keep each spread at its original paper size. Only crowded pages shrink.
+      let low=.25,high=1
+      for(let i=0;i<9;i++){
+        const mid=(low+high)/2;set(mid)
+        if(fits())low=mid;else high=mid
+      }
+      set(low)
+    }
+    const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(fit)}
+    const observer=new ResizeObserver(schedule)
+    observer.observe(leaf)
+    content.addEventListener('load',schedule,true)
+    void document.fonts.ready.then(schedule)
+    schedule()
+    return()=>{disposed=true;observer.disconnect();cancelAnimationFrame(frame);content.removeEventListener('load',schedule,true)}
+  },[children])
+  return <div className={`journal-leaf journal-${side}`} ref={leafRef}>
+    <div className="journal-leaf-content" ref={contentRef}>{children}</div>
     <div className="journal-leaf-footer">{footer}</div>
   </div>
 }

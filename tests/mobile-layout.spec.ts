@@ -213,6 +213,14 @@ test.describe('hobbies page', () => {
     await page.goto('/hobbies')
     await check(page, 'hobbies')
   })
+  test('journal pages fit the paper without internal scrolling', async ({ page }) => {
+    for (const hash of ['', '#embroidery', '#game-design', '#afterglow', '#fashion-design', '#running']) {
+      await page.goto(`/hobbies${hash}`)
+      await page.evaluate(()=>document.fonts.ready)
+      const visible=page.locator('.journal-spread:not([hidden]) .journal-leaf-content')
+      await expect.poll(()=>visible.evaluateAll(els=>els.every(el=>getComputedStyle(el).overflowY==='hidden'&&el.scrollHeight<=el.clientHeight+2))).toBe(true)
+    }
+  })
   test('page navigation uses paper corners without visible navigation controls', async ({ page }) => {
     await page.goto('/hobbies#embroidery')
     const footer=page.locator('#embroidery .journal-leaf-footer')
