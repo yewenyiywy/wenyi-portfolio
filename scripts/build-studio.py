@@ -29,6 +29,13 @@ deskpad=mat('Desk mat leather',(.045,.105,.082),.83)
 stitch=mat('Desk mat stitching',(.23,.29,.21),.85)
 leaf=mat('Plant foliage',(.075,.25,.095),.8)
 ceramic=mat('Cream ceramic',(.63,.55,.41),.41)
+orchid_purple=mat('Orchid violet',(.27,.035,.43),.52)
+orchid_light=mat('Orchid lilac',(.54,.17,.63),.58)
+orchid_lip=mat('Orchid magenta lip',(.46,.035,.17),.48)
+orchid_center=mat('Orchid pale throat',(.95,.78,.55),.48)
+bird_orange=mat('Bird of paradise orange',(.92,.26,.025),.55)
+bird_blue=mat('Bird of paradise blue',(.055,.16,.49),.49)
+leaf_dark=mat('Deep glossy leaf',(.035,.18,.06),.42)
 screenmat=mat('Computer display',(.015,.17,.15),.4)
 
 def group(name):
@@ -96,6 +103,60 @@ def surface(name,loc,w,h,material,vertical=True,parent=None):
     ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
     if parent:ob.parent=parent
     return ob
+
+def petal(name,base,tip,width,material,normal=(0,-1,0),curl=.045):
+    # Individual curved botanical surfaces, not flat billboards.
+    a,b=Vector(base),Vector(tip);direction=(b-a).normalized();n=Vector(normal).normalized();side=direction.cross(n).normalized()
+    verts=[];faces=[];rows=12;cols=8
+    for i in range(rows+1):
+        t=i/rows;span=width*(math.sin(math.pi*t)**.72)*.5+.001
+        for j in range(cols+1):
+            q=j/cols*2-1;p=a.lerp(b,t)+side*(span*q)+n*(curl*math.sin(math.pi*t)*(1-q*q))
+            verts.append(tuple(p))
+    for i in range(rows):
+        for j in range(cols):
+            k=i*(cols+1)+j;faces.append((k,k+1,k+cols+2,k+cols+1))
+    mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update();ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
+    for p in mesh.polygons:p.use_smooth=True
+    mod=ob.modifiers.new('Petal thickness','SOLIDIFY');mod.thickness=.003
+    return ob
+
+def planter(name,x,y,r,h):
+    bpy.ops.mesh.primitive_cone_add(vertices=48,radius1=r*.79,radius2=r,depth=h,location=(x,y,1.34+h/2));ob=bpy.context.object;ob.name=name+' pot';ob.data.materials.append(ceramic)
+    mod=ob.modifiers.new('Rounded lip','BEVEL');mod.width=.015;mod.segments=2
+    cylinder(name+' soil',(x,y,1.34+h+.005),r*.88,.018,edge)
+    return 1.34+h
+
+def orchid(x,y):
+    z=planter('Orchid',x,y,.26,.34)
+    for i in range(6):
+        a=i*math.tau/6;tip=(x+math.cos(a)*.43,y+math.sin(a)*.34,z+.13+.05*(i%2))
+        petal('Orchid basal leaf',(x,y,z+.02),tip,.17,leaf_dark,(0,0,1),.07)
+    for branch,sign in enumerate((-1,1)):
+        top=(x+sign*.16,y-.04,z+.78+branch*.08)
+        cable('Orchid stem',[(x,y,z),(x+sign*.06,y,z+.36),(x+sign*.11,y+.03,z+.66),top],.012,leaf_dark)
+        for i in range(4):
+            c=Vector((top[0]+sign*(i%2)*.14,top[1]-.035-(i%2)*.06,top[2]-i*.16))
+            rod('Orchid flower stalk',(top[0],top[1],top[2]-i*.16),c,.007,leaf_dark)
+            for k,angle in enumerate((90,25,155,225,315)):
+                a=math.radians(angle);tip=c+Vector((math.cos(a)*.145,-.025,math.sin(a)*.145))
+                petal('Orchid purple petal',c,tip,.17 if k<3 else .105,orchid_purple if k!=0 else orchid_light,(0,-1,0),.038)
+            petal('Orchid throat',c,c+Vector((0,-.065,-.075)),.08,orchid_lip,(0,-1,0),.016)
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=.027,location=c+Vector((0,-.06,0)));ob=bpy.context.object;ob.name='Orchid flower center';ob.scale=(.75,.54,1);ob.data.materials.append(orchid_center)
+
+def bird_of_paradise(x,y):
+    z=planter('Bird of paradise',x,y,.29,.40)
+    for i,(dx,dy,h) in enumerate([(-.34,-.08,.97),(.29,-.04,1.14),(-.20,.16,1.24),(.36,.12,.80),(.05,.06,1.03)]):
+        end=(x+dx*.34,y+dy*.45,z+h*.44);tip=(x+dx,y+dy,z+h)
+        cable('Bird of paradise leaf stem',[(x,y,z), (x+dx*.25,y+dy*.3,z+h*.35),end],.016,leaf_dark)
+        petal('Bird of paradise large leaf',end,tip,.26,leaf_dark,(0,-1,0),.046)
+        rod('Bird of paradise leaf vein',end,tip,.006,leaf)
+    for sign,h in [(-1,1.10),(1,1.25)]:
+        base=Vector((x+sign*.15,y-.10,z+h))
+        cable('Bird of paradise flower stem',[(x,y,z),(x+sign*.06,y,z+h*.55),base],.015,leaf_dark)
+        petal('Bird of paradise spathe',base,base+Vector((sign*.34,0,.035)),.10,leaf_dark,(0,-1,0),.025)
+        for k in range(3):petal('Bird of paradise orange flower',base+Vector((sign*.07,0,.02)),base+Vector((sign*(.10+k*.085),-.01,.19-k*.02)),.083,bird_orange,(0,-1,0),.024)
+        petal('Bird of paradise blue tongue',base+Vector((sign*.08,-.025,.03)),base+Vector((sign*.28,-.06,.12)),.055,bird_blue,(0,-1,0),.02)
 
 # Architectural shell, a restrained desk set rather than a walkable room.
 box('Back wall',(0,2.35,2.6),(14,.16,5.2),wall,.005)
@@ -172,20 +233,13 @@ box('Research notebook front',(-1.60,-1.12,1.484),(.88,.72,.045),burgundy,.018,p
 surface('research_cover',(-1.60,-1.12,1.51),.82,.65,burgundy,False,projects)
 
 # A sculptural reading lamp, a few books, a ceramic plant. No decorative clutter.
-cylinder('Lamp base',(-3.23,1.03,1.40),.29,.12,black)
-rod('Lamp arm lower',(-3.23,1.03,1.45),(-3.12,1.18,2.46),.035,black)
-rod('Lamp arm upper',(-3.12,1.18,2.46),(-2.89,.50,2.80),.035,black)
-bpy.ops.mesh.primitive_cone_add(vertices=32,radius1=.30,radius2=.13,depth=.26,location=(-2.88,.48,2.75),rotation=(.18,0,0));ob=bpy.context.object;ob.name='Lamp shade';ob.data.materials.append(black)
-cylinder('Lamp warm liner',(-2.88,.48,2.612),.27,.025,gold)
-for i,material in enumerate((navy,burgundy,green)):
-    box('Shelf book',(3.14+i*.14,1.09,1.70),(.12,.55,.70-i*.07),material,.015)
-    box('Shelf book gilt',(3.14+i*.14,.805,1.78),(.08,.018,.025),gold,.003)
-cylinder('Ceramic planter',(3.25,-.38,1.54),.22,.39,ceramic)
-cylinder('Pot soil',(3.25,-.38,1.744),.19,.026,edge)
-for i in range(7):
-    angle=i*2.399;end=(3.25+math.cos(angle)*.32,-.38+math.sin(angle)*.25,2.02+.12*(i%3))
-    rod('Plant stem',(3.25,-.38,1.74),end,.014,leaf)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=1,location=end);ob=bpy.context.object;ob.name='Plant leaf';ob.scale=(.17,.065,.045);ob.rotation_euler.z=angle;ob.data.materials.append(leaf)
+cylinder('Lamp base',(-3.26,-.32,1.40),.29,.12,black)
+rod('Lamp arm lower',(-3.26,-.32,1.45),(-3.39,-.12,2.46),.035,black)
+rod('Lamp arm upper',(-3.39,-.12,2.46),(-3.57,-.44,2.80),.035,black)
+bpy.ops.mesh.primitive_cone_add(vertices=32,radius1=.30,radius2=.13,depth=.26,location=(-3.57,-.44,2.75),rotation=(.18,0,0));ob=bpy.context.object;ob.name='Lamp shade';ob.data.materials.append(black)
+cylinder('Lamp warm liner',(-3.57,-.44,2.612),.27,.025,gold)
+orchid(-3.14,1.61)
+bird_of_paradise(3.18,1.48)
 
 out=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','public','studio.glb'))
 bpy.ops.export_scene.gltf(filepath=out,export_format='GLB',export_apply=True,export_materials='EXPORT',export_yup=True)

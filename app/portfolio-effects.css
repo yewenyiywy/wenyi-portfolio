@@ -1,11 +1,10 @@
 /* Quiet, decorative motion; content and navigation stay in normal flow. */
 :root{--ambient-x:0;--ambient-y:0;--light-x:50%;--light-y:30%}
-.portfolio-ink-transition{position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0;background:#8e6d4550;mix-blend-mode:multiply;animation:ink-lift .52s steps(12,end) both}
+.portfolio-ink-transition{position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0;background:#8e6d4528;mix-blend-mode:multiply;animation:ink-lift .46s ease-out both}
 .portfolio-ink-transition[data-dark=true]{background:#d9b87b32;mix-blend-mode:screen}
 @keyframes ink-lift{
-  0%{opacity:.42;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
-  40%{opacity:.27;clip-path:polygon(0 0,100% 0,100% 80%,92% 80%,92% 88%,74% 88%,74% 76%,52% 76%,52% 92%,31% 92%,31% 80%,12% 80%,12% 66%,0 66%)}
-  100%{opacity:0;clip-path:polygon(0 0,100% 0,100% 0,0 0)}
+  0%{opacity:.38}
+  100%{opacity:0}
 }
 
 /* The light is an overlay, never another interactive element. */

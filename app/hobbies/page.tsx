@@ -305,12 +305,12 @@ export default function HobbiesPage() {
     return <section className="journal-spread" id={chapters[index].anchor || undefined} aria-label={chapters[index].title} hidden={activeSpread !== index || !!shot || !!fashion}>
       <JournalLeaf side="left" footer={<>
         <span className="journal-page-number">{String(index * 2 + 1).padStart(2, '0')}</span>
-        {index > 0 ? <PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/> : <PageTape label="Back to portfolio" kind={previousTape} href="/classic"/>}
+        {index > 0 ? <PageTape label="Contents" kind={contentsTape} onClick={() => turnTo(0)}/> : <PageTape label="Back to studio" kind={previousTape} href="/"/>}
       </>}>
         {left}
       </JournalLeaf>
       <JournalLeaf side="right" footer={<>
-        {index === chapters.length - 1 && <PageTape label="Back to portfolio" kind={nextTape} href="/classic"/>}
+        {index === chapters.length - 1 && <PageTape label="Back to studio" kind={nextTape} href="/"/>}
         <span className="journal-page-number">{String(index * 2 + 2).padStart(2, '0')}</span>
       </>}>
         {right}

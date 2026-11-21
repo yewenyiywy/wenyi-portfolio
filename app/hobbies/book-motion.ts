@@ -3,8 +3,7 @@
 import * as THREE from 'three'
 import html2canvas from 'html2canvas'
 
-// The original pixel-art book provides the paper on both faces. Capture only
-// the live content, then composite at the same low resolution as the renderer.
+// The Blender-rendered journal supplies realistic paper on both faces.
 export async function flipLeaf(book: HTMLElement, direction: number, target: number, reveal: () => void) {
   const current = book.querySelector<HTMLElement>('.journal-spread:not([hidden])')
   const destination = book.querySelectorAll<HTMLElement>('.journal-spread:not(.journal-detail)')[target]
@@ -20,11 +19,11 @@ export async function flipLeaf(book: HTMLElement, direction: number, target: num
   const show = () => { if (!revealed) { revealed = true; reveal() } }
   try {
     const width = book.offsetWidth, height = book.offsetHeight
-    const pixel = 3
+    const pixel = 1
     const pageWidth = width * .439, pageHeight = height * .83
     const pageTop = height * .08
     const artwork = new Image()
-    artwork.src = '/hobbies/field-journal.webp'
+    artwork.src = '/hobbies/real-journal.webp'
     await artwork.decode()
     let captureId = 0
     const snapshot = async (leaf: HTMLElement, side: string, layout: HTMLElement) => {
@@ -47,7 +46,7 @@ export async function flipLeaf(book: HTMLElement, direction: number, target: num
         const y = ((layout.offsetParent===spread?spread.offsetTop:0) + layout.offsetTop - pageTop) / pixel
         ctx.drawImage(content, x, y, layout.offsetWidth / pixel, layout.offsetHeight / pixel)
         const texture = new THREE.CanvasTexture(canvas)
-        texture.magFilter = texture.minFilter = THREE.NearestFilter
+        texture.magFilter = texture.minFilter = THREE.LinearFilter
         texture.generateMipmaps = false
         texture.colorSpace = THREE.SRGBColorSpace
         resources.push(texture)
@@ -56,7 +55,7 @@ export async function flipLeaf(book: HTMLElement, direction: number, target: num
     }
     const [frontMap, backMap, stationaryMap] = await Promise.all([snapshot(front, fromSide, front), snapshot(back, toSide, stationary), snapshot(stationary, toSide, stationary)])
     backMap.repeat.x = -1; backMap.offset.x = 1
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false })
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
     renderer.setSize(Math.ceil(width / pixel), Math.ceil(height / pixel), false)
     renderer.domElement.className = 'journal-flip-canvas'
     renderer.domElement.setAttribute('aria-hidden', 'true')
@@ -64,7 +63,7 @@ export async function flipLeaf(book: HTMLElement, direction: number, target: num
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-width / 2,width / 2,height / 2,-height / 2,1,5000)
     camera.position.z = 2000
-    const segments = 28
+    const segments = 48
     const geometry = new THREE.PlaneGeometry(pageWidth, pageHeight, segments, 8)
     const stationaryGeometry = new THREE.PlaneGeometry(pageWidth, pageHeight)
     const mat = new THREE.MeshBasicMaterial({ map: frontMap, side: THREE.FrontSide, vertexColors: true })
@@ -96,7 +95,7 @@ export async function flipLeaf(book: HTMLElement, direction: number, target: num
         const j = Math.round(u*segments)
         positions.setX(i,xs[j]);positions.setZ(i,zs[j])
         const angle=Math.PI*p+curl*(u-.5)
-        const light=Math.round((.76+.24*Math.abs(Math.cos(angle)))*8)/8
+        const light=.75+.25*Math.abs(Math.cos(angle))
         shading.setXYZ(i,light,light,light)
       }
       positions.needsUpdate=true;shading.needsUpdate=true

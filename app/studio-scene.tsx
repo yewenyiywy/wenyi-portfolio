@@ -41,11 +41,21 @@ function bookTexture(color:string,heading:string,subtitle:string){return canvasT
   title(ctx,heading,w/2,h*.46,62,'#d5b575');title(ctx,subtitle,w/2,h*.57,25,'#d5b575')
   title(ctx,'✦',w/2,h*.28,32,'#d5b575');title(ctx,'W. Y.',w/2,h*.79,28,'#d5b575')
 })}
-function degreeTexture(school:string,sub:string){return canvasTexture((ctx,w,h)=>{
-  ctx.fillStyle='#f5ecd6';ctx.fillRect(0,0,w,h);border(ctx,w,h,'#a18a5a',22)
-  title(ctx,school,w/2,h*.25,42,'#303b47');title(ctx,'Wenyi Ye',w/2,h*.47,46,'#50412c','Georgia');title(ctx,sub,w/2,h*.61,22,'#62543f')
-  ctx.fillStyle='#ad8250';ctx.beginPath();ctx.arc(w/2,h*.78,27,0,Math.PI*2);ctx.fill();title(ctx,'✦',w/2,h*.795,23,'#f8e8b8')
-})}
+function degreeTexture(michigan:boolean){
+  const color=michigan?'#00274c':'#003262'
+  const texture=canvasTexture((ctx,w,h)=>{
+    ctx.fillStyle='#fbf7ec';ctx.fillRect(0,0,w,h);border(ctx,w,h,michigan?'#c59931':'#bc9a52',22)
+    title(ctx,michigan?'UNIVERSITY OF MICHIGAN':'UNIVERSITY OF CALIFORNIA, BERKELEY',w/2,h*.25,michigan?32:26,color)
+    title(ctx,michigan?'Ann Arbor':'Haas School of Business',w/2,h*.32,24,color)
+    title(ctx,'Wenyi Ye',w/2,h*.46,42,'#50412c','Georgia')
+    if(michigan){title(ctx,'B.S. Financial Mathematics',w/2,h*.60,29,color);title(ctx,'B.S. Human Origins, Biology, and Behavior',w/2,h*.69,23,color)}
+    else title(ctx,'Master of Financial Engineering',w/2,h*.63,29,color)
+    title(ctx,michigan?'Class of 2025':'Class of 2027 · Expected',w/2,h*.83,21,'#665c4a')
+  },1024,640)
+  const logo=new Image();logo.onload=()=>{const c=texture.image as HTMLCanvasElement,ctx=c.getContext('2d')!;const max=76,ratio=Math.min(max/logo.width,max/logo.height);ctx.drawImage(logo,(c.width-logo.width*ratio)/2,48,logo.width*ratio,logo.height*ratio);texture.needsUpdate=true}
+  logo.src=michigan?'/logos/umich.png':'/logos/ucb-seal.png'
+  return texture
+}
 function resumeTexture(){return canvasTexture((ctx,w,h)=>{
   ctx.fillStyle='#faf7ee';ctx.fillRect(0,0,w,h);title(ctx,'WENYI YE',w/2,64,42,'#25352f','Arial');title(ctx,'PROFESSIONAL EXPERIENCE',w/2,100,19,'#72634f','Arial')
   ctx.fillStyle='#9d8b68';ctx.fillRect(48,120,w-96,2)
@@ -120,6 +130,8 @@ export default function StudioScene(){
         else if(name!=='computer_screen')label='Retro CRT computer · Games'
       }else if(!route){
         if(name.includes('lamp'))label='Reading lamp'
+        else if(name.includes('orchid'))label='Purple Phalaenopsis orchid'
+        else if(name.includes('bird'))label='Bird of paradise · Strelitzia'
         else if(name.includes('plant')||name.includes('planter')||name.includes('soil'))label='Potted plant'
         else if(name.includes('shelf book'))label='Books'
         else if(name.includes('desk pad')||name.includes('mat edge'))label='Leather desk mat'
@@ -151,9 +163,10 @@ export default function StudioScene(){
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e);if(!hit?.route)return
       const route=hit.route
+      if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
       moving=true;updateHover('')
       if(!reduced){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
-      const navigate=()=>{if(route.href.startsWith('https:'))window.location.assign(route.href);else router.push(route.href)}
+      const navigate=()=>router.push(route.href)
       if(reduced)navigate();else transition=setTimeout(navigate,580)
     }
     const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('')}}
@@ -170,7 +183,7 @@ export default function StudioScene(){
       const sunlight=new THREE.DirectionalLight('#ffd4a0',3.1);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
-      const lamp=new THREE.PointLight('#ffc278',12,3,.8);lamp.position.set(-2.88,2.58,-.48);scene.add(lamp)
+      const lamp=new THREE.PointLight('#ffc278',12,3,.8);lamp.position.set(-3.57,2.58,.44);scene.add(lamp)
       const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const textureLoader=new THREE.TextureLoader()
@@ -203,7 +216,7 @@ export default function StudioScene(){
             else if(name==='hobbies_cover')apply(obj,bookTexture('#173f30','HOBBIES','A PERSONAL JOURNAL'))
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
             else if(name==='resume_texture')apply(obj,resumeTexture())
-            else if(name.startsWith('degree_texture_'))apply(obj,name.endsWith('0')?degreeTexture('University of Michigan','Undergraduate studies'):degreeTexture('UC Berkeley','Graduate studies'))
+            else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
             else if(name.startsWith('photo_texture_')){
               const index=Number(name.split('_').pop());const url=photos[index]
               if(url)textureLoader.load(url,t=>{if(!alive){t.dispose();return};t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.anisotropy=4;const image=t.image as HTMLImageElement;const imageAspect=image.width/image.height,frameAspect=.79;if(imageAspect>frameAspect){t.repeat.x=frameAspect/imageAspect;t.offset.x=(1-t.repeat.x)/2}else{t.repeat.y=imageAspect/frameAspect;t.offset.y=(1-t.repeat.y)/2}apply(obj,t)})
@@ -237,6 +250,6 @@ export default function StudioScene(){
       {status==='ready'&&<div className="studio-scene-caption">Explore the desk · Drag to look around</div>}
       <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/">Afterglow</a></nav>
+    <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/" target="_blank" rel="noreferrer noopener">Afterglow</a></nav>
   </main>
 }

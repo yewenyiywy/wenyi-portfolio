@@ -26,9 +26,9 @@ export default function PortfolioNav({page, activeSection, onHome, onSection}:{
     <Link href="/classic#contact" onClick={e=>{closeMenu();if(onSection){e.preventDefault();onSection('contact')}}}>Get in touch</Link>
   </>
   return <nav className="portfolio-topnav" aria-label="Portfolio navigation">
-    <Link href="/" className="portfolio-topnav-brand" onClick={closeMenu}>WENYI YE<span>.</span></Link>
+    <Link href="/" className="portfolio-topnav-brand" onClick={closeMenu}>Wenyi Ye<span>.</span></Link>
     <div className="portfolio-topnav-links">{links()}</div>
-    <Link href="/classic/full" className="portfolio-topnav-full" onClick={closeMenu}>View full portfolio</Link>
+    <Link href="/" className="portfolio-topnav-full" onClick={closeMenu}>← Back to studio</Link>
     <button type="button" className="portfolio-topnav-toggle" aria-label={menu?'Close navigation':'Open navigation'} aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><span/><span/></button>
     {menu&&<div className="portfolio-topnav-menu">{links()}</div>}
   </nav>
