@@ -24,6 +24,21 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   await expect(page.locator('.studio-index a[href^="/classic"]')).toHaveCount(1)
   await page.waitForTimeout(1800)
   const capture=async(name:string)=>{const shot=await page.screenshot({timeout:90_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
+  await expect(host).toHaveAttribute('data-crt-folder','desktop')
+  // The monitor is a real texture on the 3D model; each folder is hit through UV raycasting.
+  await page.mouse.click(418,286)
+  await expect(host).toHaveAttribute('data-crt-folder','games')
+  await capture('crt-games')
+  await page.mouse.click(526,259)
+  await expect(host).toHaveAttribute('data-crt-folder','desktop')
+  await page.mouse.click(466,286)
+  await expect(host).toHaveAttribute('data-crt-folder','about')
+  await page.mouse.click(526,259)
+  await expect(host).toHaveAttribute('data-crt-folder','desktop')
+  await page.mouse.click(514,286)
+  await expect(host).toHaveAttribute('data-crt-folder','videos')
+  await page.mouse.click(526,259)
+  await expect(host).toHaveAttribute('data-crt-folder','desktop')
   const original=await capture('initial')
   expect(original.mean).toBeGreaterThan(25)
   // Exclude startup frames sampled while asynchronously loaded material maps
