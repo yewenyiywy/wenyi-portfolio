@@ -127,6 +127,9 @@ export default function StudioScene(){
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
     let composer:EffectComposer|undefined,outline:OutlinePass|undefined
+    let lampLight:THREE.PointLight|undefined
+    let lampOn=true,lampLevel=1
+    const lampShades=new Set<THREE.MeshStandardMaterial>()
     const interactive=new Map<THREE.Object3D,THREE.Group>()
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
     const highlight=(group?:THREE.Group)=>{
@@ -153,6 +156,7 @@ export default function StudioScene(){
         if(!key&&/^(Desk |Tabletop|Drawer|Raised |Handle |Drop ring|Turned olive|Leg gilt|Fluted knee|Apron |Gilt drawer)/.test(name))key='desk'
         if(!key&&/^(Window stile|Window rail|Deep sash|Curtain brass)/.test(name))key='window'
         if(!key&&name.startsWith('Sheer curtain'))key=name
+        if(!key&&name.startsWith('Lamp '))key='lamp'
         if(!key)return
         const list=groups.get(key)??[];list.push(o);groups.set(key,list)
       })
@@ -214,7 +218,7 @@ export default function StudioScene(){
         else if(name.includes('shelf book'))label='Books'
         else if(name.includes('desk pad')||name.includes('mat edge'))label='Leather desk mat'
       }
-      return {route,label:label||({pen:'Fountain pen',mat:'Leather desk mat',desk:'Antique writing desk',window:'Window'} as Record<string,string>)[object.name]||'Desk object',object}
+      return {route,label:label||({pen:'Fountain pen',mat:'Leather desk mat',desk:'Antique writing desk',window:'Window',lamp:lampOn?'Lamp · Turn off':'Lamp · Turn on'} as Record<string,string>)[object.name]||'Desk object',object}
     }
     const updateHover=(text:string,clickable=false)=>{if(hovered!==text){hovered=text;setHover(text)}if(renderer)renderer.domElement.style.cursor=clickable?'pointer':'grab'}
     contactAction.current=(open)=>{
@@ -247,6 +251,9 @@ export default function StudioScene(){
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e);if(!hit)return
       highlight(hit.object)
+      if(hit.object.name==='lamp'){
+        lampOn=!lampOn;dirty=true;updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
+      }
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
       if(!hit.route)return
@@ -267,15 +274,16 @@ export default function StudioScene(){
       renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
-      scene=new THREE.Scene();scene.background=new THREE.Color('#a9c9e5')
+      scene=new THREE.Scene();scene.background=new THREE.Color('#c893a7')
       const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
-      scene.add(new THREE.HemisphereLight('#e9effa','#796653',.65))
+      scene.add(new THREE.HemisphereLight('#dee3ff','#796653',.53))
       // Spread the key across the window aperture to create a soft penumbra.
-      for(const [x,y,z] of [[-5.5,4.9,1.6],[-5.5,3.9,1.6],[-5.5,4.9,.3],[-5.5,3.9,.3]]){
-        const sunlight=new THREE.DirectionalLight('#fff1d8',.44);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
+      for(const [x,y,z] of [[-5.5,3.6,.6],[-5.5,2.8,.6],[-5.5,3.6,-.7],[-5.5,2.8,-.7]]){
+        const sunlight=new THREE.DirectionalLight('#ffcf9b',.31);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
         sunlight.shadow.mapSize.set(1024,1024);sunlight.shadow.camera.left=-5;sunlight.shadow.camera.right=5;sunlight.shadow.camera.top=5;sunlight.shadow.camera.bottom=-5;sunlight.shadow.normalBias=.012;sunlight.shadow.bias=-.00012;sunlight.shadow.radius=3;scene.add(sunlight,sunlight.target)
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
+      lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
       composer=new EffectComposer(renderer)
       composer.addPass(new RenderPass(scene,camera))
       outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
@@ -289,8 +297,10 @@ export default function StudioScene(){
       const loader=new GLTFLoader()
       void (async()=>{
         try{
-          const response=await fetch('/studio.glb.gz',{signal:abort.signal});if(!response.ok||!response.body)throw Error('Model unavailable')
-          const encoded=await response.arrayBuffer()
+          const manifest=await fetch('/studio-model/manifest.json',{signal:abort.signal});if(!manifest.ok)throw Error('Model unavailable')
+          const {parts}=await manifest.json() as {parts:string[]}
+          const chunks=await Promise.all(parts.map(async part=>{const response=await fetch(`/studio-model/${part}`,{signal:abort.signal});if(!response.ok)throw Error('Model unavailable');return response.arrayBuffer()}))
+          const encoded=await new Blob(chunks).arrayBuffer()
           const signature=new Uint8Array(encoded,0,4)
           const buffer=signature[0]===0x67&&signature[1]===0x6c?encoded:await new Response(new Blob([encoded]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
           const gltf=await loader.parseAsync(buffer,'/');if(!alive)return
@@ -300,6 +310,7 @@ export default function StudioScene(){
             if(!(obj instanceof THREE.Mesh))return
             obj.castShadow=!obj.name.startsWith('Exterior ')&&!obj.name.startsWith('Sheer curtain')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
+            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Ivory sheer linen'){m.transparent=true;m.opacity=.39;m.depthWrite=false;m.side=THREE.DoubleSide;m.roughness=.9}
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
@@ -323,6 +334,14 @@ export default function StudioScene(){
       })()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
+        const goal=lampOn?1:0
+        if(Math.abs(lampLevel-goal)>.001){
+          lampLevel=reduced?goal:THREE.MathUtils.lerp(lampLevel,goal,.16)
+          if(Math.abs(lampLevel-goal)<.001)lampLevel=goal
+          if(lampLight)lampLight.intensity=8.5*lampLevel
+          lampShades.forEach(m=>{m.emissiveIntensity=.8*lampLevel})
+          dirty=true
+        }
         const radius=8.9*Math.max(1,1.5/aspect)
         const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
         desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius))

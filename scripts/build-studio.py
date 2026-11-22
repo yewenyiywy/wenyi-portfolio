@@ -135,10 +135,14 @@ def mouse_shell(parent):
     mesh=bpy.data.meshes.new('Mouse shell');mesh.from_pydata(verts,[],faces);mesh.update()
     ob=bpy.data.objects.new('Mouse shell',mesh);bpy.context.collection.objects.link(ob);ob.parent=parent;mesh.materials.append(ivory)
     for polygon in mesh.polygons:polygon.use_smooth=True
-    for i,x in enumerate((1.142,1.298)):
-        button=box(f'Mouse button {i}',(x,-1.02,1.507),(.137,.16,.023),ivory,.026,parent)
-        button.rotation_euler.x=-.18
-    box('Mouse button seam',(1.22,-1.038,1.516),(.008,.13,.012),keycap,.002,parent)
+    # Engrave button divisions directly along the existing shell surface.
+    def surface_mark(px,py):
+        hit,point,normal,_=ob.ray_cast(Vector((px,py,1.7)),Vector((0,0,-1)))
+        return tuple(point+normal*.0009) if hit else None
+    divider=[surface_mark(1.22,-1.17+i*.019) for i in range(13)]
+    joint=[surface_mark(1.22+(i-12)*.013,-1.17) for i in range(25)]
+    cable('Mouse button divider',[p for p in divider if p],.0016,keycap,parent)
+    cable('Mouse front button joint',[p for p in joint if p],.0015,keycap,parent)
     box('Mouse cable strain relief',(1.22,-.901,1.42),(.055,.06,.045),keycap,.01,parent)
 
 def surface(name,loc,w,h,material,vertical=True,parent=None):
@@ -210,11 +214,84 @@ def orchid_bloom(c,s,tilt=0,veins=False):
     for dx,dz,r in [(0,.026,.019),(-.014,.005,.012),(.014,.005,.012)]:
         bpy.ops.mesh.primitive_uv_sphere_add(segments=12 if ASSET_REVIEW else 8,ring_count=6 if ASSET_REVIEW else 4,radius=r,location=throat+u*dx+v*dz+n*.018);ob=bpy.context.object;ob.name='Orchid pale column';ob.scale=(.85,.62,1);ob.data.materials.append(orchid_center)
 
+def print_material(name, filename, roughness=.65):
+    m=mat(name,(1,1,1),roughness)
+    tex=m.node_tree.nodes.new('ShaderNodeTexImage')
+    tex.image=bpy.data.images.load(os.path.join(os.path.dirname(__file__),'studio-textures',filename),check_existing=True)
+    bs=m.node_tree.nodes.get('Principled BSDF')
+    m.node_tree.links.new(tex.outputs['Color'],bs.inputs['Base Color'])
+    if filename.endswith('.png'):
+        m.node_tree.links.new(tex.outputs['Alpha'],bs.inputs['Alpha'])
+        m.node_tree.links.new(tex.outputs['Color'],bs.inputs['Emission Color'])
+        bs.inputs['Emission Strength'].default_value=.35
+    return m
+
 def planter(name,x,y,r,h):
-    bpy.ops.mesh.primitive_cone_add(vertices=48,radius1=r*.79,radius2=r,depth=h,location=(x,y,1.34+h/2));ob=bpy.context.object;ob.name=name+' pot';ob.data.materials.append(ceramic)
-    mod=ob.modifiers.new('Rounded lip','BEVEL');mod.width=.015;mod.segments=2
-    cylinder(name+' soil',(x,y,1.34+h+.005),r*.88,.018,edge)
-    return 1.34+h
+    import random
+    from mathutils.noise import noise_vector
+    rng=random.Random(394)
+    top=1.34+h
+    # A rolled lip and an inner wall leave visible clearance above the mix.
+    profile=[(1.34,.01),(1.34,r*.77),(1.35,r*.79),(top-.021,r*.991),
+             (top-.008,r),(top,r*.988),(top+.002,r*.953),(top-.007,r*.936),
+             (top-.080,r*.907),(1.37,r*.72),(1.37,.01)]
+    lathe(name+' ceramic planter',x,y,profile,ceramic)
+    mix=print_material('Fine potting humus','loam.jpg',.96)
+    normal_image=mix.node_tree.nodes.new('ShaderNodeTexImage')
+    normal_image.image=bpy.data.images.load(os.path.join(os.path.dirname(__file__),'studio-textures','loam-normal.png'))
+    normal_image.image.colorspace_settings.name='Non-Color'
+    normals=mix.node_tree.nodes.new('ShaderNodeNormalMap');normals.inputs['Strength'].default_value=.72
+    mix.node_tree.links.new(normal_image.outputs['Color'],normals.inputs['Color'])
+    mix.node_tree.links.new(normals.outputs[0],mix.node_tree.nodes.get('Principled BSDF').inputs['Normal'])
+    radius=.93*r
+    def height(u,v):
+        distance=math.hypot(u,v)
+        broad=noise_vector(Vector((u*17,v*17,3.6))).x
+        fine=noise_vector(Vector((u*93,v*93,1.7))).z
+        return top-.026+.013*broad+.005*fine-.008*(distance/radius)**3-.009*math.exp(-distance**2/.0008)
+    verts=[(x,y,height(0,0))];faces=[];segments=108
+    for row in range(1,32):
+        for col in range(segments):
+            angle=(col+rng.uniform(-.19,.19))*math.tau/segments
+            d=radius*(row+(rng.uniform(-.30,.30) if row<31 else 0))/31
+            u=d*math.cos(angle);v=d*math.sin(angle)
+            verts.append((x+u,y+v,height(u,v)+rng.uniform(-.0014,.0014)))
+        start=1+(row-1)*segments
+        for j in range(segments):
+            a=start+j;b=start+(j+1)%segments
+            if row==1:faces.append((0,a,b))
+            else:faces.extend([(a-segments,a,b),(a-segments,b,b-segments)])
+    mesh=bpy.data.meshes.new('Loose planting medium');mesh.from_pydata(verts,[],faces);mesh.update()
+    obj=bpy.data.objects.new(name+' soil surface',mesh);bpy.context.collection.objects.link(obj);mesh.materials.append(mix)
+    uv=mesh.uv_layers.new()
+    for loop in mesh.loops:
+        px,py,_=verts[loop.vertex_index];uv.data[loop.index].uv=(.5+(px-x)/(2*radius),.5+(py-y)/(2*radius))
+    palette=[mat('Dark humus clods',(.041,.023,.013),.97),mat('Crumbly brown peat',(.075,.041,.021),.96),
+             mat('Weathered pine bark',(.102,.052,.026),.91),mat('Mineral grains',(.43,.38,.29),.93)]
+    # Build one batched mesh of partially buried, independently shaped particles.
+    verts=[];faces=[];slots=[]
+    for _ in range(1450):
+        d=math.sqrt(rng.random())*(radius-.006);a=rng.random()*math.tau;u=d*math.cos(a);v=d*math.sin(a)
+        k=rng.choices(range(4),weights=[57,32,9,2])[0];length=.002+rng.random()**2*.007
+        width=length*rng.uniform(.56,1.1);depth=length*rng.uniform(.44,.90)
+        if k==2:length*=2.1;depth*=.65
+        phi=rng.uniform(0,math.tau);cs=math.cos(phi);sn=math.sin(phi);base=len(verts)
+        z=height(u,v)-depth*.25
+        for ring,(span,lift) in enumerate(((.54,-.57),(1,.09),(.62,.73))):
+            for j in range(6):
+                ang=j*math.tau/6+rng.uniform(-.16,.16)+.19*ring
+                rr=span*rng.uniform(.73,1.20);px=length*rr*math.cos(ang);py=width*rr*math.sin(ang)
+                verts.append((x+u+cs*px-sn*py,y+v+sn*px+cs*py,z+depth*(lift+rng.uniform(-.23,.23))))
+        for ring in range(2):
+            for j in range(6):
+                i=base+6*ring+j;next_i=base+6*ring+(j+1)%6
+                faces.append((i,next_i,next_i+6,i+6));slots.append(k)
+        faces.append(tuple(base+12+j for j in range(6)));slots.append(k)
+    mesh=bpy.data.meshes.new('Bark and soil aggregate');mesh.from_pydata(verts,[],faces);mesh.update()
+    obj=bpy.data.objects.new(name+' soil crumbs and bark',mesh);bpy.context.collection.objects.link(obj)
+    for material in palette:mesh.materials.append(material)
+    for poly,slot in zip(mesh.polygons,slots):poly.material_index=slot
+    return height(0,0)-.003
 
 def orchid(x,y):
     # Bulbous matte-black ceramic, upright glossy basal leaves, and two cascading flower spikes.
@@ -240,19 +317,44 @@ def orchid(x,y):
             c=p+Vector(((-1 if stem==0 else 1)*(.035+j*.024),-.01,-.075-j*.055));rod('Orchid bud stalk',p,c,.004,leaf_dark)
             bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=.032,location=c);ob=bpy.context.object;ob.name='Orchid unopened bud';ob.scale=(.72,.85,1.3);ob.data.materials.append(bud_green)
 
-def strelitzia_leaf(base,tip,width,normal):
+def strelitzia_leaf(base,tip,width,normal,stem_base=None):
     a,b=Vector(base),Vector(tip);d=(b-a).normalized();n=Vector(normal).normalized();side=d.cross(n).normalized()
     def point(t,q):
         span=width*.5*math.sin(math.pi*t)**.61
         ridge=.044*math.sin(math.pi*t)*(1-abs(q))+.012*math.sin(8*math.pi*t)*abs(q)**2
         return a.lerp(b,t)+side*(span*q)+n*ridge
+    if stem_base is not None:
+        # Continuous tapered petiole, extending into the blade as its midrib.
+        start=Vector(stem_base)
+        end=point(.24,0)-n*.002
+        length=(a-start).length
+        controls=[start,start+(a-start)*.35,a-d*length*.19,a,point(.10,0),end]
+        rings=[]
+        for i in range(41):
+            t=i/40
+            p=start.lerp(a,t/.68) if t<=.68 else a.lerp(end,(t-.68)/.32)
+            # Cubic approach to the blade makes the tangent continuous.
+            if t<=.68:
+                u=t/.68
+                p=start*(1-u)**3+controls[1]*3*u*(1-u)**2+controls[2]*3*u*u*(1-u)+a*u**3
+                tangent=(controls[1]-start)*3*(1-u)**2+(controls[2]-controls[1])*6*u*(1-u)+(a-controls[2])*3*u*u
+            else:
+                u=(t-.68)/.32
+                p=point(.24*u,0)-n*.002*u
+                tangent=d
+            axis=tangent.normalized()
+            across=axis.cross(n).normalized()
+            depth=across.cross(axis).normalized()
+            radius=.016*(1-t)**.76+.0005
+            rings.append([tuple(p+radius*(across*math.cos(j*math.tau/16)+depth*.72*math.sin(j*math.tau/16))) for j in range(16)])
+        section_mesh('Bird of paradise tapered continuous petiole',rings,leaf_dark)
     rows,cols=(26,12) if ASSET_REVIEW else (18,8);verts=[tuple(point(i/rows,j/cols*2-1)) for i in range(rows+1) for j in range(cols+1)];faces=[]
     for i in range(rows):
         for j in range(cols):
             k=i*(cols+1)+j;faces.append((k,k+1,k+cols+2,k+cols+1))
     mesh=bpy.data.meshes.new('Strelitzia ribbed lamina');mesh.from_pydata(verts,[],faces);mesh.update();grid_uv(mesh,rows,cols);o=bpy.data.objects.new('Bird of paradise ribbed paddle leaf',mesh);bpy.context.collection.objects.link(o);mesh.materials.append(leaf_surface)
     for p in mesh.polygons:p.use_smooth=True
-    cable('Bird of paradise central midrib',[point(t,0)+n*.0015 for t in (0,.2,.4,.6,.8,1)],.0035,leaf_vein)
+    cable('Bird of paradise central midrib',[point(t,0)+n*.0015 for t in (.12,.2,.4,.6,.8,.98)],.0022,leaf_vein)
     for t in (.19,.30,.41,.52,.63,.74):
         for sign in (-1,1):
             v=[tuple(point(t+.11*j/6,sign*j/6*.93)+n*.0015) for j in range(7)]
@@ -342,7 +444,7 @@ def contact_holder(x,y):
     for i,xx in enumerate((x-.25,x-.08,x+.09,x+.26)):
         box('Contact index tab',(xx,y+.13,1.98),(.15,.025,.075),card_green,.006,parent)
         surface(f'contact_tab_{i}',(xx,y+.115,1.98),.144,.067,card_green,True,parent)
-    surface('contact_card_texture',(x,y+.073,1.72),.72,.42,paper,True,parent)
+    surface('contact_card_texture',(x,y+.073,1.72),.72,.42,print_material('Ruled index stock','contact.jpg'),True,parent)
     for xx in (x-.25,x+.25):
         bpy.ops.mesh.primitive_torus_add(major_radius=.08,minor_radius=.012,location=(xx,y+.015,1.57),rotation=(0,math.pi/2,0),major_segments=32,minor_segments=8);ob=bpy.context.object;ob.name='Contact brass binding rings';ob.data.materials.append(gold);ob.parent=parent
 
@@ -519,8 +621,7 @@ def sculpted_bird(x,y):
     z=planter('Bird of paradise',x,y,.29,.40)
     for dx,dy,h in [(-.40,.15,.89),(.44,.24,.98),(-.24,.32,1.13),(.32,-.03,.68)]:
         root=(x+dx*.18,y+dy*.2,z+h*.32)
-        cable('Bird of paradise leaf stem',[(x,y,z),root],.012,leaf_dark)
-        strelitzia_leaf(root,(x+dx,y+dy,z+h),.24,(dx,-1,.05))
+        strelitzia_leaf(root,(x+dx,y+dy,z+h),.24,(dx,-1,.05),(x,y,z))
     orange=mat('Tangerine sepals',(.96,.185,.009),.42)
     indigo=mat('Indigo fused petals',(.045,.009,.102),.38)
     bract=mat('Glaucous spathe',(.16,.30,.079),.47)
@@ -599,24 +700,86 @@ def merge_botanical_meshes(prefix):
         for ob in objects:ob.select_set(True)
         bpy.context.view_layer.objects.active=objects[0];bpy.ops.object.join();bpy.context.object.name=prefix+' '+material
 
-# Architectural shell, a restrained desk set rather than a walkable room.
-box('Back wall',(0,2.35,2.6),(14,.16,5.2),wall,.005)
-box('Floor',(0,0,-.1),(12,12,.2),oak,0)
-box('Desk top',(0,-.1,1.24),(7.4,3.5,.20),walnut,.045)
-box('Desk front lip',(0,-1.84,1.17),(7.4,.12,.16),edge,.025)
-for x in (-3.3,3.3):
-    for y in (-1.53,1.36):box('Desk leg',(x,y,.56),(.16,.16,1.14),edge,.025)
-box('Wall baseboard',(0,2.23,.18),(10,.13,.29),edge,.012)
+olive=mat('Olive lacquer',(.146,.163,.083),.34)
+trim=mat('Worn gilt moulding',(.46,.32,.14),.44,.65)
+cream=mat('Ivory painted sash',(.73,.67,.54),.53)
+wallprint=print_material('Hummingbird wallcovering','wallpaper.jpg',.91)
+def panel(name,points,coords,material):
+    mesh=bpy.data.meshes.new(name);mesh.from_pydata(points,[],[(0,1,2,3)]);mesh.update()
+    uv=mesh.uv_layers.new()
+    for i,p in enumerate(coords):uv.data[i].uv=p
+    ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
+    return ob
+def hang_wall(a,b,bottom,top,side=False):
+    corners=[(a,bottom),(b,bottom),(b,top),(a,top)]
+    points=[(-4.03,2.27-h,z) if side else (h-4.03,2.27,z) for h,z in corners]
+    panel('Papered window return' if side else 'Papered rear wall',points,[(h*(-1 if side else 1)/2.15,z/2.15) for h,z in corners],wallprint)
+hang_wall(0,13,-1.35,7)
+panel('Papered right wall',[(8.97,2.27,-1.35),(8.97,-41.73,-1.35),(8.97,-41.73,7),(8.97,2.27,7)],[(0,0),(44/2.15,0),(44/2.15,8.35/2.15),(0,8.35/2.15)],wallprint)
+panel('Plaster ceiling',[(-4.03,2.27,7),(8.97,2.27,7),(8.97,-41.73,7),(-4.03,-41.73,7)],[(0,0),(1,0),(1,1),(0,1)],wall)
+# Window occupies a true opening in the left wall, with continuous UVs around the reveal.
+for a,b,z0,z1 in [(0,44,-1.35,1.45),(0,44,4.75,7),(0,.48,1.45,4.75),(3.92,44,1.45,4.75)]:
+    hang_wall(a,b,z0,z1,True)
+for h in (.48,2.20,3.92):box('Window stile',(-4.01,2.27-h,3.10),(.145,.075,3.39),cream,.012)
+for z in (1.45,3.10,4.75):box('Window rail',(-4.01,.07,z),(.145,3.54,.082),cream,.013)
+box('Deep sash sill',(-3.98,.07,1.44),(.36,3.68,.086),cream,.018)
+box('Rear skirting',(1.9,2.22,-1.22),(12,.095,.26),cream,.015)
+box('Side skirting',(-4.005,-2,-1.22),(.09,8.5,.26),cream,.015)
+box('Continuous oak subfloor',(2.47,-19.73,-1.44),(13,44,.17),oak,0)
+parquet=print_material('Chevron oak parquet','chevron-oak.jpg',.48)
+panel('Continuous chevron parquet',[(-4.03,-41.73,-1.349),(8.97,-41.73,-1.349),(8.97,2.28,-1.349),(-4.03,2.28,-1.349)],[(0,0),(6.5,0),(6.5,22),(0,22)],parquet)
+# Floor-length translucent linen curtains. Each panel is a continuous pleated mesh.
+sheer=mat('Ivory sheer linen',(.82,.73,.56),.86)
+sheer_bs=sheer.node_tree.nodes.get('Principled BSDF');sheer_bs.inputs['Alpha'].default_value=.39
+sheer.surface_render_method='DITHERED'
+for start,end in [(-1.79,-.83),(.68,1.84)]:
+    verts=[];faces=[];rows,cols=30,96
+    for i in range(rows+1):
+        t=i/rows
+        for j in range(cols+1):
+            u=j/cols
+            y=start+(end-start)*u
+            fold=.065*math.sin(u*math.tau*9+.15*math.sin(t*math.pi))
+            verts.append((-3.78+fold*(.7+.3*t),y+.027*math.sin(t*math.pi)*math.sin(u*math.pi),4.96-t*4.13+.04*math.cos(u*math.tau*9)*t**8))
+    for i in range(rows):
+        for j in range(cols):
+            k=i*(cols+1)+j;faces.append((k,k+1,k+cols+2,k+cols+1))
+    mesh=bpy.data.meshes.new('Pleated linen');mesh.from_pydata(verts,[],faces);mesh.update();grid_uv(mesh,rows,cols)
+    curtain=bpy.data.objects.new('Sheer curtain',mesh);bpy.context.collection.objects.link(curtain);mesh.materials.append(sheer)
+    for polygon in mesh.polygons:polygon.use_smooth=True
+rod('Curtain brass rod',(-3.79,-1.94,4.99),(-3.79,1.99,4.99),.019,trim)
+# Vary the lacquer at two scales. Long soft variations follow the board's grain.
+noise=olive.node_tree.nodes.new('ShaderNodeTexNoise');noise.inputs['Scale'].default_value=6;noise.inputs['Detail'].default_value=4
+ramp=olive.node_tree.nodes.new('ShaderNodeValToRGB')
+ramp.color_ramp.elements[0].color=(.07,.084,.037,1);ramp.color_ramp.elements[1].color=(.23,.235,.14,1)
+olive.node_tree.links.new(noise.outputs['Fac'],ramp.inputs[0]);olive.node_tree.links.new(ramp.outputs[0],olive.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
+box('Desk lacquered top',(0,-.1,1.27),(7.4,3.5,.14),olive,.045)
+box('Tabletop gilded bead',(0,-.1,1.195),(7.37,3.47,.03),trim,.012)
+box('Tabletop lower moulding',(0,-.1,1.15),(7.29,3.42,.077),olive,.026)
+for x in (-2.63,2.63):
+    box('Drawer body',(x,-.14,.90),(1.83,3.25,.47),olive,.031)
+    box('Drawer side shadow',(x,-1.777,.90),(1.68,.054,.435),edge,.021)
+    box('Raised gilt drawer rail',(x,-1.812,.90),(1.65,.045,.42),trim,.028)
+    box('Raised olive drawer field',(x,-1.84,.90),(1.55,.042,.34),olive,.027)
+    cylinder('Handle backplate',(x,-1.87,.95),.064,.038,trim,rotation=(math.pi/2,0,0))
+    bpy.ops.mesh.primitive_torus_add(location=(x,-1.905,.87),major_radius=.075,minor_radius=.013,rotation=(math.pi/2,0,0))
+    bpy.context.object.name='Drop ring pull';bpy.context.object.data.materials.append(trim)
+for x in (-3.36,3.36):
+    for y in (-1.55,1.33):
+        lathe('Turned olive leg',x,y,[(-1.35,.079),(-1.33,.103),(-1.29,.11),(-1.24,.08),(-1.14,.061),(-.86,.053),(-.15,.076),(.23,.097),(.29,.126),(.34,.13),(.39,.105),(.45,.145),(.52,.15),(.60,.113),(.71,.14)],olive)
+        for z,r in [(-1.28,.11),(.35,.13),(.53,.15)]:cylinder('Leg gilt collar',(x,y,z),r,.019,trim)
+box('Fluted knee apron',(0,-1.66,1.003),(3.55,.14,.26),olive,.025)
+for k in range(39):box('Apron carved reed',((k-19)*.084,-1.737,1.004),(.022,.013,.165),edge,.009)
 box('Leather desk pad',(.25,-1.04,1.354),(2.95,1.30,.025),deskpad,.035)
 for x in (-1.17,1.67):box('Stitched mat edge',(x,-1.04,1.37),(.009,1.19,.003),stitch,0)
 for y in (-1.63,-.45):box('Stitched mat edge',(.25,y,1.37),(2.83,.009,.003),stitch,0)
 
 # Real framed photographs, their images are applied by Three.js.
 photos=group('target_about')
-for i,(x,z,w,h) in enumerate([(-2.56,3.48,.85,1.07),(-1.49,3.63,.78,.99),(1.40,3.61,.81,1.03),(2.48,3.43,.86,1.08)]):
-    box('Photo frame', (x,2.20,z),(w,.11,h),edge,.025,photos)
-    box('Photo mat',(x,2.133,z),(w-.085,.025,h-.085),paper,.005,photos)
-    surface(f'photo_texture_{i}',(x,2.115,z),w-.18,h-.18,paper,True,photos)
+for i,(x,z,w,h) in enumerate([(-2.62,3.66,.74,.96),(-1.87,3.99,.56,.63),(-1.77,3.27,.72,.53)]):
+    box(f'Photo frame_{i}', (x,2.20,z),(w,.05,h),trim,.009,photos)
+    box(f'Photo mat_{i}',(x,2.166,z),(w-.032,.014,h-.032),paper,.005,photos)
+    surface(f'photo_texture_{i}',(x,2.156,z),w-.078,h-.078,print_material(f"Photograph {i}",f"portrait{i}.jpg"),True,photos)
 
 # Compact 1980s CRT computer: separate enclosure, bevelled bezel, glass, floppy drive.
 computer=group('target_computer')
@@ -624,7 +787,7 @@ box('CRT rear casing',(0,.55,2.15),(1.63,1.28,1.65),ivory,.095,computer)
 box('CRT front shell',(0,-.075,2.15),(1.67,.18,1.66),ivory,.065,computer)
 box('CRT raised screen bezel',(0,-.19,2.40),(1.43,.10,1.05),keycap,.065,computer)
 box('CRT black gasket',(0,-.252,2.40),(1.25,.045,.89),dark,.047,computer)
-surface('computer_screen',(0,-.28,2.40),1.17,.81,screenmat,True,computer)
+surface('computer_screen',(0,-.28,2.40),1.17,.81,print_material('CRT phosphor display','crt.jpg'),True,computer)
 box('Floppy drive inset',(.39,-.18,1.67),(.63,.03,.085),keycap,.01,computer)
 box('Floppy drive slot',(.39,-.202,1.67),(.52,.026,.031),dark,.005,computer)
 box('Floppy eject',(.66,-.211,1.67),(.085,.025,.055),ivory,.004,computer)
@@ -648,48 +811,334 @@ cable('Mouse cable',[(1.22,-.88,1.42),(1.25,-.74,1.38),(1.38,-.47,1.37),(1.46,-.
 
 # Degrees as a pair of horizontally framed certificates hung below the photos.
 education=group('target_education')
-for i,x in enumerate((-2.05,2.05)):
-    z=2.47
+for i,(x,z) in enumerate(((1.17,3.82),(2.57,3.26))):
     box(f'Degree frame_{i}',(x,2.20,z),(1.24,.11,.79),edge,.025,education)
     box(f'Degree navy mat_{i}',(x,2.132,z),(1.15,.025,.70),navy,.005,education)
     box(f'Degree gilded inner edge_{i}',(x,2.113,z),(1.04,.013,.61),gold,.003,education)
     box(f'Degree paper_{i}',(x,2.104,z),(1.00,.013,.57),paper,.005,education)
-    surface(f'degree_texture_{i}',(x,2.094,z),.98,.55,paper,True,education)
+    surface(f'degree_texture_{i}',(x,2.094,z),.98,.55,print_material(f"Academic print {i}",f"degree{i}.jpg"),True,education)
 
-# A substantial cloth-bound hobby book, gold rules and an ivory page block.
-hobbies=group('target_hobbies')
-box('Hobbies back cover', (2.38,-.78,1.36),(1.16,.85,.09),green,.025,hobbies)
-box('Hobbies paper block',(2.38,-.77,1.47),(1.08,.79,.15),paper,.018,hobbies)
-box('Hobbies front cover',(2.38,-.78,1.57),(1.16,.85,.075),green,.024,hobbies)
-box('Hobbies spine',(1.82,-.78,1.47),(.10,.85,.26),green,.026,hobbies)
-for y in (-1.09,-.49):box('Gilt spine bands',(1.814,y,1.48),(.11,.035,.26),gold,.005,hobbies)
-surface('hobbies_cover',(2.39,-.78,1.611),1.06,.76,green,False,hobbies)
-
-# Resume and project notebook are separate, touchable physical objects.
-experience=group('target_experience')
-for i in range(4):box('Resume sheet',(1.87,.66,1.348+i*.012),(1.05,.87,.012),paper,.004,experience,rotation=(i-1)*.014)
-surface('resume_texture',(1.87,.66,1.398),1.03,.85,paper,False,experience)
+hobbies=group('target_hobbies');hobbies.location=(2.47,-1.02,1.34);hobbies.rotation_euler.z=.17
+turquoise=mat('Distressed teal leather',(.09,.27,.23),.52)
+box('Pocket journal lower board',(0,0,.006),(.52,.90,.011),turquoise,.008,hobbies)
+box('Pocket journal ivory leaves',(0,0,.020),(.50,.875,.022),paper,.007,hobbies)
+box('Pocket journal upper board',(0,0,.035),(.52,.90,.009),turquoise,.007,hobbies)
+binding=print_material('Sun and moon binding','journal-crisp.jpg',.52)
+foil=binding.node_tree.nodes.new('ShaderNodeTexImage')
+foil.image=bpy.data.images.load(os.path.join(os.path.dirname(__file__),'studio-textures','journal-foil.png'))
+foil.image.colorspace_settings.name='Non-Color'
+shader=binding.node_tree.nodes.get('Principled BSDF')
+binding.node_tree.links.new(foil.outputs['Color'],shader.inputs['Metallic'])
+impression=binding.node_tree.nodes.new('ShaderNodeBump')
+impression.inputs['Distance'].default_value=.0012
+impression.inputs['Strength'].default_value=.45
+binding.node_tree.links.new(foil.outputs['Color'],impression.inputs['Height'])
+binding.node_tree.links.new(impression.outputs['Normal'],shader.inputs['Normal'])
+surface('Foil sun and moon tooling',(0,0,.040),.511,.89,binding,False,hobbies)
+for j in range(4):box('Page fore edge',(0,-.438,.012+j*.004),(.487,.002,.001),ceramic,.0004,hobbies)
+# A second piece of folded leather overlaps the board. Follow the curved
+# boundary in the rectified cover scan to register its tooling with the face.
+profile=[(0,.609),(.13,.594),(.17,.605),(.225,.682),(.30,.739),(.38,.761),(.44,.749),(.51,.69),(.55,.614),(.58,.526),(1,.477)]
+left=[(u,v) for v,u in profile]
+outline=left+[(1,1),(1,0)]
+mesh=bpy.data.meshes.new('Journal envelope flap')
+mesh.from_pydata([((u-.5)*.511,(.5-v)*.89,.045) for u,v in outline],[],[tuple(range(len(outline)))])
+mesh.update()
+uv=mesh.uv_layers.new()
+for loop in mesh.loops:
+    u,v=outline[loop.vertex_index];uv.data[loop.index].uv=(u,1-v)
+flap=bpy.data.objects.new('Embossed leather envelope flap',mesh)
+bpy.context.collection.objects.link(flap);flap.parent=hobbies;mesh.materials.append(binding)
+solid=flap.modifiers.new('Turned leather edge','SOLIDIFY');solid.thickness=.004
+bevel=flap.modifiers.new('Soft leather edge','BEVEL');bevel.width=.0015;bevel.segments=3
+cable('Journal gilded flap piping',[((u-.5)*.511,(.5-v)*.89,.046) for u,v in left],.0013,trim,hobbies)
+box('Rounded cloth spine',(-.255,0,.022),(.018,.896,.043),turquoise,.008,hobbies)
+experience=group('target_experience');experience.location=(1.57,.44,1.34);experience.rotation_euler.z=.20
+for i in range(3):box('Resume sheet',((2-i)*.018,(2-i)*.012,.003+i*.005),(.78,1.04,.005),paper,.002,experience,rotation=(2-i)*.035)
+surface('resume_texture',(0,0,.016),.768,1.026,print_material('Resume letterpress','resume.jpg'),False,experience)
 projects=group('target_projects')
-box('Research notebook cover',(-1.60,-1.12,1.37),(.88,.72,.08),burgundy,.026,projects)
-box('Research notebook pages',(-1.60,-1.12,1.43),(.83,.67,.07),paper,.01,projects)
-box('Research notebook front',(-1.60,-1.12,1.484),(.88,.72,.045),burgundy,.018,projects)
-surface('research_cover',(-1.60,-1.12,1.51),.82,.65,burgundy,False,projects)
+box('Research notebook cover',(-2.62,-.54,1.37),(.88,.72,.08),burgundy,.026,projects)
+box('Research notebook pages',(-2.62,-.54,1.43),(.83,.67,.07),paper,.01,projects)
+box('Research notebook front',(-2.62,-.54,1.484),(.88,.72,.045),burgundy,.018,projects)
+surface('research_cover',(-2.62,-.54,1.51),.82,.65,print_material('Research cover print','research.jpg'),False,projects)
 
-# Deliberate foreground/background layering: the orchids partially hide the
-# higher strelitzia and left photographs; the journal overlaps the card holder.
-sculpted_lamp(3.02,1.30)
-contact_holder(2.62,.23)
-# A porcelain trinket dish and fountain pen add an understated personal touch.
-cylinder('Porcelain rose tray',(-2.43,-.83,1.374),.23,.045,rose)
-cylinder('Porcelain tray interior',(-2.43,-.83,1.40),.20,.012,paper)
-rod('Fountain pen barrel',(-1.03,.42,1.38),(-1.65,.85,1.38),.034,burgundy)
-rod('Fountain pen brass trim',(-1.31,.61,1.38),(-1.36,.64,1.38),.036,gold)
-sculpted_bird(-2.25,1.39)
-orchid(-2.93,.54)
-merge_botanical_meshes('Orchid');merge_botanical_meshes('Bird of paradise')
+contact_holder(2.73,.72)
+sculpted_bird(-2.62,1.12)
+sculpted_lamp(-1.48,.77)
+merge_botanical_meshes('Bird of paradise')
+mp=group('Mint pocket MP3');mp.location=(-1.73,-.81,1.341);mp.rotation_euler.z=-.18
+mint=mat('Anodized mint aluminium',(.29,.55,.37),.30,.53)
+box('Miniature player case',(0,0,.024),(.205,.388,.048),mint,.019,mp)
+surface('Miniature player screen',(0,.064,.049),.17,.205,print_material('Player glass display','mp3.jpg',.22),False,mp)
+for x in (-.057,0,.057):box('Player touch engraving',(x,-.095,.049),(.014,.008,.001),paper,.001,mp)
+box('Headphone plug',(0,-.208,.025),(.030,.055,.028),dark,.007,mp)
+for i,tip in enumerate([(-.33,-.15),(-.49,-.10)]):
+    cable('Earphone lead',[(0,-.217,.024),(-.055,-.32,.009),(-.26,-.35-i*.023,.008),(tip[0],tip[1]-.05,.009),(tip[0],tip[1],.024)],.005,dark,mp)
+    ob=box('Earbud housing',(tip[0],tip[1],.033),(.063,.075,.056),dark,.022,mp)
+rod('Fountain pen barrel',(2.91,-.75,1.376),(3.11,-1.24,1.376),.028,burgundy)
+rod('Pen band',(3.01,-.995,1.376),(3.026,-1.034,1.376),.030,trim)
+prism=surface('Window prism caustic',(0,0,0),1.05,.26,print_material('Soft daylight spectrum','spectrum.png'),False)
+prism.location=(-2.74,-1.43,1.341);prism.rotation_euler.z=-.42
+# Model the view as three-dimensional streets, rooflines and a separate skyline.
+import random
+city_rng=random.Random(79)
+city_meshes={}
+def city_poly(material,verts,faces):
+    vertices,polygons=city_meshes.setdefault(material,([],[]))
+    offset=len(vertices);vertices.extend(verts)
+    polygons.extend(tuple(offset+i for i in face) for face in faces)
+def city_box(material,x,y,z,w,d,h):
+    verts=[(x+sx*w/2,y+sy*d/2,z+sz*h/2) for sz in (-1,1) for sy in (-1,1) for sx in (-1,1)]
+    city_poly(material,verts,[(0,2,3,1),(4,5,7,6),(0,1,5,4),(2,6,7,3),(0,4,6,2),(1,3,7,5)])
+facades=[mat('Exterior painted '+name,color,.82) for name,color in [('sage',(.30,.43,.34)),('ochre',(.68,.46,.22)),('rose',(.49,.26,.25)),('blue',(.28,.38,.51)),('cream',(.73,.65,.48)),('lavender',(.42,.37,.46))]]
+roof=mat('Exterior slate roofs',(.055,.075,.095),.88)
+millwork=mat('Exterior ivory painted trim',(.78,.72,.57),.76)
+glass_city=mat('Exterior dusk glass',(.10,.16,.22),.35)
+lit=mat('Exterior warm illuminated windows',(.78,.48,.18),.5)
+bs=lit.node_tree.nodes.get('Principled BSDF');bs.inputs['Emission Color'].default_value=(1,.53,.12,1);bs.inputs['Emission Strength'].default_value=.65
+asphalt=mat('Exterior street asphalt',(.09,.105,.12),.92)
+park=mat('Exterior garden slope',(.19,.26,.15),.93)
+city_assets=os.path.join(os.path.dirname(__file__),'studio-textures','city')
+def city_pbr(material,asset,tint=None):
+    """Use actual scanned diffuse, normal and roughness maps, with local paint tint."""
+    nodes=material.node_tree.nodes;links=material.node_tree.links
+    shader=nodes.get('Principled BSDF')
+    def channel(name,noncolor=False):
+        node=nodes.new('ShaderNodeTexImage')
+        node.image=bpy.data.images.load(os.path.join(city_assets,asset,name+'.jpg'),check_existing=True)
+        if noncolor:node.image.colorspace_settings.name='Non-Color'
+        return node
+    diffuse=channel('Diffuse')
+    if material.name.startswith('Exterior painted '):
+        diffuse.image=bpy.data.images.load(os.path.join(city_assets,asset,'Paint-'+material.name.split()[-1]+'.jpg'),check_existing=True)
+        tint=None
+    if tint:
+        blend=nodes.new('ShaderNodeMixRGB');blend.blend_type='MULTIPLY';blend.inputs[0].default_value=.78
+        blend.inputs[2].default_value=(*tint,1)
+        links.new(diffuse.outputs['Color'],blend.inputs[1]);links.new(blend.outputs[0],shader.inputs['Base Color'])
+    else:links.new(diffuse.outputs['Color'],shader.inputs['Base Color'])
+    normal=nodes.new('ShaderNodeNormalMap');normal.inputs['Strength'].default_value=.68
+    links.new(channel('nor_gl',True).outputs['Color'],normal.inputs['Color'])
+    links.new(normal.outputs[0],shader.inputs['Normal'])
+    links.new(channel('Rough',True).outputs['Color'],shader.inputs['Roughness'])
+    material['tile_size']=1.57 if asset=='weathered_plank_siding' else 3.0
+for facade in facades:
+    city_pbr(facade,'weathered_plank_siding',tuple(facade.diffuse_color[:3]))
+city_pbr(roof,'roof_slates_02',(.28,.34,.44))
+city_pbr(asphalt,'asphalt_02')
+foundation=mat('Exterior brick foundations',(.37,.29,.22),.90)
+city_pbr(foundation,'brick_wall_003')
+city_pbr(millwork,'plastered_wall_02',(.98,.94,.83))
+sidewalk=mat('Exterior pavement',(.49,.45,.40),.86)
+city_pbr(sidewalk,'plastered_wall_02')
+city_box(park,-26,16,-3.05,44,87,.3)
+city_box(asphalt,-6.6,15,-2.87,2.6,80,.05)
+city_box(sidewalk,-8.0,15,-2.79,.65,80,.13)
+facade_prints=[print_material('Exterior carved facade '+name,'city/facades/'+name+'.jpg',.68) for name in ('lavender','sage','coral')]
+def sculpted_facade(f,y,ground,width,height,roof_height,index):
+    # The front elevation texture is mapped over an actual bay window relief,
+    # with its own projecting angled sides and raised cornice geometry.
+    material=facade_prints[index%3]
+    us=[0,.018,.07,.16,.40,.51,.56,.60,.64,.90,.96,1]
+    vs=[0,.045,.075,.12,.28,.34,.365,.39,.60,.65,.69,.72]
+    def relief(u,v):
+        bay=max(0,min(1,(u-.025)/.115,(.56-u)/.15))
+        vertical=max(0,min(1,(v-.045)/.035,(.69-v)/.05))
+        cornice=.035 if any(abs(v-z)<.012 for z in (.075,.365,.65,.69)) else 0
+        porch=.055 if .60<=u<=.96 and .025<=v<=.40 else 0
+        return .012+bay*vertical*.34+cornice+porch
+    verts=[(f+relief(u,v),y+(u-.5)*width,ground+v/.72*height) for v in vs for u in us]
+    uv=[(u,v) for v in vs for u in us]
+    faces=[]
+    for i in range(len(vs)-1):
+        for j in range(len(us)-1):
+            k=i*len(us)+j;faces.append((k,k+1,k+len(us)+1,k+len(us)))
+    top=len(verts);verts.extend([(f+.021,y-width/2,ground+height),(f+.021,y+width/2,ground+height),(f+.021,y,ground+height+roof_height)])
+    uv.extend([(0,.72),(1,.72),(.5,1)]);faces.append((top,top+1,top+2))
+    mesh=bpy.data.meshes.new('Victorian articulated frontage');mesh.from_pydata(verts,[],faces);mesh.update()
+    layer=mesh.uv_layers.new()
+    for loop in mesh.loops:layer.data[loop.index].uv=uv[loop.vertex_index]
+    ob=bpy.data.objects.new('Exterior Victorian relief facade',mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
+for row in range(2):
+    x=-10.1-row*8.3
+    for i in range(16):
+        y=-10+i*2.75+row*.9
+        wall=facades[(i+row*2)%len(facades)]
+        ground=-3.22+row*.30+i*.020
+        width=2.40;depth=3.5;height=3.95+city_rng.uniform(-.20,.20);top=ground+height
+        city_box(wall,x,y,ground+height/2,depth,width,height)
+        city_box(foundation,x,y,ground+.16,depth+.05,width+.04,.32)
+        # gabled roof, with its triangular street-facing elevation
+        f=x+depth/2;back=x-depth/2;r=1.38
+        verts=[(back,y-width/2-.10,top),(back,y+width/2+.10,top),(back,y,top+r),(f+.13,y-width/2-.10,top),(f+.13,y+width/2+.10,top),(f+.13,y,top+r)]
+        city_poly(roof,verts,[(0,3,5,2),(1,2,5,4),(0,1,4,3)])
+        sculpted_facade(f,y,ground,width,height,r,i+row)
+        for k in range(4):city_box(foundation,f+.20+k*.13,y+.66,ground+.10-k*.05,.22,.62,.09)
+        city_box(roof,x-.8,y+.76,top+.72,.28,.30,1.1)
+# Farther downtown towers, with a recognizable tapered Transamerica pyramid.
+tower_mats=[print_material('Exterior skyline '+str(i),f'city/facades/tower-{i}.jpg',.46 if i in (0,2) else .72) for i in range(4)]
+for row in range(3):
+    for i in range(20):
+        x=-38-row*7+city_rng.uniform(-1,1);y=-19+i*3.7+city_rng.uniform(-.6,.6)
+        height=city_rng.uniform(5.0,9.4)+(i%7==0)*3
+        w=city_rng.uniform(2.0,3.0);d=city_rng.uniform(1.7,2.9)
+        material=city_rng.choice(tower_mats)
+        bottom=-2;top=bottom+height
+        corners=[(x-w/2,y-d/2),(x+w/2,y-d/2),(x+w/2,y+d/2),(x-w/2,y+d/2)]
+        for side in range(4):
+            a,b=corners[side],corners[(side+1)%4]
+            panel('Exterior downtown tower wall',[(a[0],a[1],bottom),(b[0],b[1],bottom),(b[0],b[1],top),(a[0],a[1],top)],[(0,0),(1,0),(1,1),(0,1)],material)
+        city_box(roof,x,y,top-.03,w,d,.06)
+        if i%3==0:
+            city_box(glass_city,x,y,-2+height+.13,w*.80,d*.83,.26)
+            city_box(roof,x,y,-2+height+.30,w*.6,d*.64,.12)
+# Separate vegetation silhouettes add another parallax layer between homes.
+tree_crown=[mat('Exterior tree foliage '+str(i),(.12+i*.024,.24+i*.027,.095+i*.013),.94) for i in range(3)]
+trunk=mat('Exterior tree bark',(.16,.105,.065),.94)
+for i in range(21):
+    x=-7.8+city_rng.uniform(-.25,.25);y=-13+i*2.9
+    city_box(trunk,x,y,-2.18,.11,.11,1.45)
+    for j in range(5):
+        cx=x+city_rng.uniform(-.35,.35);cy=y+city_rng.uniform(-.43,.43);cz=-1.22+city_rng.uniform(-.25,.47);r=city_rng.uniform(.29,.49)
+        vertices=[(cx,cy,cz+r)]+[(cx+math.cos(a*math.tau/9)*r,cy+math.sin(a*math.tau/9)*r,cz) for a in range(9)]+[(cx,cy,cz-r)]
+        faces=[(0,1+k,1+(k+1)%9) for k in range(9)]+[(10,1+(k+1)%9,1+k) for k in range(9)]
+        city_poly(city_rng.choice(tree_crown),vertices,faces)
+for material,(verts,faces) in city_meshes.items():
+    mesh=bpy.data.meshes.new(material.name);mesh.from_pydata(verts,[],faces);mesh.update()
+    if 'tile_size' in material:
+        uv=mesh.uv_layers.new()
+        tile=material['tile_size']
+        for face in mesh.polygons:
+            axis=max(range(3),key=lambda i:abs(face.normal[i]))
+            for loop_index in face.loop_indices:
+                v=mesh.vertices[mesh.loops[loop_index].vertex_index].co
+                uv.data[loop_index].uv=((v.y if axis==0 else v.x)/tile,(v.y if axis==2 else v.z)/tile)
+    ob=bpy.data.objects.new(material.name,mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
+    ob.visible_shadow=True
+# A scanned shrub model adds real branch and leaf detail at different street depths.
+shrub_path=os.path.join(city_assets,'shrub_01','shrub_01.gltf')
+before=set(bpy.data.objects)
+bpy.ops.import_scene.gltf(filepath=shrub_path)
+shrubs=[o for o in bpy.data.objects if o not in before and o.type=='MESH']
+for source in shrubs:
+    source.name='Exterior scanned shrub'
+    source.visible_shadow=True
+    source.location=(-7.5,-7,-2.65)
+    source.scale=(.42,.42,.42)
+    for j in range(1,8):
+        clone=source.copy();clone.data=source.data
+        clone.location=(-7.5,-7+j*4.7,-2.65);clone.rotation_euler.z=j*1.27
+        bpy.context.collection.objects.link(clone)
+# Print actual key legends from one UV atlas, with no overlapping geometry.
+alphabet="1234567890-=+~QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./"
+legends=print_material('ABS key printing','legends.jpg',.64)
+for row,keys in enumerate(["~1234567890-=+"," QWERTYUIOP[] "," ASDFGHJKL;' "," ZXCVBNM,./ "]):
+    for col,ch in enumerate(keys):
+        ob=bpy.data.objects.get(f'keyboard_label_{row}_{col}')
+        if not ob or ch not in alphabet:continue
+        idx=alphabet.index(ch);ob.data.materials[0]=legends
+        for uv in ob.data.uv_layers.active.data:
+            u,v=uv.uv;uv.uv=((idx%8+u)/8,1-(idx//8+1-v)/8)
+# Shaped inset corner profiles follow the drawer field, in the reference's style.
+for x in (-2.63,2.63):
+    path=[(-.72,-.10),(-.64,-.15),(.64,-.15),(.72,-.10),(.72,.10),(.64,.15),(-.64,.15),(-.72,.10),(-.72,-.10)]
+    for (a,b),(c,d) in zip(path,path[1:]):
+        rod('Gilt drawer panel inlay',(x+a,-1.865,.90+b),(x+c,-1.865,.90+d),.009,trim)
+
+# A distant curved sky canopy preserves the full cloud gradient across the
+# window's narrow view. All architecture remains in front as real geometry.
+sunset_material=print_material('Exterior sunset cloud canopy','city/sunset-panorama.jpg',1)
+nodes=sunset_material.node_tree.nodes;links=sunset_material.node_tree.links
+shader=nodes.get('Principled BSDF')
+tex=next(n for n in nodes if n.type=='TEX_IMAGE')
+links.new(tex.outputs['Color'],shader.inputs['Emission Color'])
+shader.inputs['Emission Strength'].default_value=.8
+verts=[];faces=[];rows,cols=28,84
+for i in range(rows+1):
+    v=i/rows
+    for j in range(cols+1):
+        u=j/cols
+        angle=-1.4+2.8*u
+        verts.append((-96*math.cos(angle),96*math.sin(angle),-2+v*40))
+for i in range(rows):
+    for j in range(cols):
+        k=i*(cols+1)+j;faces.append((k,k+cols+1,k+cols+2,k+1))
+sky_mesh=bpy.data.meshes.new('Curved twilight canopy')
+sky_mesh.from_pydata(verts,[],faces);sky_mesh.update()
+grid_uv(sky_mesh,rows,cols)
+sky_obj=bpy.data.objects.new('Exterior sunset cloud canopy',sky_mesh)
+bpy.context.collection.objects.link(sky_obj);sky_mesh.materials.append(sunset_material)
+sky_obj.visible_shadow=False;sky_obj.visible_diffuse=False;sky_obj.visible_glossy=False
 
 out=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','public','studio.glb'))
 bpy.ops.export_scene.gltf(filepath=out,export_format='GLB',export_apply=True,export_materials='EXPORT',export_yup=True)
 with open(out,'rb') as source, open(out+'.gz','wb') as dest:
     dest.write(gzip.compress(source.read(),compresslevel=9,mtime=0))
+from pathlib import Path
+import json
+parts_dir=Path(out).parent/'studio-model'
+parts_dir.mkdir(exist_ok=True)
+parts=[]
+with open(out+'.gz','rb') as source:
+    while chunk:=source.read(3000000):
+        name=f'part-{len(parts):02d}.bin'
+        (parts_dir/name).write_bytes(chunk)
+        parts.append(name)
+(parts_dir/'manifest.json').write_text(json.dumps({'parts':parts}))
 print('STUDIO_EXPORT',out,os.path.getsize(out))
+
+if '--blend' in sys.argv:
+    from pathlib import Path
+    destination=Path(sys.argv[sys.argv.index('--blend')+1]).resolve()
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    scene=bpy.context.scene
+    scene.world.use_nodes=True
+    bg=scene.world.node_tree.nodes.get('Background')
+    sky=scene.world.node_tree.nodes.new('ShaderNodeTexEnvironment')
+    sky.image=bpy.data.images.load(os.path.join(city_assets,'sunset.hdr'))
+    world_nodes=scene.world.node_tree.nodes;world_links=scene.world.node_tree.links
+    world_links.new(sky.outputs['Color'],bg.inputs['Color']);bg.inputs[1].default_value=.14
+    # Exposure for the visible sky is independent of the physically calibrated
+    # illumination, so the view does not become a muddy grey.
+    camera_sky=world_nodes.new('ShaderNodeBackground')
+    sunset_backdrop=world_nodes.new('ShaderNodeTexEnvironment')
+    sunset_backdrop.image=bpy.data.images.load(os.path.join(city_assets,'sunset-panorama.jpg'))
+    world_links.new(sunset_backdrop.outputs['Color'],camera_sky.inputs['Color']);camera_sky.inputs['Strength'].default_value=.95
+    light_path=world_nodes.new('ShaderNodeLightPath')
+    mix_world=world_nodes.new('ShaderNodeMixShader')
+    world_links.new(light_path.outputs['Is Camera Ray'],mix_world.inputs[0])
+    world_links.new(bg.outputs[0],mix_world.inputs[1]);world_links.new(camera_sky.outputs[0],mix_world.inputs[2])
+    world_links.new(mix_world.outputs[0],world_nodes.get('World Output').inputs['Surface'])
+    def aim(ob,target):ob.rotation_euler=(Vector(target)-ob.location).to_track_quat('-Z','Y').to_euler()
+    def light(name,position,target,energy,size,color):
+        bpy.ops.object.light_add(type='AREA',location=position)
+        ob=bpy.context.object;ob.name=name;ob.data.energy=energy;ob.data.shape='DISK';ob.data.size=size;ob.data.color=color;aim(ob,target)
+        return ob
+    light('Soft sunset through the left sash',(-4.8,.07,3.10),(0,.35,1.5),330,2.7,(1,.74,.54))
+    light('Camera-side cool twilight bounce',(1,-4.4,4.25),(0,.45,1.6),180,5.5,(.72,.79,1))
+    exterior_receivers=bpy.data.collections.new('Exterior light receivers')
+    for obj in list(scene.objects):
+        if obj.type=='MESH' and obj.name.startswith('Exterior ') and not obj.name.startswith('Exterior sunset cloud'):
+            exterior_receivers.objects.link(obj)
+    for exterior_light in (light('Exterior twilight sky bounce',(-5,12,11),(-18,10,1),1850,14,(.65,.77,1)),
+                           light('Exterior warm sunset',(-5.4,2,6.5),(-13,13,1),1300,7,(1,.69,.40))):
+        exterior_light.light_linking.receiver_collection=exterior_receivers
+    bpy.ops.object.light_add(type='POINT',location=(-1.55,.77,2.30))
+    lamp_light=bpy.context.object;lamp_light.name='Amber desk lamp glow';lamp_light.data.energy=45;lamp_light.data.color=(1,.62,.22);lamp_light.data.shadow_soft_size=.12
+    # The large window-area emitter provides the key. A second directional
+    # sun produced a clipped triangular highlight at the wall/ceiling corner.
+    bpy.ops.object.camera_add(location=(.40,-9.8,3.86))
+    cam=bpy.context.object;cam.name='Studio hero camera';aim(cam,(0,.35,1.76));cam.data.lens=41;scene.camera=cam
+    scene.render.engine='CYCLES';scene.cycles.samples=112;scene.cycles.use_denoising=False
+    scene.render.resolution_x=1560;scene.render.resolution_y=1000;scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX'
+    # Prepare the opening viewport in the same camera view as the final render.
+    for scr in bpy.data.screens:
+        for area in scr.areas:
+            if area.type=='VIEW_3D':area.spaces.active.region_3d.view_perspective='CAMERA'
+    bpy.ops.file.pack_all()
+    bpy.context.preferences.filepaths.save_version=0
+    scene.render.filepath='//Studio-daylight.png'
+    bpy.ops.wm.save_as_mainfile(filepath=str(destination),compress=True)
+    if '--render' in sys.argv:
+        bpy.ops.render.render(write_still=True)
