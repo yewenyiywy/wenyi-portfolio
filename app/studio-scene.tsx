@@ -146,7 +146,7 @@ export default function StudioScene(){
         if(key==='target_about')key='photo-'+(name.match(/(?:_|\.)(\d+)$/)?.[1]?.replace(/^0+(?=\d)/,'')??'0')
         if(key==='target_education')key='degree-'+(name.match(/_(\d+)$/)?.[1]??'0')
         if(key==='target_computer')key=/^(Keyboard|keyboard_label|Spacebar|Coiled keyboard)/.test(name)?'keyboard':/^Mouse/.test(name)?'mouse':'computer'
-        if(!key&&name.startsWith('Bird of paradise'))key='plant'
+        if(!key&&name.startsWith('Bird of paradise'))key=/ceramic|soil/.test(name)?'planter':'plant'
         if(!key&&/^(Fountain pen|Pen band)/.test(name))key='pen'
         if(!key&&/^(Leather desk pad|Stitched mat)/.test(name))key='mat'
         if(!key&&/^(Desk |Tabletop|Drawer|Raised |Handle |Drop ring|Turned olive|Leg gilt|Fluted knee|Apron |Gilt drawer)/.test(name))key='desk'
@@ -245,15 +245,16 @@ export default function StudioScene(){
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e);if(!hit)return
       highlight(hit.object)
-      if(!reduced){const existing=poses.get(hit.object);poses.set(hit.object,{start:performance.now(),rotation:existing?.rotation??hit.object.rotation.clone()});dirty=true}
+      const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
+      const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
       if(!hit.route)return
       const route=hit.route
       if(route.href==='#contact-card'){setContactIndex(0);setContactOpen(true);contactAction.current?.(true);return}
       if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
       moving=true;updateHover('')
-      if(!reduced){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
+      if(!reduced&&!hit.object.name.startsWith('photo-')){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
       const navigate=()=>router.push(route.href)
-      if(reduced)navigate();else transition=setTimeout(navigate,580)
+      transition=setTimeout(navigate,hit.object.name.startsWith('photo-')?1100:reduced?0:580)
     }
     const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('');highlight()}}
     const cancel=()=>{pointer=null}
@@ -261,15 +262,18 @@ export default function StudioScene(){
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace
       renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.94
-      renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap
+      renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
       scene=new THREE.Scene();scene.background=new THREE.Color('#73644f')
-      const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.48;room.dispose();pmrem.dispose()
-      scene.add(new THREE.HemisphereLight('#e3dfce','#493022',.75))
-      const sunlight=new THREE.DirectionalLight('#fff0ce',1.75);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
-      sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
-      const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
+      const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
+      scene.add(new THREE.HemisphereLight('#e9effa','#796653',.65))
+      // Spread the key across the window aperture to create a soft penumbra.
+      for(const [x,y,z] of [[-5.5,4.9,1.6],[-5.5,3.9,1.6],[-5.5,4.9,.3],[-5.5,3.9,.3]]){
+        const sunlight=new THREE.DirectionalLight('#fff1d8',.44);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
+        sunlight.shadow.mapSize.set(1024,1024);sunlight.shadow.camera.left=-5;sunlight.shadow.camera.right=5;sunlight.shadow.camera.top=5;sunlight.shadow.camera.bottom=-5;sunlight.shadow.normalBias=.012;sunlight.shadow.bias=-.00012;sunlight.shadow.radius=3;scene.add(sunlight,sunlight.target)
+      }
+      const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       composer=new EffectComposer(renderer)
       composer.addPass(new RenderPass(scene,camera))
       outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
@@ -321,9 +325,10 @@ export default function StudioScene(){
         desired.set(Math.sin(a)*radius,3.86+(radius-8.9)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
         const position=focusCamera??desired,target=focus??baseLook
         for(const [group,pose] of Array.from(poses.entries())){
-          const t=Math.min(1,(performance.now()-pose.start)/550)
+          const t=Math.min(1,(performance.now()-pose.start)/1100)
           group.rotation.copy(pose.rotation)
-          group.rotation.z+=Math.sin(t*Math.PI*3)*(1-t)*(group.name==='plant'?.055:group.name==='desk'||group.name==='window'?.005:.04)
+          group.rotation.z+=Math.sin(t*Math.PI*4)*(1-t)*(group.name==='plant'?.145:group.name.startsWith('photo-')?.13:group.name==='desk'||group.name==='window'?.005:.04)
+          renderer.shadowMap.needsUpdate=true
           dirty=true
           if(t===1){group.rotation.copy(pose.rotation);poses.delete(group)}
         }
