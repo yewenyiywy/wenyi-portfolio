@@ -27,7 +27,7 @@ def png(path,pixels):
     raw=b''.join(b'\0'+row.tobytes() for row in pixels)
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,0,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b''))
 
-def bake(name,w,h,origin,u,v,normal,distance):
+def bake(name,w,h,origin,u,v,normal,distance,window_shadow=False):
     origin=Vector(origin);u=Vector(u);v=Vector(v);normal=Vector(normal)
     uh=u.normalized();vh=v.normalized();n=24
     directions=[]
@@ -42,7 +42,17 @@ def bake(name,w,h,origin,u,v,normal,distance):
             for direction in directions:
                 _,_,_,hit=tree.ray_cast(point,direction,distance)
                 if hit is not None:occlusion+=(1-hit/distance)**1.4
-            image[y,x]=max(.24,1-.83*occlusion/n)
+            value=max(.24,1-.83*occlusion/n)
+            if window_shadow:
+                # Trace actual desk geometry toward a broad window aperture.
+                blocked=0
+                for wy in (-1.1,-.05,1.1):
+                    for wz in (2.0,3.1,4.2):
+                        delta=Vector((-3.85,wy,wz))-point
+                        _,_,_,hit=tree.ray_cast(point,delta.normalized(),delta.length-.02)
+                        blocked+=hit is not None
+                value*=1-.43*blocked/9
+            image[y,x]=value
     p=np.pad(image,1,mode='edge');image=(p[:-2,:-2]+2*p[:-2,1:-1]+p[:-2,2:]+2*p[1:-1,:-2]+4*p[1:-1,1:-1]+2*p[1:-1,2:]+p[2:,:-2]+2*p[2:,1:-1]+p[2:,2:])/16
     png(out/(name+'.png'),np.uint8(np.clip(image*255,0,255)))
     print(f'{name} {w}x{h}, minimum {image.min():.3f}',flush=True)
@@ -51,4 +61,4 @@ def bake(name,w,h,origin,u,v,normal,distance):
 bake('desk-contact',640,320,(-3.7,1.65,1.344),(7.4,0,0),(0,-3.5,0),(0,0,1),.72)
 bake('mat-contact',384,192,(-1.225,-.39,1.370),(2.95,0,0),(0,-1.30,0),(0,0,1),.35)
 bake('wall-contact',512,256,(-3.8,2.266,1.45),(7.6,0,0),(0,0,3.6),(0,-1,0),.45)
-bake('floor-contact',512,320,(-4,2.27,-1.345),(8.5,0,0),(0,-7,0),(0,0,1),.75)
+bake('floor-contact',512,320,(-4,2.27,-1.345),(8.5,0,0),(0,-7,0),(0,0,1),.75,True)

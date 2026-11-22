@@ -110,6 +110,8 @@ export default function StudioScene(){
   const [hover,setHover]=useState('')
   const [contactOpen,setContactOpen]=useState(false)
   const [contactIndex,setContactIndex]=useState(0)
+  const [shadowDebug,setShadowDebug]=useState(false)
+  const diagnosticExport=useRef<(()=>void)|null>(null)
   const openContact=()=>{setContactIndex(0);setContactOpen(true);contactAction.current?.(true)}
   const closeContact=()=>{setContactOpen(false);contactAction.current?.(false)}
   useEffect(()=>{if(!contactOpen)return;contactDialog.current?.focus();const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape'){setContactOpen(false);contactAction.current?.(false)}};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[contactOpen])
@@ -119,6 +121,10 @@ export default function StudioScene(){
   },[router])
   useEffect(()=>{
     const host=mount.current;if(!host)return
+    const debugParams=new URLSearchParams(window.location.search)
+    const debug=debugParams.get('debug')==='shadows'
+    const legacy=debug&&debugParams.get('mode')==='legacy'
+    setShadowDebug(debug)
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
@@ -138,6 +144,9 @@ export default function StudioScene(){
     let highlighted:THREE.Group|undefined
     const rimMeshes:THREE.Mesh[]=[]
     const highlight=(group?:THREE.Group)=>{
+      // Do not draw a second surface over transmissive glass. Hover leaves the
+      // approved lamp material, depth and transmission pass untouched.
+      if(group?.name==='lamp'&&!legacy)group=undefined
       if(highlighted===group)return
       for(const mesh of rimMeshes)mesh.removeFromParent()
       rimMeshes.length=0;highlighted=group;dirty=true
@@ -188,6 +197,7 @@ export default function StudioScene(){
     const camera=new THREE.PerspectiveCamera(35,1,.25,100)
     const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone(),restLook=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
+    let hoverTarget=''
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
     let pointer:{x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
     const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),desired=new THREE.Vector3()
@@ -252,7 +262,12 @@ export default function StudioScene(){
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
-        yaw=x*.065;pitch=-y*.035;const hit=choose(e);highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
+        const hit=choose(e),wasLamp=hoverTarget==='lamp';hoverTarget=hit?.object.name??''
+        if(debug)dirty=true
+        // Keep the camera fixed when entering or leaving the lamp. A hover
+        // should not re-sort overlapping refractive glass at the same time.
+        if(legacy){yaw=x*.065;pitch=-y*.035}
+        highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
       }
     }
     const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
@@ -281,7 +296,7 @@ export default function StudioScene(){
       const navigate=()=>router.push(route.href)
       transition=setTimeout(navigate,hit.object.name.startsWith('photo-')?1100:reduced?0:580)
     }
-    const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('');highlight()}}
+    const leave=()=>{if(!pointer&&!moving){if(legacy||hoverTarget!=='lamp')yaw=pitch=0;hoverTarget='';updateHover('');highlight()}}
     const cancel=()=>{pointer=null}
     try {
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
@@ -290,6 +305,34 @@ export default function StudioScene(){
       renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
+      const debugFrames:Array<{time:number;event:string;lampOn:boolean;level:number;black:number;mean:number;camera:number[];calls:number}>=[]
+      const debugEvents:Array<{time:number;event:string}>=[]
+      const monitorCanvas=document.createElement('canvas');monitorCanvas.width=96;monitorCanvas.height=96
+      const monitorCtx=debug?monitorCanvas.getContext('2d',{willReadFrequently:true}):null
+      const monitorBounds=new THREE.Box3(),monitorPoint=new THREE.Vector3()
+      let prevDebugTarget='',debugError='',lampGroup:THREE.Group|undefined
+      const recordEvent=(event:string)=>{if(!debug)return;debugEvents.push({time:Math.round(performance.now()),event});if(debugEvents.length>150)debugEvents.shift()}
+      const snapshot=()=>({mode:legacy?'legacy-hover':'isolated-hover',frames:debugFrames,events:debugEvents,error:debugError})
+      const monitor=()=>{
+        if(!monitorCtx||!renderer||!lampGroup)return
+        try{
+          monitorBounds.setFromObject(lampGroup);let left=1,right=-1,bottom=1,top=-1
+          for(const x of [monitorBounds.min.x,monitorBounds.max.x])for(const y of [monitorBounds.min.y,monitorBounds.max.y])for(const z of [monitorBounds.min.z,monitorBounds.max.z]){monitorPoint.set(x,y,z).project(camera);left=Math.min(left,monitorPoint.x);right=Math.max(right,monitorPoint.x);bottom=Math.min(bottom,monitorPoint.y);top=Math.max(top,monitorPoint.y)}
+          const source=renderer.domElement,w=source.width,h=source.height
+          const x0=Math.max(0,(left+1)*w/2),x1=Math.min(w,(right+1)*w/2),y0=Math.max(0,(1-top)*h/2),y1=Math.min(h,(1-bottom)*h/2)
+          if(x1-x0<2||y1-y0<2)return
+          monitorCtx.drawImage(source,x0,y0,x1-x0,y1-y0,0,0,96,96)
+          const pixels=monitorCtx.getImageData(0,0,96,96).data;let dark=0,sum=0
+          for(let i=0;i<pixels.length;i+=4){const luminance=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;sum+=luminance;if(luminance<25)dark++}
+          if(prevDebugTarget!==hoverTarget){recordEvent(`hover: ${prevDebugTarget||'none'} → ${hoverTarget||'none'}`);prevDebugTarget=hoverTarget}
+          debugFrames.push({time:Math.round(performance.now()),event:hoverTarget||'none',lampOn,level:Number(lampLevel.toFixed(3)),black:Number((dark/(96*96)).toFixed(4)),mean:Number((sum/(96*96)).toFixed(2)),camera:camera.position.toArray().map(v=>Number(v.toFixed(3))),calls:renderer.info.render.calls})
+          if(debugFrames.length>360)debugFrames.shift();host.dataset.shadowDiagnostics=JSON.stringify(snapshot())
+        }catch(error){debugError=String(error);host.dataset.shadowDiagnostics=JSON.stringify(snapshot())}
+      }
+      if(debug){
+        renderer.domElement.addEventListener('webglcontextlost',()=>{recordEvent('WebGL context lost');host.dataset.shadowDiagnostics=JSON.stringify(snapshot())})
+        diagnosticExport.current=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}));const anchor=document.createElement('a');anchor.href=url;anchor.download='studio-shadow-diagnostics.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+      }
       scene=new THREE.Scene();scene.background=new THREE.Color('#c893a7')
       const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
       scene.add(new THREE.HemisphereLight('#dee3ff','#796653',.53))
@@ -337,6 +380,13 @@ export default function StudioScene(){
           const deskAO=contact('desk'),matAO=contact('mat'),wallAO=contact('wall'),floorAO=contact('floor')
           const applyContact=(mesh:THREE.Mesh,texture:THREE.Texture,x0:number,xSpan:number,v0:number,vSpan:number,vertical=false)=>{
             const material=(mesh.material as THREE.MeshStandardMaterial).clone();material.aoMap=texture;material.aoMapIntensity=1;material.needsUpdate=true;ownedMaterials.push(material);mesh.material=material
+            // Ambient occlusion alone does not attenuate bright direct light.
+            // The floor map also contains a traced window-to-desk visibility
+            // term; apply it to the final diffuse illumination, on the floor itself.
+            if(mesh.name==='Continuous chevron parquet'){
+              material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\n reflectedLight.directDiffuse *= mix(1.0, texture2D(aoMap, vAoMapUv).r, 0.82);')}
+              material.customProgramCacheKey=()=> 'studio-floor-visibility-v1'
+            }
             mesh.geometry=mesh.geometry.clone();const positions=mesh.geometry.attributes.position,uv=new Float32Array(positions.count*2),p=new THREE.Vector3()
             for(let i=0;i<positions.count;i++){p.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);uv[i*2]=(p.x-x0)/xSpan;uv[i*2+1]=((vertical?p.y:p.z)-v0)/vSpan}
             mesh.geometry.setAttribute('uv1',new THREE.BufferAttribute(uv,2))
@@ -347,6 +397,11 @@ export default function StudioScene(){
             if(!(obj instanceof THREE.Mesh))return
             obj.castShadow=!/^(Exterior |Papered |Plaster ceiling|Continuous |Sheer curtain|Window prism caustic|keyboard_label_|computer_screen|degree_texture_|contact_card_texture|contact_tab_|resume_texture|research_cover|Foil sun and moon tooling)/.test(obj.name);obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
+            // The entire sculptural lamp contains closely spaced intersecting
+            // transparent and metallic shells. Exclude it from shadow-map
+            // reception, while retaining all original PBR material parameters.
+            // Its ground/contact shadow remains in the baked receiver maps.
+            if(!legacy&&obj.name.startsWith('Lamp ')){obj.castShadow=false;obj.receiveShadow=false}
             if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
             if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
@@ -377,11 +432,13 @@ export default function StudioScene(){
             else if(name==='Papered rear wall')applyContact(obj,wallAO,-3.8,7.6,1.45,3.6,true)
             else if(name==='Continuous chevron parquet')applyContact(obj,floorAO,-4,8.5,-2.27,7)
           })
-          assembleInteractions();host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();lampGroup=Array.from(interactive.values()).find(group=>group.name==='lamp');host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
+      let lastFrameTime=performance.now()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
+        const now=performance.now(),dt=Math.max(1,now-lastFrameTime);lastFrameTime=now
         const goal=lampOn?1:0
         if(host.dataset.lampSettled==='false'){
           const t=reduced?1:Math.min(1,(performance.now()-lampStartedAt)/280)
@@ -413,17 +470,18 @@ export default function StudioScene(){
           dirty=true
           if(t===1){group.rotation.copy(pose.rotation);poses.delete(group)}
         }
-        if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
-          camera.position.lerp(position,reduced?1:.085)
-          look.lerp(target,reduced?1:.085);camera.lookAt(look)
-          renderer.render(scene,camera);dirty=false
+        if(dirty || camera.position.distanceToSquared(position)>.0001 || look.distanceToSquared(target)>.0001){
+          const alpha=reduced?1:1-Math.exp(-dt/145)
+          camera.position.lerp(position,alpha);if(camera.position.distanceToSquared(position)<.0001)camera.position.copy(position)
+          look.lerp(target,alpha);if(look.distanceToSquared(target)<.0001)look.copy(target);camera.lookAt(look)
+          renderer.render(scene,camera);dirty=false;monitor()
         }
         frame=requestAnimationFrame(animate)
       }
       camera.position.set(.31,3.86,8.9);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
-    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();highlight();rimMaterial.dispose();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
+    return()=>{alive=false;contactAction.current=null;diagnosticExport.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();highlight();rimMaterial.dispose();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
   },[router])
 
   return <main className="studio-home" data-status={status}>
@@ -433,6 +491,7 @@ export default function StudioScene(){
       {status==='loading'&&<p className="studio-state" role="status">Opening the studio…</p>}
       {status==='fallback'&&<p className="studio-state">The 3D studio is unavailable on this device. All sections are available below.</p>}
       <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
+      {shadowDebug&&<div style={{position:'absolute',zIndex:9,right:12,bottom:12,padding:10,background:'#f8f3e5',color:'#332c24',fontSize:12,border:'1px solid #a68e65'}}><button type="button" onClick={()=>diagnosticExport.current?.()}>Download shadow diagnostics</button><div style={{fontSize:11,marginTop:4}}>Local frame monitor · no data is sent</div></div>}
       {contactOpen&&<div className="contact-backdrop" onClick={closeContact}><div className="contact-index-dialog" role="dialog" aria-modal="true" aria-label="Wenyi Ye contact cards" tabIndex={-1} ref={contactDialog} onClick={e=>e.stopPropagation()}>
         <button type="button" className="contact-dismiss" onClick={closeContact}>← Back to desk</button>
         <div className="contact-tabs" role="tablist" aria-label="Contact channels">{contactCards.map((card,i)=><button type="button" role="tab" aria-selected={i===contactIndex} key={card.tab} onClick={()=>setContactIndex(i)}>{card.tab}</button>)}</div>

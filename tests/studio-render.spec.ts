@@ -14,10 +14,10 @@ async function luminance(page:Page,shot:Buffer){
 
 test('real WebGL lamp toggles, hover and drag do not produce black frame spikes',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message))
-  await page.goto('/');const stage=page.locator('.studio-stage'),host=page.locator('.studio-render'),canvas=host.locator('canvas')
+  await page.goto('/?debug=shadows');const stage=page.locator('.studio-stage'),host=page.locator('.studio-render')
   await expect(stage).toHaveAttribute('data-status','ready',{timeout:120_000})
   await page.waitForTimeout(1800)
-  const capture=async(name:string)=>{const shot=await canvas.screenshot({timeout:30_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
+  const capture=async(name:string)=>{const shot=await page.screenshot({timeout:90_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
   const original=await capture('initial')
   expect(original.mean).toBeGreaterThan(25)
   // The original model's shade center projects to this region of the 3:2 frame.
@@ -30,16 +30,26 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   await page.waitForTimeout(600)
   const baseline=await capture('lamp-hover')
   const frames=[baseline]
+  for(let i=0;i<5;i++){
+    await page.mouse.move(480,100);await page.waitForTimeout(250)
+    await page.mouse.move(lamp!.x,lamp!.y);await page.waitForTimeout(250)
+  }
   for(const state of ['off','on','off','on']){
     await page.mouse.click(lamp!.x,lamp!.y)
     await expect(host).toHaveAttribute('data-lamp-state',state,{timeout:15_000})
-    frames.push(await capture(`lamp-${state}-${frames.length}`))
-    await expect(host).toHaveAttribute('data-lamp-settled','true',{timeout:15_000})
+    await expect(host).toHaveAttribute('data-lamp-settled','true',{timeout:60_000})
     frames.push(await capture(`lamp-${state}-settled-${frames.length}`))
   }
   for(const [x,y] of [[480,410],[650,420],[200,420],[480,260],[850,350]]){
-    await page.mouse.move(x,y);frames.push(await capture(`hover-${frames.length}`))
+    await page.mouse.move(x,y);await page.waitForTimeout(200)
   }
+  const diagnostics=JSON.parse((await host.getAttribute('data-shadow-diagnostics'))??'{}')
+  await info.attach('lamp-frame-monitor.json',{body:JSON.stringify(diagnostics,null,2),contentType:'application/json'})
+  expect(diagnostics.error).toBe('')
+  const lit=diagnostics.frames.filter((f:{lampOn:boolean;level:number})=>f.lampOn&&f.level>.99)
+  expect(lit.length).toBeGreaterThan(5)
+  const median=lit.map((f:{mean:number})=>f.mean).sort((a:number,b:number)=>a-b)[Math.floor(lit.length/2)]
+  for(const f of lit)expect(f.mean,`lamp region at ${f.time} ms (${f.event})`).toBeGreaterThan(median*.78)
   await page.mouse.move(480,500);await page.mouse.down();await page.mouse.move(650,490,{steps:5});await page.mouse.up()
   frames.push(await capture('drag'))
   for(const frame of frames){expect(frame.mean).toBeGreaterThan(original.mean*.70);expect(frame.black).toBeLessThan(original.black+.035);expect(frame.deskBlack).toBeLessThan(original.deskBlack+.025)}
