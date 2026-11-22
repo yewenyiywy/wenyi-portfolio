@@ -6,10 +6,6 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
-import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -126,18 +122,28 @@ export default function StudioScene(){
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
-    let composer:EffectComposer|undefined,outline:OutlinePass|undefined
     let lampLight:THREE.PointLight|undefined
-    let lampOn=true,lampLevel=1
+    let lampOn=true,lampLevel=1,lampStartLevel=1,lampStartedAt=0
     const lampShades=new Set<THREE.MeshStandardMaterial>()
     const interactive=new Map<THREE.Object3D,THREE.Group>()
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
+    // A depth-tested additive rim on the existing mesh. No scene-wide depth
+    // overrides, postprocessing targets, or changes to the original material.
+    const rimMaterial=new THREE.ShaderMaterial({
+      uniforms:{tint:{value:new THREE.Color('#ffdf99')}},
+      vertexShader:`varying vec3 vNormal; varying vec3 vView; void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vNormal=normalize(normalMatrix*normal);vView=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`uniform vec3 tint; varying vec3 vNormal; varying vec3 vView; void main(){float rim=pow(1.0-abs(dot(normalize(vNormal),normalize(vView))),3.0);gl_FragColor=vec4(tint,rim*0.65);}`,
+      transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,toneMapped:false
+    })
+    let highlighted:THREE.Group|undefined
+    const rimMeshes:THREE.Mesh[]=[]
     const highlight=(group?:THREE.Group)=>{
-      if(!outline)return
-      // OutlinePass uses an opaque depth override, which is incompatible with
-      // the lamp's transmissive glass. Keep its tooltip without the depth pass.
-      if(group?.name==='lamp')group=undefined
-      if(outline.selectedObjects[0]!==group){outline.selectedObjects=group?[group]:[];dirty=true}
+      if(highlighted===group)return
+      for(const mesh of rimMeshes)mesh.removeFromParent()
+      rimMeshes.length=0;highlighted=group;dirty=true
+      if(!group)return
+      const meshes=group.children.filter((obj):obj is THREE.Mesh=>obj instanceof THREE.Mesh)
+      for(const mesh of meshes){const rim=new THREE.Mesh(mesh.geometry,rimMaterial);rim.name='Interaction rim';rim.raycast=()=>{};rim.castShadow=false;rim.receiveShadow=false;rim.renderOrder=20;mesh.add(rim);rimMeshes.push(rim)}
     }
     const assembleInteractions=()=>{
       if(!model)return
@@ -179,8 +185,8 @@ export default function StudioScene(){
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
-    const camera=new THREE.PerspectiveCamera(35,1,.1,125)
-    const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone()
+    const camera=new THREE.PerspectiveCamera(35,1,.25,100)
+    const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone(),restLook=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
     let pointer:{x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
@@ -256,12 +262,16 @@ export default function StudioScene(){
       // Retain the lamp hit from pointer-down while the camera eases to its
       // parallax position, so an ordinary click never misses a thin shade.
       if(p.lamp||hit?.object.name==='lamp'){
-        lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
+        lampStartLevel=lampLevel;lampStartedAt=performance.now();lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';host.dataset.lampSettled='false';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
       }
       if(!hit)return
       highlight(hit.object)
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
-      const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
+      // Large anchored furniture and window frames must never rotate into
+      // the tabletop/wall: that can create overlapping geometry and shadows.
+      if(animated.name!=='desk'&&animated.name!=='window'){
+        const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
+      }
       if(!hit.route)return
       const route=hit.route
       if(route.href==='#contact-card'){setContactIndex(0);setContactOpen(true);contactAction.current?.(true);return}
@@ -283,19 +293,16 @@ export default function StudioScene(){
       scene=new THREE.Scene();scene.background=new THREE.Color('#c893a7')
       const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
       scene.add(new THREE.HemisphereLight('#dee3ff','#796653',.53))
-      // Spread the key across the window aperture to create a soft penumbra.
-      for(const [x,y,z] of [[-5.5,3.6,.6],[-5.5,2.8,.6],[-5.5,3.6,-.7],[-5.5,2.8,-.7]]){
-        const sunlight=new THREE.DirectionalLight('#ffcf9b',.31);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
-        sunlight.shadow.mapSize.set(1024,1024);sunlight.shadow.camera.left=-5;sunlight.shadow.camera.right=5;sunlight.shadow.camera.top=5;sunlight.shadow.camera.bottom=-5;sunlight.shadow.normalBias=.012;sunlight.shadow.bias=-.00012;sunlight.shadow.radius=3;scene.add(sunlight,sunlight.target)
+      // The old shadow cameras sat behind the enclosing wall, which blocked
+      // the window key and washed out the contact shadows. Place two samples
+      // in the actual aperture; they share the previous total light energy.
+      for(const [x,y,z,energy] of [[-3.85,3.65,.52,.64],[-3.85,3.35,-.52,.60]]){
+        const sunlight=new THREE.DirectionalLight('#ffcf9b',energy);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
+        const shadow=sunlight.shadow;shadow.mapSize.set(2048,2048);shadow.camera.left=-5;shadow.camera.right=5;shadow.camera.top=4.5;shadow.camera.bottom=-4.5;shadow.camera.near=.05;shadow.camera.far=14;shadow.camera.updateProjectionMatrix();shadow.normalBias=.005;shadow.bias=-.00005;shadow.radius=3;scene.add(sunlight,sunlight.target)
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
-      composer=new EffectComposer(renderer)
-      composer.addPass(new RenderPass(scene,camera))
-      outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
-      outline.visibleEdgeColor.set('#ffe8ad');outline.hiddenEdgeColor.set('#000000');outline.edgeStrength=2;outline.edgeGlow=.4;outline.edgeThickness=1.2
-      composer.addPass(outline);composer.addPass(new OutputPass())
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);composer?.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1?36:35;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -314,6 +321,9 @@ export default function StudioScene(){
           // GLTFLoader sanitizes spaces into underscores. Preserve the original
           // Blender names for all interaction, mesh and shadow classifications.
           model.traverse(obj=>{if(typeof obj.userData.name==='string')obj.name=obj.userData.name})
+          const vegetation:THREE.Object3D[]=[]
+          model.traverse(obj=>{if(/^Exterior (tree |scanned shrub)/.test(obj.name))vegetation.push(obj)})
+          vegetation.forEach(obj=>obj.removeFromParent())
           const floorLoader=new THREE.TextureLoader()
           const loadSurface=(path:string,colorSpace:THREE.ColorSpace)=>{
             const texture=floorLoader.load(path,()=>{dirty=true});textures.push(texture);texture.colorSpace=colorSpace;texture.flipY=false;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=renderer!.capabilities.getMaxAnisotropy();return texture
@@ -321,21 +331,34 @@ export default function StudioScene(){
           const floorColor=loadSurface('/studio-surfaces/chevron-oak.jpg',THREE.SRGBColorSpace)
           const floorHeight=loadSurface('/studio-surfaces/chevron-height.jpg',THREE.NoColorSpace)
           const lacquer=loadSurface('/studio-surfaces/olive-lacquer.jpg',THREE.SRGBColorSpace)
+          // Geometry-baked contact AO, projected through mesh UV1, is stable
+          // at every viewing angle. No extra surfaces to fight the depth buffer.
+          const contact=(name:string)=>{const t=loadSurface(`/studio-surfaces/${name}-contact.png`,THREE.NoColorSpace);t.channel=1;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;return t}
+          const deskAO=contact('desk'),matAO=contact('mat'),wallAO=contact('wall'),floorAO=contact('floor')
+          const applyContact=(mesh:THREE.Mesh,texture:THREE.Texture,x0:number,xSpan:number,v0:number,vSpan:number,vertical=false)=>{
+            const material=(mesh.material as THREE.MeshStandardMaterial).clone();material.aoMap=texture;material.aoMapIntensity=1;material.needsUpdate=true;ownedMaterials.push(material);mesh.material=material
+            mesh.geometry=mesh.geometry.clone();const positions=mesh.geometry.attributes.position,uv=new Float32Array(positions.count*2),p=new THREE.Vector3()
+            for(let i=0;i<positions.count;i++){p.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);uv[i*2]=(p.x-x0)/xSpan;uv[i*2+1]=((vertical?p.y:p.z)-v0)/vSpan}
+            mesh.geometry.setAttribute('uv1',new THREE.BufferAttribute(uv,2))
+          }
+          model.updateMatrixWorld(true)
           const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
-            obj.castShadow=!obj.name.startsWith('Exterior ')&&!obj.name.startsWith('Sheer curtain')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=!obj.name.startsWith('Exterior ')
+            obj.castShadow=!/^(Exterior |Papered |Plaster ceiling|Continuous |Sheer curtain|Window prism caustic|keyboard_label_|computer_screen|degree_texture_|contact_card_texture|contact_tab_|resume_texture|research_cover|Foil sun and moon tooling)/.test(obj.name);obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
-            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.12;m.thickness=.014;m.roughness=.32;m.needsUpdate=true}}
+            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
-            if(m.name==='Moulded green art glass'){m.color.set('#477443');m.roughness=.3;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.18;m.thickness=.035}obj.castShadow=false;m.needsUpdate=true}
-            if(m.name==='Hand finished brass'){m.color.set('#b58c47');m.metalness=.78;m.roughness=.37;m.needsUpdate=true}
             if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
             if(obj.name==='Continuous oak subfloor'&&obj.position.y> -1.46)obj.position.y-=.04
+            // The rainbow decal was only 1 mm above the desktop. Use a
+            // depth offset and a non-writing transparent layer, not another
+            // competing opaque surface at the exact same depth.
+            if(obj.name==='Window prism caustic'){m.depthWrite=false;m.transparent=true;m.polygonOffset=true;m.polygonOffsetFactor=-2;m.polygonOffsetUnits=-2;obj.position.y+=.006;obj.receiveShadow=false;obj.renderOrder=2;m.needsUpdate=true}
             if(m.name==='Ivory sheer linen'){m.transparent=true;m.opacity=.39;m.depthWrite=false;m.side=THREE.DoubleSide;m.roughness=.9}
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
-              physical.metalness=0;physical.transmission=green?.22:.35;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.29:.23;physical.envMapIntensity=.85;physical.side=THREE.FrontSide;physical.needsUpdate=true
+              physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
               if(physical!==m){ownedMaterials.push(physical);obj.material=physical}obj.castShadow=false
             }
             if(m.name==='Brass'||m.name==='Cast bronze maiden'){m.metalness=1;m.roughness=.29;m.envMapIntensity=1.2;m.needsUpdate=true}
@@ -349,43 +372,58 @@ export default function StudioScene(){
             else if(name==='contact_card_texture')apply(obj,contactCardTexture())
             else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
+            if(name==='Desk lacquered top')applyContact(obj,deskAO,-3.7,7.4,-1.65,3.5)
+            else if(name==='Leather desk pad')applyContact(obj,matAO,-1.225,2.95,.39,1.30)
+            else if(name==='Papered rear wall')applyContact(obj,wallAO,-3.8,7.6,1.45,3.6,true)
+            else if(name==='Continuous chevron parquet')applyContact(obj,floorAO,-4,8.5,-2.27,7)
           })
-          assembleInteractions();host.dataset.lampState='on';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
         const goal=lampOn?1:0
-        if(Math.abs(lampLevel-goal)>.001){
-          lampLevel=reduced?goal:THREE.MathUtils.lerp(lampLevel,goal,.16)
-          if(Math.abs(lampLevel-goal)<.001)lampLevel=goal
+        if(host.dataset.lampSettled==='false'){
+          const t=reduced?1:Math.min(1,(performance.now()-lampStartedAt)/280)
+          lampLevel=THREE.MathUtils.lerp(lampStartLevel,goal,1-Math.pow(1-t,3))
+          if(t===1){lampLevel=goal;host.dataset.lampSettled='true'}
           if(lampLight)lampLight.intensity=8.5*lampLevel
           lampShades.forEach(m=>{m.emissiveIntensity=.8*lampLevel})
           dirty=true
         }
-        const radius=8.9*Math.max(1,1.5/aspect)
-        const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
-        desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius))
-        const position=focusCamera??desired,target=focus??baseLook
+        const portrait=aspect<1
+        if(portrait){
+          const pan=THREE.MathUtils.clamp(-dragYaw*12.4,-2.75,2.75)
+          const tilt=THREE.MathUtils.clamp(dragPitch*3,-.36,.36)
+          desired.set(pan+.08,3.52+tilt,6.15)
+          restLook.set(pan,1.75-tilt*.45,-.35)
+        }else{
+          const radius=8.9*Math.max(1,1.5/aspect)
+          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
+          desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius));restLook.copy(baseLook)
+        }
+        const position=focusCamera??desired,target=focus??restLook
         for(const [group,pose] of Array.from(poses.entries())){
           const t=Math.min(1,(performance.now()-pose.start)/1100)
           group.rotation.copy(pose.rotation)
           group.rotation.z+=Math.sin(t*Math.PI*4)*(1-t)*(group.name==='plant'?.145:group.name.startsWith('photo-')?.13:group.name==='desk'||group.name==='window'?.005:.04)
-          renderer.shadowMap.needsUpdate=true
+          // Small prop animations retain the stable baked window shadows.
+          // Rebuilding all four shadow maps per swing frame caused temporal
+          // interference on thin, nearly coplanar surfaces.
           dirty=true
           if(t===1){group.rotation.copy(pose.rotation);poses.delete(group)}
         }
         if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
           camera.position.lerp(position,reduced?1:.085)
           look.lerp(target,reduced?1:.085);camera.lookAt(look)
-          if(composer)composer.render();else renderer.render(scene,camera);dirty=false
+          renderer.render(scene,camera);dirty=false
         }
         frame=requestAnimationFrame(animate)
       }
       camera.position.set(.31,3.86,8.9);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
-    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();outline?.dispose();composer?.dispose();renderer?.dispose();renderer?.domElement.remove()}
+    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();highlight();rimMaterial.dispose();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
   },[router])
 
   return <main className="studio-home" data-status={status}>
