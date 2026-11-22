@@ -17,7 +17,7 @@ const destinations: Record<string, { label: string; href: string }> = {
   target_computer:{label:'Alchemy · Play game',href:'/game'},
   target_contact:{label:'Contact · Card index',href:'#contact-card'},
 }
-const photos=['/wenyi.jpg','/photo-03.jpg','/photo-02.jpg','/photo-04.jpg']
+
 const contactCards=[
   {tab:'Email',hint:'The best way to reach me',value:'ywywywy@berkeley.edu',href:'mailto:ywywywy@berkeley.edu'},
   {tab:'LinkedIn',hint:'Professional network',value:'Wenyi (Wendy) Ye',href:'https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/'},
@@ -126,8 +126,8 @@ export default function StudioScene(){
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
-    const camera=new THREE.PerspectiveCamera(40,1,.1,50)
-    const baseLook=new THREE.Vector3(.10,2.04,-.18),look=baseLook.clone()
+    const camera=new THREE.PerspectiveCamera(35,1,.1,50)
+    const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
     let pointer:{x:number;y:number;yaw:number;pitch:number}|null=null
@@ -151,8 +151,7 @@ export default function StudioScene(){
         else if(name.includes('keyboard')||name.includes('spacebar'))label='Keyboard · Computer'
         else if(name!=='computer_screen')label='Retro CRT computer · Games'
       }else if(!route){
-        if(name.includes('lamp'))label='Art Nouveau bronze lamp'
-        else if(name.includes('orchid'))label='Purple Phalaenopsis orchid'
+        if(/miniature|earbud|earphone|headphone|player/.test(name))label='Mint MP3 player'
         else if(name.includes('bird'))label='Bird of paradise · Strelitzia'
         else if(name.includes('plant')||name.includes('planter')||name.includes('soil'))label='Potted plant'
         else if(name.includes('shelf book'))label='Books'
@@ -203,20 +202,18 @@ export default function StudioScene(){
     try {
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace
-      renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.94
       renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
       scene=new THREE.Scene();scene.background=new THREE.Color('#73644f')
-      const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.82;room.dispose();pmrem.dispose()
+      const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.48;room.dispose();pmrem.dispose()
       scene.add(new THREE.HemisphereLight('#e3dfce','#493022',.75))
-      const sunlight=new THREE.DirectionalLight('#ffd4a0',2.6);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
+      const sunlight=new THREE.DirectionalLight('#fff0ce',1.75);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
-      const lamp=new THREE.PointLight('#ffb341',9,2.8,2);lamp.position.set(2.79,2.55,-1.265);scene.add(lamp)
       const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
-      const textureLoader=new THREE.TextureLoader()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
       }
@@ -232,7 +229,7 @@ export default function StudioScene(){
           const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
-            obj.castShadow=true;obj.receiveShadow=true
+            obj.castShadow=!obj.name.includes('Garden beyond the window')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=true
             const m=obj.material as THREE.MeshStandardMaterial
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
@@ -245,31 +242,20 @@ export default function StudioScene(){
             if(obj.geometry.attributes.uv&&['Walnut','Desk mat leather','Forest green cloth','Warm plaster','Ivory paper','Aged ABS plastic'].includes(m.name)){m.bumpMap=grain;m.bumpScale=m.name==='Warm plaster'?.014:m.name==='Desk mat leather'?.009:.004;m.needsUpdate=true}
             const name=obj.name
             if(name==='computer_screen'){apply(obj,screenTexture(),true);obj.castShadow=false}
-            else if(name.startsWith('keyboard_label_')){
-              const [, ,row,col]=name.split('_');const chars=['1234567890–+=⌫','QWERTYUIOP[]\\','ASDFGHJKL;\'↵','ZXCVBNM,./⇧']
-              const symbol=chars[Number(row)]?.[Number(col)]??''
-              const texture=canvasTexture((ctx,w,h)=>title(ctx,symbol,w/2,h*.58,28,'#4d493d','Arial'),64,64)
-              dirty=true;textures.push(texture);const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false});ownedMaterials.push(material);obj.material=material;obj.castShadow=false
-            }
-            else if(name==='hobbies_cover')apply(obj,bookTexture('#173f30','HOBBIES','A PERSONAL JOURNAL'))
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
             else if(name==='resume_texture')apply(obj,resumeTexture())
             else if(name==='contact_card_texture')apply(obj,contactCardTexture())
             else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
-            else if(name.startsWith('photo_texture_')){
-              const index=Number(name.split('_').pop());const url=photos[index]
-              if(url)textureLoader.load(url,t=>{if(!alive){t.dispose();return};t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.anisotropy=4;const image=t.image as HTMLImageElement;const imageAspect=image.width/image.height,frameAspect=.79;if(imageAspect>frameAspect){t.repeat.x=frameAspect/imageAspect;t.offset.x=(1-t.repeat.x)/2}else{t.repeat.y=imageAspect/frameAspect;t.offset.y=(1-t.repeat.y)/2}apply(obj,t)})
-            }
           })
           dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
-        const radius=5.8*Math.max(1,1.5/aspect)
+        const radius=8.9*Math.max(1,1.5/aspect)
         const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
-        desired.set(Math.sin(a)*radius,3.48+(radius-6.0)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
+        desired.set(Math.sin(a)*radius,3.86+(radius-8.9)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
         const position=focusCamera??desired,target=focus??baseLook
         if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
           camera.position.lerp(position,reduced?1:.085)
@@ -278,7 +264,7 @@ export default function StudioScene(){
         }
         frame=requestAnimationFrame(animate)
       }
-      camera.position.set(.20,3.48,5.8);animate()
+      camera.position.set(.31,3.86,8.9);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
     return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
