@@ -134,6 +134,9 @@ export default function StudioScene(){
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
     const highlight=(group?:THREE.Group)=>{
       if(!outline)return
+      // OutlinePass uses an opaque depth override, which is incompatible with
+      // the lamp's transmissive glass. Keep its tooltip without the depth pass.
+      if(group?.name==='lamp')group=undefined
       if(outline.selectedObjects[0]!==group){outline.selectedObjects=group?[group]:[];dirty=true}
     }
     const assembleInteractions=()=>{
@@ -180,7 +183,7 @@ export default function StudioScene(){
     const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
-    let pointer:{x:number;y:number;yaw:number;pitch:number}|null=null
+    let pointer:{x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
     const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),desired=new THREE.Vector3()
     const choose=(event:PointerEvent)=>{
       if(!model||!renderer)return null
@@ -246,14 +249,17 @@ export default function StudioScene(){
         yaw=x*.065;pitch=-y*.035;const hit=choose(e);highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
       }
     }
-    const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch};renderer?.domElement.setPointerCapture(e.pointerId)}
+    const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
     const up=(e:PointerEvent)=>{
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
-      const hit=choose(e);if(!hit)return
-      highlight(hit.object)
-      if(hit.object.name==='lamp'){
-        lampOn=!lampOn;dirty=true;updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
+      const hit=choose(e)
+      // Retain the lamp hit from pointer-down while the camera eases to its
+      // parallax position, so an ordinary click never misses a thin shade.
+      if(p.lamp||hit?.object.name==='lamp'){
+        lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
       }
+      if(!hit)return
+      highlight(hit.object)
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
       if(!hit.route)return
@@ -287,7 +293,7 @@ export default function StudioScene(){
       composer=new EffectComposer(renderer)
       composer.addPass(new RenderPass(scene,camera))
       outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
-      outline.visibleEdgeColor.set('#ffe8ad');outline.hiddenEdgeColor.set('#ffe8ad');outline.edgeStrength=3;outline.edgeGlow=.55;outline.edgeThickness=1.2
+      outline.visibleEdgeColor.set('#ffe8ad');outline.hiddenEdgeColor.set('#000000');outline.edgeStrength=2;outline.edgeGlow=.4;outline.edgeThickness=1.2
       composer.addPass(outline);composer.addPass(new OutputPass())
       const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);composer?.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
@@ -305,16 +311,31 @@ export default function StudioScene(){
           const buffer=signature[0]===0x67&&signature[1]===0x6c?encoded:await new Response(new Blob([encoded]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
           const gltf=await loader.parseAsync(buffer,'/');if(!alive)return
           model=gltf.scene
+          // GLTFLoader sanitizes spaces into underscores. Preserve the original
+          // Blender names for all interaction, mesh and shadow classifications.
+          model.traverse(obj=>{if(typeof obj.userData.name==='string')obj.name=obj.userData.name})
+          const floorLoader=new THREE.TextureLoader()
+          const loadSurface=(path:string,colorSpace:THREE.ColorSpace)=>{
+            const texture=floorLoader.load(path,()=>{dirty=true});textures.push(texture);texture.colorSpace=colorSpace;texture.flipY=false;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=renderer!.capabilities.getMaxAnisotropy();return texture
+          }
+          const floorColor=loadSurface('/studio-surfaces/chevron-oak.jpg',THREE.SRGBColorSpace)
+          const floorHeight=loadSurface('/studio-surfaces/chevron-height.jpg',THREE.NoColorSpace)
+          const lacquer=loadSurface('/studio-surfaces/olive-lacquer.jpg',THREE.SRGBColorSpace)
           const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
             obj.castShadow=!obj.name.startsWith('Exterior ')&&!obj.name.startsWith('Sheer curtain')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
-            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
+            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.12;m.thickness=.014;m.roughness=.32;m.needsUpdate=true}}
+            if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
+            if(m.name==='Moulded green art glass'){m.color.set('#477443');m.roughness=.3;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.18;m.thickness=.035}obj.castShadow=false;m.needsUpdate=true}
+            if(m.name==='Hand finished brass'){m.color.set('#b58c47');m.metalness=.78;m.roughness=.37;m.needsUpdate=true}
+            if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
+            if(obj.name==='Continuous oak subfloor'&&obj.position.y> -1.46)obj.position.y-=.04
             if(m.name==='Ivory sheer linen'){m.transparent=true;m.opacity=.39;m.depthWrite=false;m.side=THREE.DoubleSide;m.roughness=.9}
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
-              physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
+              physical.metalness=0;physical.transmission=green?.22:.35;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.29:.23;physical.envMapIntensity=.85;physical.side=THREE.FrontSide;physical.needsUpdate=true
               if(physical!==m){ownedMaterials.push(physical);obj.material=physical}obj.castShadow=false
             }
             if(m.name==='Brass'||m.name==='Cast bronze maiden'){m.metalness=1;m.roughness=.29;m.envMapIntensity=1.2;m.needsUpdate=true}
@@ -329,7 +350,7 @@ export default function StudioScene(){
             else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
           })
-          assembleInteractions();dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();host.dataset.lampState='on';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
@@ -357,7 +378,7 @@ export default function StudioScene(){
         if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
           camera.position.lerp(position,reduced?1:.085)
           look.lerp(target,reduced?1:.085);camera.lookAt(look)
-          if(composer&&outline?.selectedObjects.length)composer.render();else renderer.render(scene,camera);dirty=false
+          if(composer)composer.render();else renderer.render(scene,camera);dirty=false
         }
         frame=requestAnimationFrame(animate)
       }
