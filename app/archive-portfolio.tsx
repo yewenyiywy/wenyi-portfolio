@@ -1,79 +1,38 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import PortfolioView from './portfolio-view'
-import PortfolioNav from './portfolio-nav'
-import './archive.css'
+import './professional.css'
 
-const folders = [
-  { id:'personal', title:'About', chapters:'about contact', tape:7 },
-  { id:'academic', title:'Education & Awards', chapters:'education awards', tape:5 },
-  { id:'technical', title:'Skills', chapters:'skills', tape:4 },
-  { id:'professional', title:'Experience', chapters:'experience', tape:6 },
-  { id:'research', title:'Projects', chapters:'projects', tape:1 },
+const folders=[
+  {id:'personal',title:'About',chapters:'about contact'},
+  {id:'academic',title:'Education & Awards',chapters:'education awards'},
+  {id:'professional',title:'Experience',chapters:'experience'},
+  {id:'research',title:'Projects',chapters:'projects'},
+  {id:'technical',title:'Skills',chapters:'skills'},
 ] as const
-type Folder = typeof folders[number]
+type Folder=typeof folders[number]
 
-function SheetTitle({folder}:{folder:Folder}) {
-  return <span className={`archive-sheet-tape archive-sheet-tape-${folder.tape}`}>{folder.title}</span>
-}
-
-export default function ArchivePortfolio() {
-  const [active, setActive] = useState<Folder>(folders[0])
-  const stackRef = useRef<HTMLDivElement>(null)
-  const ordered = [...folders.filter(f=>f.id!==active.id),active]
-  const scrollStack = () => requestAnimationFrame(() => stackRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))
-
-  useEffect(() => {
-    const sync = () => {
-      const hash = window.location.hash.slice(1)
-      const folder = folders.find(f => f.id === hash || f.chapters.split(' ').includes(hash))
-      setActive(folder ?? folders[0])
-      if(folder) requestAnimationFrame(() => {
-        const target = document.getElementById(hash)
-        if(target) target.scrollIntoView({block:'start'});else stackRef.current?.scrollIntoView({block:'start'})
-      })
-    }
-    sync()
-    window.addEventListener('hashchange',sync)
-    window.addEventListener('popstate',sync)
-    return () => {window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}
-  }, [])
-
-  function open(folder: Folder) {
-    if(folder.id===active.id)return
-    setActive(folder)
-    window.history.pushState(null,'',`/classic#${folder.id}`)
-    scrollStack()
-  }
-
-  function close() {
-    setActive(folders[0])
-    window.history.pushState(null,'','/classic')
-    requestAnimationFrame(() => window.scrollTo({top:0,behavior:'smooth'}))
-  }
-
-  function navigateSection(section:string) {
-    const folder=folders.find(f=>f.chapters.split(' ').includes(section))
-    if(!folder)return
-    setActive(folder)
-    window.history.pushState(null,'',`/classic#${section}`)
-    requestAnimationFrame(()=>{
-      if(section==='contact')document.getElementById(section)?.scrollIntoView({behavior:'smooth',block:'start'})
-      else stackRef.current?.scrollIntoView({behavior:'smooth',block:'start'})
-    })
-  }
-
-  return <div className="archive-home">
-    <PortfolioNav page="archive" activeSection={active.chapters.split(' ')[0]} onHome={close} onSection={navigateSection}/>
-    <div className="archive-index">
-      <div className="archive-paper-stack" ref={stackRef} aria-label="Five overlapping portfolio papers">
-        {ordered.slice(0,4).map((folder,index)=><div key={folder.id} className="archive-sheet archive-sheet-back" style={{'--sheet-index':index} as CSSProperties}><button className="archive-sheet-label" type="button" aria-pressed={false} onClick={()=>open(folder)}><SheetTitle folder={folder}/></button></div>)}
-        <div className="archive-sheet archive-sheet-front archive-paper" key={active.id}>
-          <button className="archive-sheet-label archive-sheet-selected" type="button" aria-pressed={true} onClick={()=>open(active)}><SheetTitle folder={active}/></button>
-          <PortfolioView chapter={active.chapters}/>
-        </div>
-      </div>
+export default function ArchivePortfolio({full=false}:{full?:boolean}){
+  const [active,setActive]=useState<Folder>(folders[0]);const paper=useRef<HTMLDivElement>(null)
+  useEffect(()=>{
+    if(full)return
+    const sync=()=>{const hash=window.location.hash.slice(1);const folder=folders.find(f=>f.id===hash||f.chapters.split(' ').includes(hash));setActive(folder??folders[0]);if(hash==='contact')requestAnimationFrame(()=>document.getElementById('contact')?.scrollIntoView({block:'start'}))}
+    sync();window.addEventListener('hashchange',sync);window.addEventListener('popstate',sync)
+    return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}
+  },[full])
+  function open(folder:Folder){setActive(folder);window.history.pushState(null,'',`/classic#${folder.chapters.split(' ')[0]}`);requestAnimationFrame(()=>paper.current?.scrollIntoView({block:'start',behavior:'smooth'}))}
+  return <div className={`professional-shell${full?' professional-full':''}`}>
+    <header className="professional-topbar"><Link href="/" className="professional-back">← Back to studio</Link><Link href="/" className="professional-brand">Wenyi Ye<span>.</span></Link><Link href="/classic/full" className="professional-full-link">View full portfolio</Link></header>
+    <div className="professional-heading"><p>WENYI YE / PROFESSIONAL DOSSIER</p><h1>{full?'Portfolio':active.title}</h1><span>Quantitative Finance · AI · Product</span></div>
+    <nav className="professional-tabs" aria-label="Portfolio sections">
+      {folders.map(folder=>full?<a key={folder.id} href={`#${folder.chapters.split(' ')[0]}`}>{folder.title}</a>:<button key={folder.id} type="button" aria-pressed={active.id===folder.id} onClick={()=>open(folder)}>{folder.title}</button>)}
+      <Link href="/hobbies">Hobbies</Link>
+    </nav>
+    <div className="professional-paper-area" ref={paper}>
+      {full?<PortfolioView/>:<div key={active.id} className="professional-dossier"><PortfolioView chapter={active.chapters}/></div>}
     </div>
+    <footer className="professional-end"><Link href="/">← Back to studio</Link><span>Wenyi Ye · 2026</span></footer>
   </div>
 }
