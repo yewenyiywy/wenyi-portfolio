@@ -28,7 +28,7 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   const measurementStart=startDiagnostics.frames?.at(-1)?.time??0
   // The original model's shade center projects to this region of the 3:2 frame.
   let lamp:{x:number;y:number}|undefined
-  for(const [x,y] of [[310,235],[330,235],[295,225],[320,215],[340,260]]){
+  for(const [x,y] of [[300,269],[310,270],[290,260],[310,235],[330,235],[340,260]]){
     await page.mouse.move(x,y);await page.waitForTimeout(350)
     if((await page.locator('.studio-object-tooltip').textContent())?.includes('Lamp')){lamp={x,y};break}
   }

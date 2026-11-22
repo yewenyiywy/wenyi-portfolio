@@ -862,6 +862,7 @@ projects=group('target_projects')
 box('Research notebook cover',(-2.62,-.54,1.37),(.88,.72,.08),burgundy,.026,projects)
 box('Research notebook pages',(-2.62,-.54,1.43),(.83,.67,.07),paper,.01,projects)
 box('Research notebook front',(-2.62,-.54,1.484),(.88,.72,.045),burgundy,.018,projects)
+box('Research notebook spine',(-3.045,-.54,1.42),(.105,.714,.172),burgundy,.025,projects)
 surface('research_cover',(-2.62,-.54,1.51),.82,.65,print_material('Research cover print','research.jpg'),False,projects)
 
 contact_holder(2.73,.72)

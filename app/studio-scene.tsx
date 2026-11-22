@@ -6,6 +6,7 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -267,8 +268,8 @@ export default function StudioScene(){
       if(moving)return
       const bounds=host.getBoundingClientRect()
       if(pointer){
-        dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.6,-.23,.23)
-        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.35,-.12,.12)
+        dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.48,-.19,.19)
+        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.18,-.045,.045)
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
@@ -357,7 +358,7 @@ export default function StudioScene(){
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1?36:35;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?34:33;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -376,6 +377,14 @@ export default function StudioScene(){
           // GLTFLoader sanitizes spaces into underscores. Preserve the original
           // Blender names for all interaction, mesh and shadow classifications.
           model.traverse(obj=>{if(typeof obj.userData.name==='string')obj.name=obj.userData.name})
+          // Close the visible page block on the left with a real rounded
+          // leather spine, using the same material as the two covers.
+          const research=model.getObjectByName('target_projects')
+          const front=model.getObjectByName('Research notebook front')
+          if(research&&front instanceof THREE.Mesh&&!model.getObjectByName('Research notebook spine')){
+            const spine=new THREE.Mesh(new RoundedBoxGeometry(.105,.172,.714,4,.025),front.material)
+            spine.name='Research notebook spine';spine.position.set(-3.045,1.42,.54);research.add(spine)
+          }
           const vegetation:THREE.Object3D[]=[]
           model.traverse(obj=>{if(/^Exterior (tree |scanned shrub)/.test(obj.name))vegetation.push(obj)})
           vegetation.forEach(obj=>obj.removeFromParent())
@@ -472,16 +481,16 @@ export default function StudioScene(){
           lampShades.forEach(m=>{m.emissiveIntensity=.8*lampLevel})
           dirty=true
         }
-        const portrait=aspect<1
+        const portrait=aspect<1.15
         if(portrait){
-          const pan=THREE.MathUtils.clamp(-dragYaw*12.4,-2.75,2.75)
-          const tilt=THREE.MathUtils.clamp(dragPitch*3,-.36,.36)
-          desired.set(pan+.08,3.52+tilt,6.15)
-          restLook.set(pan,1.75-tilt*.45,-.35)
+          const pan=THREE.MathUtils.clamp(-dragYaw*11.9,-2.25,2.25)
+          const tilt=THREE.MathUtils.clamp(dragPitch*2,-.09,.09)
+          desired.set(pan+.08,3.42+tilt,5.95)
+          restLook.set(pan,2.22-tilt*.25,-.35)
         }else{
-          const radius=8.9*Math.max(1,1.5/aspect)
-          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
-          desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius));restLook.copy(baseLook)
+          const radius=8.9*Math.min(1.12,Math.max(1,1.5/aspect))
+          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.17,.17),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.045,.045)
+          desired.set(Math.sin(a)*radius,3.86+Math.sin(b)*radius,Math.cos(a)*radius);restLook.set(.1,2.12,-.35)
         }
         const position=focusCamera??desired,target=focus??restLook
         for(const cloth of Array.from(curtains.values())){
