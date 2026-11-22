@@ -6,6 +6,7 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import './studio.css'
 
@@ -75,18 +76,40 @@ function resumeTexture(){return canvasTexture((ctx,w,h)=>{
     const y=160+i*108;ctx.fillText(company,48,y);ctx.fillStyle='#b2ac9b';for(let j=0;j<3;j++)ctx.fillRect(48,y+16+j*17,w-96-(j%2)*60,3);ctx.fillStyle='#2b342d'
   })
 })}
-function screenTexture(){return canvasTexture((ctx,w,h)=>{
+type CRTFolder = 'desktop'|'games'|'about'|'videos'
+function drawScreen(ctx:CanvasRenderingContext2D,w:number,h:number,folder:CRTFolder){
   ctx.fillStyle='#075c59';ctx.fillRect(0,0,w,h);ctx.fillStyle='#e5e6d7';ctx.fillRect(0,0,w,37)
-  ctx.font='bold 20px monospace';ctx.fillStyle='#182620';ctx.textAlign='left';ctx.fillText('◈  Wenyi OS     File   Games',15,25)
-  title(ctx,'WENYI’S PLAYROOM',w/2,112,39,'#d9e7c8','monospace')
+  ctx.font='bold 20px monospace';ctx.fillStyle='#182620';ctx.textAlign='left';ctx.fillText('◈  Wenyi OS     File   View',15,25)
   const icon=(x:number,label:string,symbol:string,color:string)=>{
     ctx.fillStyle='#082f30';ctx.fillRect(x-82,177,164,128);ctx.fillStyle='#e5e3cc';ctx.fillRect(x-73,168,146,128)
     ctx.fillStyle=color;ctx.fillRect(x-63,178,126,108);title(ctx,symbol,x,253,64,'#f0e8d0','monospace');title(ctx,label,x,338,27,'#fff6d6','monospace')
   }
-  icon(w*.25,'ALCHEMY','✦','#5c376c');icon(w*.75,'AFTERGLOW','☾','#9a6058')
-  title(ctx,'Choose a game',w/2,435,22,'#d2ded0','monospace')
+  const folderIcon=(x:number,label:string)=>{
+    ctx.fillStyle='#443e24';ctx.fillRect(x-65,199,136,91)
+    ctx.fillStyle='#d4ae64';ctx.fillRect(x-66,183,53,23);ctx.fillRect(x-66,199,132,84)
+    ctx.fillStyle='#f3d788';ctx.fillRect(x-62,207,124,72);ctx.fillStyle='#fff0af';ctx.fillRect(x-62,207,124,4)
+    title(ctx,label,x,322,24,'#fff6d6','monospace')
+  }
+  if(folder==='desktop'){
+    title(ctx,'WENYI OS',w/2,112,39,'#d9e7c8','monospace')
+    folderIcon(128,'Games');folderIcon(384,'About Me');folderIcon(640,'Videos')
+    title(ctx,'Select a folder',w/2,435,22,'#d2ded0','monospace')
+  }else{
+    ctx.fillStyle='#e5e6d7';ctx.fillRect(35,60,698,420);ctx.fillStyle='#344c55';ctx.fillRect(41,66,686,42)
+    title(ctx,folder==='games'?'Games':folder==='about'?'About Me':'Videos',w/2,96,27,'#fff6d6','monospace')
+    ctx.fillStyle='#d7c5a0';ctx.fillRect(684,74,30,26);title(ctx,'×',699,96,29,'#182620','monospace')
+    ctx.fillStyle='#075c59';ctx.fillRect(46,113,676,358)
+    if(folder==='games'){icon(192,'ALCHEMY','✦','#5c376c');icon(576,'AFTERGLOW','☾','#9a6058');title(ctx,'Choose a game',w/2,435,22,'#d2ded0','monospace')}
+    else if(folder==='about'){
+      title(ctx,'Wenyi Ye',w/2,185,39,'#f0e8d0','monospace')
+      title(ctx,'Quantitative Finance · AI · Product',w/2,247,23,'#d2ded0','monospace')
+      title(ctx,'UC Berkeley · MFE',w/2,294,24,'#d2ded0','monospace')
+      title(ctx,'University of Michigan',w/2,337,24,'#d2ded0','monospace')
+    }else{title(ctx,'No videos yet',w/2,282,30,'#d2ded0','monospace')}
+  }
   for(let y=0;y<h;y+=4){ctx.fillStyle='#101c2424';ctx.fillRect(0,y,w,1)}
-},768,532)}
+}
+function screenTexture(){return canvasTexture((ctx,w,h)=>drawScreen(ctx,w,h,'desktop'),768,532)}
 function woodTexture(){return canvasTexture((ctx,w,h)=>{
   const image=ctx.createImageData(w,h)
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
@@ -133,6 +156,13 @@ export default function StudioScene(){
     let lampOn=true,lampLevel=1,lampStartLevel=1,lampStartedAt=0
     const lampShades=new Set<THREE.MeshStandardMaterial>()
     const interactive=new Map<THREE.Object3D,THREE.Group>()
+    let crtFolder:CRTFolder='desktop',crtTexture:THREE.CanvasTexture|undefined
+    const setCRTFolder=(folder:CRTFolder)=>{
+      crtFolder=folder;host.dataset.crtFolder=folder
+      if(crtTexture){const canvas=crtTexture.image as HTMLCanvasElement;drawScreen(canvas.getContext('2d')!,canvas.width,canvas.height,folder);crtTexture.needsUpdate=true;dirty=true}
+    }
+    let matStarted:number|null=null
+    const matParts:{mesh:THREE.Mesh;rest:Float32Array;world:THREE.Matrix4;inverse:THREE.Matrix4}[]=[]
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
     const curtains=new Map<THREE.Group,{mesh:THREE.Mesh;rest:Float32Array;height:Float32Array;phase:Float32Array;inward:THREE.Vector3;start:number|null}>()
     // A depth-tested additive rim on the existing mesh. No scene-wide depth
@@ -189,6 +219,17 @@ export default function StudioScene(){
         if(key==='plant')pivot.y=box.min.y
         group.position.copy(pivot);model.add(group);group.updateMatrixWorld(true)
         for(const o of meshes){group.attach(o);interactive.set(o,group)}
+        if(key==='mat'){
+          for(const obj of meshes){
+            const mesh=obj as THREE.Mesh
+            mesh.updateWorldMatrix(true,false)
+            const world=mesh.matrixWorld.clone(),inverse=world.clone().invert()
+            // Subdivide both the leather and stitched border; the same
+            // world-space bend keeps them perfectly aligned.
+            mesh.geometry=new TessellateModifier(.035,8).modify(mesh.geometry)
+            matParts.push({mesh,rest:new Float32Array(mesh.geometry.attributes.position.array),world,inverse})
+          }
+        }
         if(key.startsWith('Sheer curtain')){
           const mesh=meshes[0] as THREE.Mesh;mesh.geometry=mesh.geometry.clone()
           mesh.updateWorldMatrix(true,false)
@@ -232,9 +273,15 @@ export default function StudioScene(){
         route=undefined
         if(name==='computer_screen'&&hit.uv){
           const x=hit.uv.x*768,y=hit.uv.y*532
-          if(y>=165&&y<=307){
-            if(Math.abs(x-192)<=74)route={label:'Alchemy · Play game',href:'/game'}
-            if(Math.abs(x-576)<=74)route={label:'Afterglow · Play game',href:'/game/afterglow'}
+          if(crtFolder==='desktop'&&y>=175&&y<=346){
+            for(const [center,folder,label] of [[128,'games','Games'],[384,'about','About Me'],[640,'videos','Videos']] as const)
+              if(Math.abs(x-center)<=92)route={label:`${label} · Open folder`,href:`#crt-${folder}`}
+          }else if(crtFolder!=='desktop'){
+            if(x>=673&&x<=728&&y>=60&&y<=112)route={label:'Close folder',href:'#crt-desktop'}
+            else if(crtFolder==='games'&&y>=165&&y<=350){
+              if(Math.abs(x-192)<=82)route={label:'Alchemy · Play game',href:'/game'}
+              if(Math.abs(x-576)<=82)route={label:'Afterglow · Play game',href:'/game/afterglow'}
+            }
           }
         }
       }
@@ -300,9 +347,14 @@ export default function StudioScene(){
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       // Large anchored furniture and window frames must never rotate into
       // the tabletop/wall: that can create overlapping geometry and shadows.
-      if(curtains.has(animated)){
+      if(hit.route?.href.startsWith('#crt-')){
+        setCRTFolder(hit.route.href.slice(5) as CRTFolder);highlight();updateHover('');return
+      }
+      if(animated.name==='mat'){
+        if(!reduced){matStarted=performance.now();dirty=true}
+      }else if(curtains.has(animated)){
         if(!reduced){const curtain=curtains.get(animated)!;curtain.start=performance.now();dirty=true}
-      }else if(animated.name!=='desk'&&animated.name!=='window'){
+      }else if(animated.name!=='desk'&&animated.name!=='window'&&animated.name!=='computer'){
         const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
       }
       if(!hit.route)return
@@ -311,6 +363,14 @@ export default function StudioScene(){
       if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
       moving=true;updateHover('')
       if(!reduced&&!hit.object.name.startsWith('photo-')){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
+      if(!reduced&&hit.object.name==='target_hobbies'){
+        // Stay on the front/left side of the desk, not a close orbit around
+        // the book: neither the right wall nor the underside enters frame.
+        const limit=aspect<1.15?Math.min(2.10,Math.max(0,3.55-3.34*aspect)):.84
+        const shift=Math.min(.25,Math.max(0,desired.x+limit))
+        focus=restLook.clone();focus.x-=shift
+        focusCamera=desired.clone();focusCamera.x-=shift
+      }
       const navigate=()=>router.push(route.href)
       transition=setTimeout(navigate,hit.object.name.startsWith('photo-')?1100:reduced?0:580)
     }
@@ -491,7 +551,7 @@ export default function StudioScene(){
             if(m.name==='Walnut'){m.map=wood;m.color.set('#ffffff');m.roughness=.53;m.needsUpdate=true}
             if(obj.geometry.attributes.uv&&['Walnut','Desk mat leather','Forest green cloth','Warm plaster','Ivory paper','Aged ABS plastic'].includes(m.name)){m.bumpMap=grain;m.bumpScale=m.name==='Warm plaster'?.014:m.name==='Desk mat leather'?.009:.004;m.needsUpdate=true}
             const name=obj.name
-            if(name==='computer_screen'){apply(obj,screenTexture(),true);obj.castShadow=false}
+            if(name==='computer_screen'){crtTexture=screenTexture();apply(obj,crtTexture,true);host.dataset.crtFolder=crtFolder;obj.castShadow=false}
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
             else if(name==='resume_texture')apply(obj,resumeTexture())
             else if(name==='contact_card_texture')apply(obj,contactCardTexture())
@@ -534,6 +594,29 @@ export default function StudioScene(){
           desired.set(Math.sin(a)*radius,3.86+vertical,Math.cos(a)*radius);restLook.set(.1,2.05+vertical,-.35)
         }
         const position=focusCamera??desired,target=focus??restLook
+        if(matStarted!==null){
+          const t=Math.min(1,(now-matStarted)/1800),angle=.92*Math.pow(Math.sin(Math.PI*t),2)
+          const v=new THREE.Vector3(),corner=.30,invSqrt2=Math.SQRT1_2
+          for(const part of matParts){
+            const p=part.mesh.geometry.attributes.position
+            for(let i=0;i<p.count;i++){
+              if(t===1){p.setXYZ(i,part.rest[i*3],part.rest[i*3+1],part.rest[i*3+2]);continue}
+              v.fromArray(part.rest,i*3).applyMatrix4(part.world)
+              // Front-left diagonal. The rest of the mat remains flat.
+              const d=Math.max(0,corner-((v.x+1.225)+(1.69-v.z))*invSqrt2)
+              if(d>0&&angle>1e-5){
+                const theta=angle*d/corner,r=corner/angle
+                const shift=d-r*Math.sin(theta)
+                v.x+=shift*invSqrt2;v.z-=shift*invSqrt2
+                v.y+=r*(1-Math.cos(theta))
+              }
+              v.applyMatrix4(part.inverse);p.setXYZ(i,v.x,v.y,v.z)
+            }
+            p.needsUpdate=true;part.mesh.geometry.computeVertexNormals()
+          }
+          dirty=true
+          if(t===1)matStarted=null
+        }
         for(const cloth of Array.from(curtains.values())){
           if(cloth.start===null)continue
           const time=(now-cloth.start)/1000,t=Math.min(1,time/4.8),envelope=Math.pow(Math.sin(Math.PI*t),1.6)
