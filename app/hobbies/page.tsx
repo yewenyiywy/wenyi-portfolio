@@ -134,7 +134,7 @@ function PageTape({ label, kind, onClick, href, buttonRef }: { label:string; kin
   const style={'--page-tape-angle':`${[-5,4,-3,6,-5,3,-6,5][kind]}deg`} as CSSProperties
   const className=`journal-page-tape${label.length>10?' journal-page-tape-long':''}`
   const content=<><Tape kind={kind}/><span>{label}</span></>
-  return href?<Link href={href} className={className} style={style}>{content}</Link>:<button type="button" className={className} style={style} onClick={onClick} ref={buttonRef}>{content}</button>
+  return href?<a href={href} className={className} style={style}>{content}</a>:<button type="button" className={className} style={style} onClick={onClick} ref={buttonRef}>{content}</button>
 }
 
 const pageTapeKinds: [TapeKind,TapeKind,TapeKind][] = [[0,2,5],[1,3,2],[0,1,3],[5,2,6],[1,0,7],[6,2,1]]

@@ -119,6 +119,7 @@ export default function StudioScene(){
   },[router])
   useEffect(()=>{
     const host=mount.current;if(!host)return
+    let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
     const textures:THREE.Texture[]=[]
@@ -213,11 +214,11 @@ export default function StudioScene(){
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
       const lamp=new THREE.PointLight('#ffb341',9,2.8,2);lamp.position.set(2.79,2.55,-1.265);scene.add(lamp)
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const textureLoader=new THREE.TextureLoader()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
-        textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
+        dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
       }
       const loader=new GLTFLoader()
       void (async()=>{
@@ -248,7 +249,7 @@ export default function StudioScene(){
               const [, ,row,col]=name.split('_');const chars=['1234567890–+=⌫','QWERTYUIOP[]\\','ASDFGHJKL;\'↵','ZXCVBNM,./⇧']
               const symbol=chars[Number(row)]?.[Number(col)]??''
               const texture=canvasTexture((ctx,w,h)=>title(ctx,symbol,w/2,h*.58,28,'#4d493d','Arial'),64,64)
-              textures.push(texture);const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false});ownedMaterials.push(material);obj.material=material;obj.castShadow=false
+              dirty=true;textures.push(texture);const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false});ownedMaterials.push(material);obj.material=material;obj.castShadow=false
             }
             else if(name==='hobbies_cover')apply(obj,bookTexture('#173f30','HOBBIES','A PERSONAL JOURNAL'))
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
@@ -261,7 +262,7 @@ export default function StudioScene(){
               if(url)textureLoader.load(url,t=>{if(!alive){t.dispose();return};t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.anisotropy=4;const image=t.image as HTMLImageElement;const imageAspect=image.width/image.height,frameAspect=.79;if(imageAspect>frameAspect){t.repeat.x=frameAspect/imageAspect;t.offset.x=(1-t.repeat.x)/2}else{t.repeat.y=imageAspect/frameAspect;t.offset.y=(1-t.repeat.y)/2}apply(obj,t)})
             }
           })
-          scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
@@ -269,9 +270,13 @@ export default function StudioScene(){
         const radius=5.8*Math.max(1,1.5/aspect)
         const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
         desired.set(Math.sin(a)*radius,3.48+(radius-6.0)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
-        camera.position.lerp(focusCamera??desired,.085)
-        look.lerp(focus??baseLook,.085);camera.lookAt(look)
-        renderer.render(scene,camera);frame=requestAnimationFrame(animate)
+        const position=focusCamera??desired,target=focus??baseLook
+        if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
+          camera.position.lerp(position,reduced?1:.085)
+          look.lerp(target,reduced?1:.085);camera.lookAt(look)
+          renderer.render(scene,camera);dirty=false
+        }
+        frame=requestAnimationFrame(animate)
       }
       camera.position.set(.20,3.48,5.8);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
