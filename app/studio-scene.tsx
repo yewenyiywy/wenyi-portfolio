@@ -133,6 +133,7 @@ export default function StudioScene(){
     const lampShades=new Set<THREE.MeshStandardMaterial>()
     const interactive=new Map<THREE.Object3D,THREE.Group>()
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
+    const curtains=new Map<THREE.Group,{mesh:THREE.Mesh;rest:Float32Array;height:Float32Array;phase:Float32Array;inward:THREE.Vector3;start:number|null}>()
     // A depth-tested additive rim on the existing mesh. No scene-wide depth
     // overrides, postprocessing targets, or changes to the original material.
     const rimMaterial=new THREE.ShaderMaterial({
@@ -187,6 +188,15 @@ export default function StudioScene(){
         if(key==='plant')pivot.y=box.min.y
         group.position.copy(pivot);model.add(group);group.updateMatrixWorld(true)
         for(const o of meshes){group.attach(o);interactive.set(o,group)}
+        if(key.startsWith('Sheer curtain')){
+          const mesh=meshes[0] as THREE.Mesh;mesh.geometry=mesh.geometry.clone()
+          mesh.updateWorldMatrix(true,false)
+          const p=mesh.geometry.attributes.position,rest=new Float32Array(p.array),height=new Float32Array(p.count),phase=new Float32Array(p.count),world=new THREE.Vector3()
+          const bounds=new THREE.Box3().setFromObject(mesh),span=Math.max(.01,bounds.max.y-bounds.min.y)
+          for(let i=0;i<p.count;i++){world.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);height[i]=THREE.MathUtils.clamp((bounds.max.y-world.y)/span,0,1);phase[i]=world.z*3.1}
+          const inward=new THREE.Vector3(1,0,0).transformDirection(mesh.matrixWorld.clone().invert())
+          curtains.set(group,{mesh,rest,height,phase,inward,start:null})
+        }
         group.userData.destination=key.startsWith('photo-')?'target_about':key.startsWith('degree-')?'target_education':key
       }
     }
@@ -284,7 +294,9 @@ export default function StudioScene(){
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       // Large anchored furniture and window frames must never rotate into
       // the tabletop/wall: that can create overlapping geometry and shadows.
-      if(animated.name!=='desk'&&animated.name!=='window'){
+      if(curtains.has(animated)){
+        if(!reduced){const curtain=curtains.get(animated)!;curtain.start=performance.now();dirty=true}
+      }else if(animated.name!=='desk'&&animated.name!=='window'){
         const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
       }
       if(!hit.route)return
@@ -460,6 +472,18 @@ export default function StudioScene(){
           desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius));restLook.copy(baseLook)
         }
         const position=focusCamera??desired,target=focus??restLook
+        for(const cloth of Array.from(curtains.values())){
+          if(cloth.start===null)continue
+          const time=(now-cloth.start)/1000,t=Math.min(1,time/4.8),envelope=Math.pow(Math.sin(Math.PI*t),1.6)
+          const p=cloth.mesh.geometry.attributes.position
+          for(let i=0;i<p.count;i++){
+            // Rod stays fixed; a soft inward breeze travels down the folds.
+            const h=cloth.height[i],weight=h*h*(3-2*h),wave=.5+.5*Math.sin(time*2.7-h*3.8+cloth.phase[i]),shift=.10*weight*envelope*(.26+.74*wave)
+            p.setXYZ(i,cloth.rest[i*3]+cloth.inward.x*shift,cloth.rest[i*3+1]+cloth.inward.y*shift,cloth.rest[i*3+2]+cloth.inward.z*shift)
+          }
+          p.needsUpdate=true;cloth.mesh.geometry.computeVertexNormals();dirty=true
+          if(t===1)cloth.start=null
+        }
         for(const [group,pose] of Array.from(poses.entries())){
           const t=Math.min(1,(performance.now()-pose.start)/1100)
           group.rotation.copy(pose.rotation)

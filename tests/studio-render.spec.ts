@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test'
+import {writeFileSync} from 'node:fs'
 
 async function luminance(page:Page,shot:Buffer){
   return page.evaluate(async encoded=>{
@@ -20,6 +21,10 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   const capture=async(name:string)=>{const shot=await page.screenshot({timeout:90_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
   const original=await capture('initial')
   expect(original.mean).toBeGreaterThan(25)
+  // Exclude startup frames sampled while asynchronously loaded material maps
+  // are still arriving. Compare actual hover transitions at the settled view.
+  const startDiagnostics=JSON.parse((await host.getAttribute('data-shadow-diagnostics'))??'{}')
+  const measurementStart=startDiagnostics.frames?.at(-1)?.time??0
   // The original model's shade center projects to this region of the 3:2 frame.
   let lamp:{x:number;y:number}|undefined
   for(const [x,y] of [[310,235],[330,235],[295,225],[320,215],[340,260]]){
@@ -45,8 +50,9 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   }
   const diagnostics=JSON.parse((await host.getAttribute('data-shadow-diagnostics'))??'{}')
   await info.attach('lamp-frame-monitor.json',{body:JSON.stringify(diagnostics,null,2),contentType:'application/json'})
+  writeFileSync(info.outputPath('lamp-frame-monitor.json'),JSON.stringify(diagnostics,null,2))
   expect(diagnostics.error).toBe('')
-  const lit=diagnostics.frames.filter((f:{lampOn:boolean;level:number})=>f.lampOn&&f.level>.99)
+  const lit=diagnostics.frames.filter((f:{time:number;lampOn:boolean;level:number})=>f.time>measurementStart&&f.lampOn&&f.level>.99)
   expect(lit.length).toBeGreaterThan(5)
   const median=lit.map((f:{mean:number})=>f.mean).sort((a:number,b:number)=>a-b)[Math.floor(lit.length/2)]
   for(const f of lit)expect(f.mean,`lamp region at ${f.time} ms (${f.event})`).toBeGreaterThan(median*.78)
