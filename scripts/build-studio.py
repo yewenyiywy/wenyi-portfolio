@@ -700,7 +700,7 @@ def merge_botanical_meshes(prefix):
         for ob in objects:ob.select_set(True)
         bpy.context.view_layer.objects.active=objects[0];bpy.ops.object.join();bpy.context.object.name=prefix+' '+material
 
-olive=mat('Olive lacquer',(.146,.163,.083),.34)
+olive=print_material('Olive lacquer','../../public/studio-surfaces/olive-lacquer.jpg',.48)
 trim=mat('Worn gilt moulding',(.46,.32,.14),.44,.65)
 cream=mat('Ivory painted sash',(.73,.67,.54),.53)
 wallprint=print_material('Hummingbird wallcovering','wallpaper.jpg',.91)
@@ -725,8 +725,14 @@ for z in (1.45,3.10,4.75):box('Window rail',(-4.01,.07,z),(.145,3.54,.082),cream
 box('Deep sash sill',(-3.98,.07,1.44),(.36,3.68,.086),cream,.018)
 box('Rear skirting',(1.9,2.22,-1.22),(12,.095,.26),cream,.015)
 box('Side skirting',(-4.005,-2,-1.22),(.09,8.5,.26),cream,.015)
-box('Continuous oak subfloor',(2.47,-19.73,-1.44),(13,44,.17),oak,0)
-parquet=print_material('Chevron oak parquet','chevron-oak.jpg',.48)
+box('Continuous oak subfloor',(2.47,-19.73,-1.48),(13,44,.17),oak,0)
+parquet=print_material('Chevron oak parquet','../../public/studio-surfaces/chevron-oak.jpg',.58)
+parquet_height=parquet.node_tree.nodes.new('ShaderNodeTexImage')
+parquet_height.image=bpy.data.images.load(os.path.join(os.path.dirname(__file__),'../public/studio-surfaces/chevron-height.jpg'),check_existing=True)
+parquet_height.image.colorspace_settings.name='Non-Color'
+parquet_bump=parquet.node_tree.nodes.new('ShaderNodeBump');parquet_bump.inputs['Strength'].default_value=.32;parquet_bump.inputs['Distance'].default_value=.012
+parquet.node_tree.links.new(parquet_height.outputs['Color'],parquet_bump.inputs['Height'])
+parquet.node_tree.links.new(parquet_bump.outputs['Normal'],parquet.node_tree.nodes.get('Principled BSDF').inputs['Normal'])
 panel('Continuous chevron parquet',[(-4.03,-41.73,-1.349),(8.97,-41.73,-1.349),(8.97,2.28,-1.349),(-4.03,2.28,-1.349)],[(0,0),(6.5,0),(6.5,22),(0,22)],parquet)
 # Floor-length translucent linen curtains. Each panel is a continuous pleated mesh.
 sheer=mat('Ivory sheer linen',(.82,.73,.56),.86)
@@ -748,11 +754,7 @@ for start,end in [(-1.79,-.83),(.68,1.84)]:
     curtain=bpy.data.objects.new('Sheer curtain',mesh);bpy.context.collection.objects.link(curtain);mesh.materials.append(sheer)
     for polygon in mesh.polygons:polygon.use_smooth=True
 rod('Curtain brass rod',(-3.79,-1.94,4.99),(-3.79,1.99,4.99),.019,trim)
-# Vary the lacquer at two scales. Long soft variations follow the board's grain.
-noise=olive.node_tree.nodes.new('ShaderNodeTexNoise');noise.inputs['Scale'].default_value=6;noise.inputs['Detail'].default_value=4
-ramp=olive.node_tree.nodes.new('ShaderNodeValToRGB')
-ramp.color_ramp.elements[0].color=(.07,.084,.037,1);ramp.color_ramp.elements[1].color=(.23,.235,.14,1)
-olive.node_tree.links.new(noise.outputs['Fac'],ramp.inputs[0]);olive.node_tree.links.new(ramp.outputs[0],olive.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
+# A scanned lacquer map survives both Blender and glTF material export.
 box('Desk lacquered top',(0,-.1,1.27),(7.4,3.5,.14),olive,.045)
 box('Tabletop gilded bead',(0,-.1,1.195),(7.37,3.47,.03),trim,.012)
 box('Tabletop lower moulding',(0,-.1,1.15),(7.29,3.42,.077),olive,.026)
