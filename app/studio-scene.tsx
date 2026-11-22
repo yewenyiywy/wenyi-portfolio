@@ -143,14 +143,16 @@ export default function StudioScene(){
         while(root&&!destinations[root.name]&&root.name!=='Mint pocket MP3')root=root.parent
         const name=o.name
         let key=root?.name
-        if(key==='target_about')key='photo-'+(name.match(/(?:_|\.)(\d+)$/)?.[1]?.replace(/^0+(?=\d)/,'')??'0')
+        // Blender names every layer of a frame with the same explicit index.
+        if(key==='target_about')key='photo-'+(name.match(/_(\d+)$/)?.[1]??'0')
         if(key==='target_education')key='degree-'+(name.match(/_(\d+)$/)?.[1]??'0')
         if(key==='target_computer')key=/^(Keyboard|keyboard_label|Spacebar|Coiled keyboard)/.test(name)?'keyboard':/^Mouse/.test(name)?'mouse':'computer'
         if(!key&&name.startsWith('Bird of paradise'))key=/ceramic|soil/.test(name)?'planter':'plant'
         if(!key&&/^(Fountain pen|Pen band)/.test(name))key='pen'
         if(!key&&/^(Leather desk pad|Stitched mat)/.test(name))key='mat'
         if(!key&&/^(Desk |Tabletop|Drawer|Raised |Handle |Drop ring|Turned olive|Leg gilt|Fluted knee|Apron |Gilt drawer)/.test(name))key='desk'
-        if(!key&&/^(Window stile|Window rail|Deep sash)/.test(name))key='window'
+        if(!key&&/^(Window stile|Window rail|Deep sash|Curtain brass)/.test(name))key='window'
+        if(!key&&name.startsWith('Sheer curtain'))key=name
         if(!key)return
         const list=groups.get(key)??[];list.push(o);groups.set(key,list)
       })
@@ -170,7 +172,7 @@ export default function StudioScene(){
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
-    const camera=new THREE.PerspectiveCamera(35,1,.1,50)
+    const camera=new THREE.PerspectiveCamera(35,1,.1,125)
     const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
@@ -265,7 +267,7 @@ export default function StudioScene(){
       renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
-      scene=new THREE.Scene();scene.background=new THREE.Color('#73644f')
+      scene=new THREE.Scene();scene.background=new THREE.Color('#a9c9e5')
       const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
       scene.add(new THREE.HemisphereLight('#e9effa','#796653',.65))
       // Spread the key across the window aperture to create a soft penumbra.
@@ -296,8 +298,9 @@ export default function StudioScene(){
           const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
-            obj.castShadow=!obj.name.includes('Garden beyond the window')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=true
+            obj.castShadow=!obj.name.startsWith('Exterior ')&&!obj.name.startsWith('Sheer curtain')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
+            if(m.name==='Ivory sheer linen'){m.transparent=true;m.opacity=.39;m.depthWrite=false;m.side=THREE.DoubleSide;m.roughness=.9}
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
               physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
@@ -322,7 +325,7 @@ export default function StudioScene(){
         if(!alive||!renderer||!scene)return
         const radius=8.9*Math.max(1,1.5/aspect)
         const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
-        desired.set(Math.sin(a)*radius,3.86+(radius-8.9)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
+        desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius))
         const position=focusCamera??desired,target=focus??baseLook
         for(const [group,pose] of Array.from(poses.entries())){
           const t=Math.min(1,(performance.now()-pose.start)/1100)

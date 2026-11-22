@@ -74,7 +74,7 @@ export default function AlchemyGame() {
   }
 
   return <div className="alchemy-home">
-    <nav className="alchemy-nav"><Link href="/" className="alchemy-brand">← Back to studio</Link></nav>
+    <nav className="alchemy-nav"><a href="/" className="alchemy-brand">← Back to studio</a></nav>
     <div className="alchemy-shell">
       <header className="alchemy-heading"><h1>Mix two ingredients to uncover a chapter of Wenyi’s story.</h1></header>
       <div className="alchemy-scene" aria-label="Alchemy workbench">
