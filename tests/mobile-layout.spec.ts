@@ -120,7 +120,8 @@ async function check(page: Page, label: string) {
 test.describe('home page', () => {
   test('default view', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading',{name:'Welcome to my studio.'})).toBeVisible()
+    await expect(page.locator('.studio-stage')).toBeVisible()
+    await expect(page.getByRole('heading',{name:'Welcome to my studio.'})).toHaveCount(0)
     const index=page.getByRole('navigation',{name:'Portfolio sections'})
     await expect(index.getByRole('link',{name:'Hobbies'})).toHaveAttribute('href','/hobbies')
     await expect(index.getByRole('link',{name:'Alchemy'})).toHaveAttribute('href','/game')
@@ -128,7 +129,9 @@ test.describe('home page', () => {
   })
   test('contact card index opens, switches tabs, and closes', async ({page})=>{
     await page.goto('/')
-    await page.locator('.studio-nav').getByRole('button',{name:'Contact'}).click()
+    const contact=page.locator('.studio-nav').getByRole('button',{name:'Contact'})
+    await contact.focus()
+    await contact.click()
     const card=page.getByRole('dialog',{name:'Wenyi Ye contact cards'})
     await expect(card).toBeVisible()
     await expect(card.getByRole('link',{name:'ywywywy@berkeley.edu'})).toHaveAttribute('href','mailto:ywywywy@berkeley.edu')
@@ -183,8 +186,9 @@ test.describe('home page', () => {
     await expect(page.locator('#experience')).toBeHidden()
     await expect(pet).toBeVisible()
     await check(page, 'alchemy-education')
-    await page.getByRole('link', { name: /skip game/i }).click()
-    await expect(page).toHaveURL(/\/classic/)
+    await page.getByRole('link', { name: /back to studio/i }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await page.goto('/classic')
     await expect(page.locator('.professional-dossier')).toHaveCount(1)
     await expect(page.locator('.archive-paper-stack')).toHaveCount(0)
     await expect(pet).toBeVisible()

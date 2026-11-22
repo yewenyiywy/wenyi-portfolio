@@ -6,6 +6,10 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -122,6 +126,46 @@ export default function StudioScene(){
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
+    let composer:EffectComposer|undefined,outline:OutlinePass|undefined
+    const interactive=new Map<THREE.Object3D,THREE.Group>()
+    const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
+    const highlight=(group?:THREE.Group)=>{
+      if(!outline)return
+      if(outline.selectedObjects[0]!==group){outline.selectedObjects=group?[group]:[];dirty=true}
+    }
+    const assembleInteractions=()=>{
+      if(!model)return
+      const groups=new Map<string,THREE.Object3D[]>()
+      model.updateMatrixWorld(true)
+      model.traverse(o=>{
+        if(!(o instanceof THREE.Mesh))return
+        let root:THREE.Object3D|null=o
+        while(root&&!destinations[root.name]&&root.name!=='Mint pocket MP3')root=root.parent
+        const name=o.name
+        let key=root?.name
+        if(key==='target_about')key='photo-'+(name.match(/(?:_|\.)(\d+)$/)?.[1]?.replace(/^0+(?=\d)/,'')??'0')
+        if(key==='target_education')key='degree-'+(name.match(/_(\d+)$/)?.[1]??'0')
+        if(key==='target_computer')key=/^(Keyboard|keyboard_label|Spacebar|Coiled keyboard)/.test(name)?'keyboard':/^Mouse/.test(name)?'mouse':'computer'
+        if(!key&&name.startsWith('Bird of paradise'))key='plant'
+        if(!key&&/^(Fountain pen|Pen band)/.test(name))key='pen'
+        if(!key&&/^(Leather desk pad|Stitched mat)/.test(name))key='mat'
+        if(!key&&/^(Desk |Tabletop|Drawer|Raised |Handle |Drop ring|Turned olive|Leg gilt|Fluted knee|Apron |Gilt drawer)/.test(name))key='desk'
+        if(!key&&/^(Window stile|Window rail|Deep sash)/.test(name))key='window'
+        if(!key)return
+        const list=groups.get(key)??[];list.push(o);groups.set(key,list)
+      })
+      for(const [key,meshes] of Array.from(groups.entries())){
+        const box=new THREE.Box3()
+        meshes.forEach(o=>box.expandByObject(o))
+        const group=new THREE.Group();group.name=key
+        const pivot=box.getCenter(new THREE.Vector3())
+        if(key.startsWith('photo-')||key.startsWith('degree-'))pivot.y=box.max.y
+        if(key==='plant')pivot.y=box.min.y
+        group.position.copy(pivot);model.add(group);group.updateMatrixWorld(true)
+        for(const o of meshes){group.attach(o);interactive.set(o,group)}
+        group.userData.destination=key.startsWith('photo-')?'target_about':key.startsWith('degree-')?'target_education':key
+      }
+    }
     const textures:THREE.Texture[]=[]
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
@@ -139,17 +183,28 @@ export default function StudioScene(){
       ray.setFromCamera(mouse,camera)
       const intersections=ray.intersectObject(model,true)
       // A nearer non-interactive object occludes a more distant target.
-      const hit=intersections[0];if(!hit)return null
-      let object:THREE.Object3D|null=hit.object
-      while(object&&!destinations[object.name])object=object.parent
+      const hit=intersections.find(entry=>!entry.object.name.includes('Window prism caustic'));if(!hit)return null
+      const object=interactive.get(hit.object)
+      if(!object)return null
       const name=hit.object.name.toLowerCase()
-      const route=object?.name==='target_computer'&&hit.object.name==='computer_screen'&&hit.uv&&hit.uv.x>.5?{label:'Afterglow · Play game',href:'https://afterglow-gray-five.vercel.app/'}:object?destinations[object.name]:null
+      const target=object.userData.destination as string
+      let route: {label:string;href:string}|undefined=destinations[target]
+      if(object.name==='computer'){
+        route=undefined
+        if(name==='computer_screen'&&hit.uv){
+          const x=hit.uv.x*768,y=hit.uv.y*532
+          if(y>=165&&y<=307){
+            if(Math.abs(x-192)<=74)route={label:'Alchemy · Play game',href:'/game'}
+            if(Math.abs(x-576)<=74)route={label:'Afterglow · Play game',href:'/game/afterglow'}
+          }
+        }
+      }
       let label=route?.label??''
-      if(object?.name==='target_education')label=name.endsWith('_0')?'University of Michigan · Education':name.endsWith('_1')?'UC Berkeley · Education':'Degree certificate · Education'
-      else if(object?.name==='target_computer'){
-        if(name.startsWith('mouse'))label='Wired mouse · Computer'
-        else if(name.includes('keyboard')||name.includes('spacebar'))label='Keyboard · Computer'
-        else if(name!=='computer_screen')label='Retro CRT computer · Games'
+      if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Education':'UC Berkeley · Education'
+      else if(object.name==='computer'||object.name==='keyboard'||object.name==='mouse'){
+        if(object.name==='mouse')label='Wired mouse'
+        else if(object.name==='keyboard')label='Keyboard'
+        else if(!route)label='Retro CRT computer'
       }else if(!route){
         if(/miniature|earbud|earphone|headphone|player/.test(name))label='Mint MP3 player'
         else if(name.includes('bird'))label='Bird of paradise · Strelitzia'
@@ -157,13 +212,13 @@ export default function StudioScene(){
         else if(name.includes('shelf book'))label='Books'
         else if(name.includes('desk pad')||name.includes('mat edge'))label='Leather desk mat'
       }
-      return {route,label,object:hit.object}
+      return {route,label:label||({pen:'Fountain pen',mat:'Leather desk mat',desk:'Antique writing desk',window:'Window'} as Record<string,string>)[object.name]||'Desk object',object}
     }
     const updateHover=(text:string,clickable=false)=>{if(hovered!==text){hovered=text;setHover(text)}if(renderer)renderer.domElement.style.cursor=clickable?'pointer':'grab'}
     contactAction.current=(open)=>{
-      moving=open;updateHover('');pointer=null
+      moving=open;updateHover('');highlight();pointer=null
       if(!open){focus=null;focusCamera=null;return}
-      const target=model?.getObjectByName('target_contact')
+      const target=Array.from(interactive.values()).find(o=>o.name==='target_contact')
       if(target&&!reduced){focus=new THREE.Box3().setFromObject(target).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.69)}
     }
     const positionTooltip=(e:PointerEvent)=>{
@@ -179,16 +234,19 @@ export default function StudioScene(){
       if(pointer){
         dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.6,-.23,.23)
         dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.35,-.12,.12)
-        if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5)updateHover('')
+        if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
-        yaw=x*.065;pitch=-y*.035;const hit=choose(e);updateHover(hit?.label??'',Boolean(hit?.route));positionTooltip(e)
+        yaw=x*.065;pitch=-y*.035;const hit=choose(e);highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
       }
     }
     const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch};renderer?.domElement.setPointerCapture(e.pointerId)}
     const up=(e:PointerEvent)=>{
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
-      const hit=choose(e);if(!hit?.route)return
+      const hit=choose(e);if(!hit)return
+      highlight(hit.object)
+      if(!reduced){const existing=poses.get(hit.object);poses.set(hit.object,{start:performance.now(),rotation:existing?.rotation??hit.object.rotation.clone()});dirty=true}
+      if(!hit.route)return
       const route=hit.route
       if(route.href==='#contact-card'){setContactIndex(0);setContactOpen(true);contactAction.current?.(true);return}
       if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
@@ -197,7 +255,7 @@ export default function StudioScene(){
       const navigate=()=>router.push(route.href)
       if(reduced)navigate();else transition=setTimeout(navigate,580)
     }
-    const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('')}}
+    const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('');highlight()}}
     const cancel=()=>{pointer=null}
     try {
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
@@ -212,7 +270,12 @@ export default function StudioScene(){
       const sunlight=new THREE.DirectionalLight('#fff0ce',1.75);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+      composer=new EffectComposer(renderer)
+      composer.addPass(new RenderPass(scene,camera))
+      outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
+      outline.visibleEdgeColor.set('#ffe8ad');outline.hiddenEdgeColor.set('#ffe8ad');outline.edgeStrength=3;outline.edgeGlow=.55;outline.edgeThickness=1.2
+      composer.addPass(outline);composer.addPass(new OutputPass())
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);composer?.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -248,7 +311,7 @@ export default function StudioScene(){
             else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
           })
-          dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
@@ -257,27 +320,32 @@ export default function StudioScene(){
         const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
         desired.set(Math.sin(a)*radius,3.86+(radius-8.9)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
         const position=focusCamera??desired,target=focus??baseLook
+        for(const [group,pose] of Array.from(poses.entries())){
+          const t=Math.min(1,(performance.now()-pose.start)/550)
+          group.rotation.copy(pose.rotation)
+          group.rotation.z+=Math.sin(t*Math.PI*3)*(1-t)*(group.name==='plant'?.055:group.name==='desk'||group.name==='window'?.005:.04)
+          dirty=true
+          if(t===1){group.rotation.copy(pose.rotation);poses.delete(group)}
+        }
         if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
           camera.position.lerp(position,reduced?1:.085)
           look.lerp(target,reduced?1:.085);camera.lookAt(look)
-          renderer.render(scene,camera);dirty=false
+          if(composer&&outline?.selectedObjects.length)composer.render();else renderer.render(scene,camera);dirty=false
         }
         frame=requestAnimationFrame(animate)
       }
       camera.position.set(.31,3.86,8.9);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
-    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
+    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();outline?.dispose();composer?.dispose();renderer?.dispose();renderer?.domElement.remove()}
   },[router])
 
-  return <main className="studio-home">
-    <header className="studio-nav"><Link href="/" className="studio-brand">Wenyi Ye<span>.</span></Link><div><Link href="/classic/full">View full portfolio</Link><button className="studio-contact-link" onClick={openContact} type="button">Contact</button></div></header>
-    <section className="studio-intro"><p>QUANTITATIVE FINANCE · AI · PRODUCT</p><h1>Welcome to my studio.</h1><div>Explore the objects on my desk, or read my portfolio directly.</div></section>
+  return <main className="studio-home" data-status={status}>
+    <header className="studio-nav studio-accessible" data-allow-overflow><button className="studio-contact-link" onClick={openContact} type="button">Contact</button></header>
     <div className="studio-stage" data-status={status}>
       <div className="studio-render" ref={mount}/>
       {status==='loading'&&<p className="studio-state" role="status">Opening the studio…</p>}
       {status==='fallback'&&<p className="studio-state">The 3D studio is unavailable on this device. All sections are available below.</p>}
-      {status==='ready'&&<div className="studio-scene-caption">Explore the desk · Drag to look around</div>}
       <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
       {contactOpen&&<div className="contact-backdrop" onClick={closeContact}><div className="contact-index-dialog" role="dialog" aria-modal="true" aria-label="Wenyi Ye contact cards" tabIndex={-1} ref={contactDialog} onClick={e=>e.stopPropagation()}>
         <button type="button" className="contact-dismiss" onClick={closeContact}>← Back to desk</button>
@@ -286,6 +354,6 @@ export default function StudioScene(){
         <p className="contact-exit-hint">Press Esc or click outside to return</p>
       </div></div>}
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/" target="_blank" rel="noreferrer noopener">Afterglow</a><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
+    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
   </main>
 }
