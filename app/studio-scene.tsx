@@ -428,6 +428,18 @@ export default function StudioScene(){
               physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
               if(physical!==m){ownedMaterials.push(physical);obj.material=physical}obj.castShadow=false
             }
+            // All three glass materials in the reported black silhouette use
+            // the same screen-space transmission render target. Retain their
+            // geometry, tint, IOR, surface reflections and light emission,
+            // but use a stable clear-coated surface instead of sampling that
+            // device-dependent framebuffer. No change to the bronze figure.
+            const lampSurface=obj.material as THREE.MeshPhysicalMaterial
+            if(!legacy&&obj.name.startsWith('Lamp ')&&lampSurface.isMeshPhysicalMaterial&&lampSurface.transmission>0){
+              lampSurface.transmission=0;lampSurface.transparent=false;lampSurface.opacity=1;lampSurface.depthWrite=true
+              lampSurface.clearcoat=.85;lampSurface.clearcoatRoughness=.16;lampSurface.envMapIntensity=1.15
+              if(lampSurface.name==='Moulded green art glass'){lampSurface.color.set('#8b956b');lampSurface.metalness=.14}
+              lampSurface.needsUpdate=true
+            }
             if(m.name==='Brass'||m.name==='Cast bronze maiden'){m.metalness=1;m.roughness=.29;m.envMapIntensity=1.2;m.needsUpdate=true}
             if(m.name.startsWith('Botanical ')){m.bumpMap=grain;m.bumpScale=m.name.includes('leaf')?.0035:.0018;m.envMapIntensity=.55;m.needsUpdate=true}
             if(m.name==='Walnut'){m.map=wood;m.color.set('#ffffff');m.roughness=.53;m.needsUpdate=true}
@@ -444,7 +456,7 @@ export default function StudioScene(){
             else if(name==='Papered rear wall')applyContact(obj,wallAO,-3.8,7.6,1.45,3.6,true)
             else if(name==='Continuous chevron parquet')applyContact(obj,floorAO,-4,8.5,-2.27,7)
           })
-          assembleInteractions();lampGroup=Array.from(interactive.values()).find(group=>group.name==='lamp');host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();lampGroup=Array.from(interactive.values()).find(group=>group.name==='lamp');let transmissionCount=0;lampGroup?.traverse(obj=>{if(obj instanceof THREE.Mesh&&(obj.material as THREE.MeshPhysicalMaterial).transmission>0)transmissionCount++});host.dataset.lampTransmissionCount=String(transmissionCount);host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
       let lastFrameTime=performance.now()

@@ -17,6 +17,7 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message))
   await page.goto('/?debug=shadows');const stage=page.locator('.studio-stage'),host=page.locator('.studio-render')
   await expect(stage).toHaveAttribute('data-status','ready',{timeout:120_000})
+  await expect(host).toHaveAttribute('data-lamp-transmission-count','0')
   await page.waitForTimeout(1800)
   const capture=async(name:string)=>{const shot=await page.screenshot({timeout:90_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
   const original=await capture('initial')
