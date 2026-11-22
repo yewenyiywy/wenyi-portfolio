@@ -6,6 +6,7 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -224,6 +225,9 @@ export default function StudioScene(){
       const name=hit.object.name.toLowerCase()
       const target=object.userData.destination as string
       let route: {label:string;href:string}|undefined=destinations[target]
+      // Only the résumé opens the old professional portfolio. Keep visual
+      // interactions, labels and the independent games/journal unchanged.
+      if(route?.href.startsWith('/classic')&&target!=='target_experience')route=undefined
       if(object.name==='computer'){
         route=undefined
         if(name==='computer_screen'&&hit.uv){
@@ -234,7 +238,7 @@ export default function StudioScene(){
           }
         }
       }
-      let label=route?.label??''
+      let label=route?.label??destinations[target]?.label??''
       if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Education':'UC Berkeley · Education'
       else if(object.name==='computer'||object.name==='keyboard'||object.name==='mouse'){
         if(object.name==='mouse')label='Wired mouse'
@@ -269,7 +273,7 @@ export default function StudioScene(){
       if(pointer){
         if(e.pointerId!==pointer.id)return
         dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.48,-.19,.19)
-        dragPitch=0
+        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.20,-.07,.07)
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
@@ -358,7 +362,7 @@ export default function StudioScene(){
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?34:Math.min(31,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(15.5))*1.5/aspect)));camera.zoom=1;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?42:Math.min(33.5,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(16.75))*1.85/aspect)));camera.zoom=1;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -385,6 +389,36 @@ export default function StudioScene(){
             const book=await loader.parseAsync(bookBuffer,'/');if(!alive)return
             research.clear();book.scene.name='Approved research book';book.scene.position.set(-2.78,1.34,.55);book.scene.rotation.y=THREE.MathUtils.degToRad(8);research.add(book.scene)
             host.dataset.researchBook='bound-leather'
+          }
+          const player=model.getObjectByName('Mint pocket MP3')
+          if(player){
+            const old:THREE.Object3D[]=[];player.traverse(o=>{if(/^(Earphone lead|Earbud housing|Headphone plug)/.test(o.name))old.push(o)});old.forEach(o=>o.removeFromParent())
+            const rubber=new THREE.MeshStandardMaterial({color:'#292a29',roughness:.72}),housing=new THREE.MeshStandardMaterial({color:'#303335',roughness:.36,metalness:.23}),silicone=new THREE.MeshStandardMaterial({color:'#1c1c1c',roughness:.88}),metal=new THREE.MeshStandardMaterial({color:'#858c89',roughness:.34,metalness:.8}),bezel=new THREE.MeshStandardMaterial({color:'#53645d',roughness:.38,metalness:.24})
+            ownedMaterials.push(rubber,housing,silicone,metal,bezel)
+            const add=(name:string,geometry:THREE.BufferGeometry,material:THREE.Material,parent:THREE.Object3D,position:THREE.Vector3)=>{const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.position.copy(position);parent.add(mesh);return mesh}
+            add('Player screen inset bezel',new RoundedBoxGeometry(.184,.004,.222,3,.012),bezel,player,new THREE.Vector3(0,.046,-.064))
+            add('Player side volume button',new RoundedBoxGeometry(.007,.018,.055,3,.002),metal,player,new THREE.Vector3(.104,.025,-.025))
+            add('Headphone connector',new RoundedBoxGeometry(.031,.021,.058,3,.008),housing,player,new THREE.Vector3(0,.021,.218))
+            const cable=(name:string,points:THREE.Vector3[],radius=.0038)=>{const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');add(name,new THREE.TubeGeometry(curve,Math.max(24,points.length*12),radius,8,false),rubber,player,new THREE.Vector3())}
+            const v=(x:number,y:number,z:number)=>new THREE.Vector3(x,y,z)
+            // A long, loose coil lies entirely on the free area in front of
+            // the player. The branch point is a real molded Y splitter.
+            const split=v(-.48,.015,.63)
+            cable('Earphone main cable',[v(0,.021,.245),v(.055,.013,.34),v(.135,.012,.54),v(.025,.012,.72),v(-.29,.012,.80),v(-.59,.012,.70),v(-.67,.012,.48),v(-.44,.012,.34),v(-.23,.018,.43),v(-.26,.019,.62),split])
+            add('Earphone Y splitter',new RoundedBoxGeometry(.025,.022,.055,3,.008),housing,player,split)
+            const makeBud=(name:string,center:THREE.Vector3,direction:THREE.Vector3,lead:THREE.Vector3[])=>{
+              const group=new THREE.Group();group.name=name;group.position.copy(center);group.quaternion.setFromUnitVectors(v(0,1,0),direction.clone().normalize());player.add(group)
+              const profile=(points:number[][])=>new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),32)
+              add(name+' molded housing',profile([[.009,-.031],[.017,-.026],[.023,-.017],[.025,-.005],[.022,.009],[.016,.02],[.010,.024]]),housing,group,v(0,0,0))
+              add(name+' acoustic silver collar',new THREE.CylinderGeometry(.017,.017,.003,32),metal,group,v(0,.018,0))
+              add(name+' silicone tip',profile([[.010,.022],[.019,.025],[.021,.031],[.017,.039],[.009,.042],[.007,.039]]),silicone,group,v(0,0,0))
+              add(name+' sound mesh',new THREE.CylinderGeometry(.007,.007,.002,24),rubber,group,v(0,.042,0))
+              add(name+' strain relief',new THREE.CylinderGeometry(.007,.004,.025,16),rubber,group,v(0,-.042,0))
+              const end=center.clone().addScaledVector(direction.clone().normalize(),-.053);cable(name+' branch cable',[split,...lead,end],.0028)
+            }
+            makeBud('Earbud left',v(-.59,.031,.45),v(-.9,.06,-.4),[v(-.50,.013,.57),v(-.52,.013,.48)])
+            makeBud('Earbud right',v(-.79,.031,.65),v(-.6,.06,.8),[v(-.62,.013,.64),v(-.71,.013,.58)])
+            host.dataset.earphones='coiled-in-ear'
           }
           const vegetation:THREE.Object3D[]=[]
           model.traverse(obj=>{if(/^Exterior (tree |scanned shrub)/.test(obj.name))vegetation.push(obj)})
@@ -426,7 +460,7 @@ export default function StudioScene(){
             if(!legacy&&obj.name.startsWith('Lamp ')){obj.castShadow=false;obj.receiveShadow=false}
             if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
-            if(m.name==='Warm oxblood calfskin'){m.bumpMap=grain;m.bumpScale=.0012;m.roughness=.65;m.needsUpdate=true}
+            if(m.name==='Warm oxblood calfskin'){m.color.setRGB(.095,.018,.009);m.bumpMap=grain;m.bumpScale=.0012;m.roughness=.65;m.needsUpdate=true;host.dataset.researchLeather='oxblood-red'}
             if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
             if(obj.name==='Continuous oak subfloor'&&obj.position.y> -1.46)obj.position.y-=.04
             // The rainbow decal was only 1 mm above the desktop. Use a
@@ -487,14 +521,16 @@ export default function StudioScene(){
         if(portrait){
           // Bound the entire visible frustum, not just the camera center.
           // Wider portrait/tablet viewports need less lateral translation.
-          const panLimit=Math.min(2.10,Math.max(0,3.35-2.52*aspect))
+          const panLimit=Math.min(2.10,Math.max(0,3.55-3.34*aspect))
           const pan=THREE.MathUtils.clamp(-dragYaw*11.9,-panLimit,panLimit)
-          desired.set(pan+.08,3.42,5.95)
-          restLook.set(pan,2.30,-.35)
+          const vertical=THREE.MathUtils.clamp(-dragPitch*3.1,-.22,.22)
+          desired.set(pan+.08,3.50+vertical,6.50)
+          restLook.set(pan,1.90+vertical,-.35)
         }else{
           const radius=8.9
           const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.095,.095)
-          desired.set(Math.sin(a)*radius,3.86,Math.cos(a)*radius);restLook.set(.1,2.26,-.35)
+          const vertical=THREE.MathUtils.clamp(-dragPitch*3.1,-.22,.22)
+          desired.set(Math.sin(a)*radius,3.86+vertical,Math.cos(a)*radius);restLook.set(.1,2.05+vertical,-.35)
         }
         const position=focusCamera??desired,target=focus??restLook
         for(const cloth of Array.from(curtains.values())){
@@ -549,6 +585,6 @@ export default function StudioScene(){
         <p className="contact-exit-hint">Press Esc or click outside to return</p>
       </div></div>}
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
+    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic#experience">Résumé</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
   </main>
 }
