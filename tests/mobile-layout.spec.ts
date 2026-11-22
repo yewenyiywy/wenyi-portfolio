@@ -126,6 +126,18 @@ test.describe('home page', () => {
     await expect(index.getByRole('link',{name:'Alchemy'})).toHaveAttribute('href','/game')
     await check(page, 'home')
   })
+  test('contact card index opens, switches tabs, and closes', async ({page})=>{
+    await page.goto('/')
+    await page.locator('.studio-nav').getByRole('button',{name:'Contact'}).click()
+    const card=page.getByRole('dialog',{name:'Wenyi Ye contact cards'})
+    await expect(card).toBeVisible()
+    await expect(card.getByRole('link',{name:'ywywywy@berkeley.edu'})).toHaveAttribute('href','mailto:ywywywy@berkeley.edu')
+    await card.getByRole('tab',{name:'LinkedIn'}).click()
+    await expect(card.getByRole('link',{name:'Wenyi (Wendy) Ye'})).toHaveAttribute('href','https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/')
+    await card.getByRole('tab',{name:'GitHub'}).click()
+    await expect(card.getByRole('link',{name:'github.com/yewenyiywy'})).toHaveAttribute('href','https://github.com/yewenyiywy')
+    await card.getByRole('button',{name:'Back to desk'}).click();await expect(card).toBeHidden()
+  })
 
   test('new professional navigation', async ({ page }) => {
     await page.goto('/classic/full')

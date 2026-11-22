@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -14,8 +15,15 @@ const destinations: Record<string, { label: string; href: string }> = {
   target_projects:{label:'Research notebook · Projects & skills',href:'/classic#projects'},
   target_hobbies:{label:'Hobbies · Personal journal',href:'/hobbies'},
   target_computer:{label:'Alchemy · Play game',href:'/game'},
+  target_contact:{label:'Contact · Card index',href:'#contact-card'},
 }
 const photos=['/wenyi.jpg','/photo-03.jpg','/photo-02.jpg','/photo-04.jpg']
+const contactCards=[
+  {tab:'Email',hint:'The best way to reach me',value:'ywywywy@berkeley.edu',href:'mailto:ywywywy@berkeley.edu'},
+  {tab:'LinkedIn',hint:'Professional network',value:'Wenyi (Wendy) Ye',href:'https://www.linkedin.com/in/wenyi-wendy-ye-01458a280/'},
+  {tab:'GitHub',hint:'Code, research and open-source projects',value:'github.com/yewenyiywy',href:'https://github.com/yewenyiywy'},
+  {tab:'Instagram',hint:'Art, hobbies and life outside work',value:'@ye_wen_yi',href:'https://www.instagram.com/ye_wen_yi/'},
+]
 
 function canvasTexture(draw:(ctx:CanvasRenderingContext2D,w:number,h:number)=>void,w=768,h=512) {
   const c=document.createElement('canvas');c.width=w;c.height=h
@@ -87,13 +95,24 @@ function woodTexture(){return canvasTexture((ctx,w,h)=>{
   }ctx.putImageData(image,0,0)
 },768,256)}
 function surfaceGrain(){const t=canvasTexture((ctx,w,h)=>{const im=ctx.createImageData(w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,v=140+Math.sin(x*127.1+y*311.7)*30+Math.sin(y*.73+Math.sin(x*.41)*3)*8;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}ctx.putImageData(im,0,0)},256,256);t.colorSpace=THREE.NoColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);return t}
+function contactCardTexture(){return canvasTexture((ctx,w,h)=>{
+  ctx.fillStyle='#fbf4e1';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#b7c1a7';ctx.lineWidth=1;for(let y=56;y<h;y+=40){ctx.beginPath();ctx.moveTo(25,y);ctx.lineTo(w-25,y);ctx.stroke()}
+  ctx.textAlign='left';ctx.fillStyle='#2f3e32';ctx.font='bold 40px Georgia';ctx.fillText('WENYI YE',38,66);ctx.font='bold 23px Arial';ctx.fillText('CONTACT',38,130);ctx.font='22px Georgia';ctx.fillText('Quantitative Finance · AI · Product',38,183);ctx.font='bold 31px Georgia';ctx.fillText('ywywywy@berkeley.edu',38,265);ctx.font='19px Arial';ctx.fillText('EMAIL  ·  LINKEDIN  ·  GITHUB  ·  INSTAGRAM',38,358)
+},768,448)}
 
 export default function StudioScene(){
   const mount=useRef<HTMLDivElement>(null)
   const tooltip=useRef<HTMLDivElement>(null)
+  const contactAction=useRef<((open:boolean)=>void)|null>(null)
+  const contactDialog=useRef<HTMLDivElement>(null)
   const router=useRouter()
   const [status,setStatus]=useState<'loading'|'ready'|'fallback'>('loading')
   const [hover,setHover]=useState('')
+  const [contactOpen,setContactOpen]=useState(false)
+  const [contactIndex,setContactIndex]=useState(0)
+  const openContact=()=>{setContactIndex(0);setContactOpen(true);contactAction.current?.(true)}
+  const closeContact=()=>{setContactOpen(false);contactAction.current?.(false)}
+  useEffect(()=>{if(!contactOpen)return;contactDialog.current?.focus();const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape'){setContactOpen(false);contactAction.current?.(false)}};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[contactOpen])
   useEffect(()=>{
     const hash=window.location.hash.slice(1)
     if(['about','education','skills','experience','projects','awards','contact'].includes(hash))router.replace(`/classic#${hash}`)
@@ -101,13 +120,13 @@ export default function StudioScene(){
   useEffect(()=>{
     const host=mount.current;if(!host)return
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
-    let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined
+    let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
     const textures:THREE.Texture[]=[]
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
     const camera=new THREE.PerspectiveCamera(40,1,.1,50)
-    const look=new THREE.Vector3(0,2.03,-.18)
+    const baseLook=new THREE.Vector3(.10,2.04,-.18),look=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
     let pointer:{x:number;y:number;yaw:number;pitch:number}|null=null
@@ -131,7 +150,7 @@ export default function StudioScene(){
         else if(name.includes('keyboard')||name.includes('spacebar'))label='Keyboard · Computer'
         else if(name!=='computer_screen')label='Retro CRT computer · Games'
       }else if(!route){
-        if(name.includes('lamp'))label='Reading lamp'
+        if(name.includes('lamp'))label='Art Nouveau bronze lamp'
         else if(name.includes('orchid'))label='Purple Phalaenopsis orchid'
         else if(name.includes('bird'))label='Bird of paradise · Strelitzia'
         else if(name.includes('plant')||name.includes('planter')||name.includes('soil'))label='Potted plant'
@@ -141,6 +160,12 @@ export default function StudioScene(){
       return {route,label,object:hit.object}
     }
     const updateHover=(text:string,clickable=false)=>{if(hovered!==text){hovered=text;setHover(text)}if(renderer)renderer.domElement.style.cursor=clickable?'pointer':'grab'}
+    contactAction.current=(open)=>{
+      moving=open;updateHover('');pointer=null
+      if(!open){focus=null;focusCamera=null;return}
+      const target=model?.getObjectByName('target_contact')
+      if(target&&!reduced){focus=new THREE.Box3().setFromObject(target).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.69)}
+    }
     const positionTooltip=(e:PointerEvent)=>{
       const box=host.getBoundingClientRect(),node=tooltip.current;if(!node)return
       const w=Math.min(300,box.width-16),h=Math.max(node.offsetHeight,40)
@@ -165,6 +190,7 @@ export default function StudioScene(){
       const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e);if(!hit?.route)return
       const route=hit.route
+      if(route.href==='#contact-card'){setContactIndex(0);setContactOpen(true);contactAction.current?.(true);return}
       if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
       moving=true;updateHover('')
       if(!reduced){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
@@ -181,11 +207,12 @@ export default function StudioScene(){
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
       scene=new THREE.Scene();scene.background=new THREE.Color('#73644f')
-      scene.add(new THREE.HemisphereLight('#e3dfce','#493022',1.45))
-      const sunlight=new THREE.DirectionalLight('#ffd4a0',3.1);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
+      const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.82;room.dispose();pmrem.dispose()
+      scene.add(new THREE.HemisphereLight('#e3dfce','#493022',.75))
+      const sunlight=new THREE.DirectionalLight('#ffd4a0',2.6);sunlight.position.set(-4.5,6.2,2.8);sunlight.castShadow=true
       sunlight.shadow.mapSize.set(2048,2048);sunlight.shadow.camera.left=-6;sunlight.shadow.camera.right=6;sunlight.shadow.camera.top=6;sunlight.shadow.camera.bottom=-6;sunlight.shadow.normalBias=.025;sunlight.shadow.bias=-.00015;scene.add(sunlight)
       const fill=new THREE.DirectionalLight('#d1e2e4',.65);fill.position.set(4,4,5);scene.add(fill)
-      const lamp=new THREE.PointLight('#ffdfae',9,3,.8);lamp.position.set(-3.28,2.48,.35);scene.add(lamp)
+      const lamp=new THREE.PointLight('#ffb341',9,2.8,2);lamp.position.set(2.79,2.55,-1.265);scene.add(lamp)
       const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const textureLoader=new THREE.TextureLoader()
@@ -206,6 +233,13 @@ export default function StudioScene(){
             if(!(obj instanceof THREE.Mesh))return
             obj.castShadow=true;obj.receiveShadow=true
             const m=obj.material as THREE.MeshStandardMaterial
+            if(m.name.includes('cast glass')||m.name.includes('blown glass')){
+              const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
+              physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
+              if(physical!==m){ownedMaterials.push(physical);obj.material=physical}obj.castShadow=false
+            }
+            if(m.name==='Brass'||m.name==='Cast bronze maiden'){m.metalness=1;m.roughness=.29;m.envMapIntensity=1.2;m.needsUpdate=true}
+            if(m.name.startsWith('Botanical ')){m.bumpMap=grain;m.bumpScale=m.name.includes('leaf')?.0035:.0018;m.envMapIntensity=.55;m.needsUpdate=true}
             if(m.name==='Walnut'){m.map=wood;m.color.set('#ffffff');m.roughness=.53;m.needsUpdate=true}
             if(obj.geometry.attributes.uv&&['Walnut','Desk mat leather','Forest green cloth','Warm plaster','Ivory paper','Aged ABS plastic'].includes(m.name)){m.bumpMap=grain;m.bumpScale=m.name==='Warm plaster'?.014:m.name==='Desk mat leather'?.009:.004;m.needsUpdate=true}
             const name=obj.name
@@ -219,6 +253,8 @@ export default function StudioScene(){
             else if(name==='hobbies_cover')apply(obj,bookTexture('#173f30','HOBBIES','A PERSONAL JOURNAL'))
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
             else if(name==='resume_texture')apply(obj,resumeTexture())
+            else if(name==='contact_card_texture')apply(obj,contactCardTexture())
+            else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
             else if(name.startsWith('photo_texture_')){
               const index=Number(name.split('_').pop());const url=photos[index]
@@ -230,21 +266,21 @@ export default function StudioScene(){
       })()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
-        const radius=6.0*Math.max(1,1.5/aspect)
-        const a=reduced?0:THREE.MathUtils.clamp(yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
+        const radius=5.8*Math.max(1,1.5/aspect)
+        const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
         desired.set(Math.sin(a)*radius,3.48+(radius-6.0)*.19+Math.sin(b)*radius,Math.cos(a)*radius)
         camera.position.lerp(focusCamera??desired,.085)
-        if(focus)look.lerp(focus,.085);camera.lookAt(look)
+        look.lerp(focus??baseLook,.085);camera.lookAt(look)
         renderer.render(scene,camera);frame=requestAnimationFrame(animate)
       }
-      camera.position.set(0,3.48,6.0);animate()
+      camera.position.set(.20,3.48,5.8);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
-    return()=>{alive=false;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());renderer?.dispose();renderer?.domElement.remove()}
+    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
   },[router])
 
   return <main className="studio-home">
-    <header className="studio-nav"><Link href="/" className="studio-brand">Wenyi Ye<span>.</span></Link><div><Link href="/classic/full">View full portfolio</Link><Link href="/classic#contact">Contact</Link></div></header>
+    <header className="studio-nav"><Link href="/" className="studio-brand">Wenyi Ye<span>.</span></Link><div><Link href="/classic/full">View full portfolio</Link><button className="studio-contact-link" onClick={openContact} type="button">Contact</button></div></header>
     <section className="studio-intro"><p>QUANTITATIVE FINANCE · AI · PRODUCT</p><h1>Welcome to my studio.</h1><div>Explore the objects on my desk, or read my portfolio directly.</div></section>
     <div className="studio-stage" data-status={status}>
       <div className="studio-render" ref={mount}/>
@@ -252,7 +288,13 @@ export default function StudioScene(){
       {status==='fallback'&&<p className="studio-state">The 3D studio is unavailable on this device. All sections are available below.</p>}
       {status==='ready'&&<div className="studio-scene-caption">Explore the desk · Drag to look around</div>}
       <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
+      {contactOpen&&<div className="contact-backdrop" onClick={closeContact}><div className="contact-index-dialog" role="dialog" aria-modal="true" aria-label="Wenyi Ye contact cards" tabIndex={-1} ref={contactDialog} onClick={e=>e.stopPropagation()}>
+        <button type="button" className="contact-dismiss" onClick={closeContact}>← Back to desk</button>
+        <div className="contact-tabs" role="tablist" aria-label="Contact channels">{contactCards.map((card,i)=><button type="button" role="tab" aria-selected={i===contactIndex} key={card.tab} onClick={()=>setContactIndex(i)}>{card.tab}</button>)}</div>
+        <div className="contact-card" role="tabpanel"><div className="contact-card-heading"><span>WENYI YE</span><span>{contactIndex+1} / {contactCards.length}</span></div><h2>{contactCards[contactIndex].tab}</h2><p>{contactCards[contactIndex].hint}</p><a href={contactCards[contactIndex].href} target={contactIndex===0?undefined:'_blank'} rel="noopener noreferrer">{contactCards[contactIndex].value}</a><div className="contact-card-rule"/></div>
+        <p className="contact-exit-hint">Press Esc or click outside to return</p>
+      </div></div>}
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/" target="_blank" rel="noreferrer noopener">Afterglow</a></nav>
+    <nav className="studio-index" aria-label="Portfolio sections"><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><a href="https://afterglow-gray-five.vercel.app/" target="_blank" rel="noreferrer noopener">Afterglow</a><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
   </main>
 }
