@@ -6,7 +6,6 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
@@ -210,7 +209,7 @@ export default function StudioScene(){
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
     let hoverTarget=''
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
-    let pointer:{x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
+    let pointer:{id:number;x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
     const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),desired=new THREE.Vector3()
     const choose=(event:PointerEvent)=>{
       if(!model||!renderer)return null
@@ -268,8 +267,9 @@ export default function StudioScene(){
       if(moving)return
       const bounds=host.getBoundingClientRect()
       if(pointer){
+        if(e.pointerId!==pointer.id)return
         dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.48,-.19,.19)
-        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.18,-.045,.045)
+        dragPitch=0
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
@@ -281,9 +281,9 @@ export default function StudioScene(){
         highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
       }
     }
-    const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
+    const down=(e:PointerEvent)=>{if(moving||pointer||e.button!==0)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
     const up=(e:PointerEvent)=>{
-      const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
+      const p=pointer;if(!p||p.id!==e.pointerId)return;pointer=null;if(moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e)
       // Retain the lamp hit from pointer-down while the camera eases to its
       // parallax position, so an ordinary click never misses a thin shade.
@@ -310,7 +310,7 @@ export default function StudioScene(){
       transition=setTimeout(navigate,hit.object.name.startsWith('photo-')?1100:reduced?0:580)
     }
     const leave=()=>{if(!pointer&&!moving){if(legacy||hoverTarget!=='lamp')yaw=pitch=0;hoverTarget='';updateHover('');highlight()}}
-    const cancel=()=>{pointer=null}
+    const cancel=(e:PointerEvent)=>{if(pointer?.id===e.pointerId)pointer=null}
     try {
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace
@@ -358,7 +358,7 @@ export default function StudioScene(){
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?34:33;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?34:Math.min(31,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(15.5))*1.5/aspect)));camera.zoom=1;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -377,13 +377,14 @@ export default function StudioScene(){
           // GLTFLoader sanitizes spaces into underscores. Preserve the original
           // Blender names for all interaction, mesh and shadow classifications.
           model.traverse(obj=>{if(typeof obj.userData.name==='string')obj.name=obj.userData.name})
-          // Close the visible page block on the left with a real rounded
-          // leather spine, using the same material as the two covers.
           const research=model.getObjectByName('target_projects')
-          const front=model.getObjectByName('Research notebook front')
-          if(research&&front instanceof THREE.Mesh&&!model.getObjectByName('Research notebook spine')){
-            const spine=new THREE.Mesh(new RoundedBoxGeometry(.105,.172,.714,4,.025),front.material)
-            spine.name='Research notebook spine';spine.position.set(-3.045,1.42,.54);research.add(spine)
+          if(research){
+            const bookResponse=await fetch('/studio-model/research-book.glb.gz',{signal:abort.signal});if(!bookResponse.ok)throw Error('Research notebook unavailable')
+            const encodedBook=await bookResponse.arrayBuffer(),sig=new Uint8Array(encodedBook,0,4)
+            const bookBuffer=sig[0]===0x67&&sig[1]===0x6c?encodedBook:await new Response(new Blob([encodedBook]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
+            const book=await loader.parseAsync(bookBuffer,'/');if(!alive)return
+            research.clear();book.scene.name='Approved research book';book.scene.position.set(-2.78,1.34,.55);book.scene.rotation.y=THREE.MathUtils.degToRad(8);research.add(book.scene)
+            host.dataset.researchBook='bound-leather'
           }
           const vegetation:THREE.Object3D[]=[]
           model.traverse(obj=>{if(/^Exterior (tree |scanned shrub)/.test(obj.name))vegetation.push(obj)})
@@ -425,6 +426,7 @@ export default function StudioScene(){
             if(!legacy&&obj.name.startsWith('Lamp ')){obj.castShadow=false;obj.receiveShadow=false}
             if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
+            if(m.name==='Warm oxblood calfskin'){m.bumpMap=grain;m.bumpScale=.0012;m.roughness=.65;m.needsUpdate=true}
             if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
             if(obj.name==='Continuous oak subfloor'&&obj.position.y> -1.46)obj.position.y-=.04
             // The rainbow decal was only 1 mm above the desktop. Use a
@@ -483,14 +485,16 @@ export default function StudioScene(){
         }
         const portrait=aspect<1.15
         if(portrait){
-          const pan=THREE.MathUtils.clamp(-dragYaw*11.9,-2.25,2.25)
-          const tilt=THREE.MathUtils.clamp(dragPitch*2,-.09,.09)
-          desired.set(pan+.08,3.42+tilt,5.95)
-          restLook.set(pan,2.22-tilt*.25,-.35)
+          // Bound the entire visible frustum, not just the camera center.
+          // Wider portrait/tablet viewports need less lateral translation.
+          const panLimit=Math.min(2.10,Math.max(0,3.35-2.52*aspect))
+          const pan=THREE.MathUtils.clamp(-dragYaw*11.9,-panLimit,panLimit)
+          desired.set(pan+.08,3.42,5.95)
+          restLook.set(pan,2.30,-.35)
         }else{
-          const radius=8.9*Math.min(1.12,Math.max(1,1.5/aspect))
-          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.17,.17),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.045,.045)
-          desired.set(Math.sin(a)*radius,3.86+Math.sin(b)*radius,Math.cos(a)*radius);restLook.set(.1,2.12,-.35)
+          const radius=8.9
+          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.095,.095)
+          desired.set(Math.sin(a)*radius,3.86,Math.cos(a)*radius);restLook.set(.1,2.26,-.35)
         }
         const position=focusCamera??desired,target=focus??restLook
         for(const cloth of Array.from(curtains.values())){
@@ -519,6 +523,7 @@ export default function StudioScene(){
           const alpha=reduced?1:1-Math.exp(-dt/145)
           camera.position.lerp(position,alpha);if(camera.position.distanceToSquared(position)<.0001)camera.position.copy(position)
           look.lerp(target,alpha);if(look.distanceToSquared(target)<.0001)look.copy(target);camera.lookAt(look)
+          host.dataset.cameraTarget=restLook.toArray().map(v=>v.toFixed(3)).join(',')
           renderer.render(scene,camera);dirty=false;monitor()
         }
         frame=requestAnimationFrame(animate)

@@ -18,6 +18,7 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   await page.goto('/?debug=shadows');const stage=page.locator('.studio-stage'),host=page.locator('.studio-render')
   await expect(stage).toHaveAttribute('data-status','ready',{timeout:120_000})
   await expect(host).toHaveAttribute('data-lamp-transmission-count','0')
+  await expect(host).toHaveAttribute('data-research-book','bound-leather')
   await page.waitForTimeout(1800)
   const capture=async(name:string)=>{const shot=await page.screenshot({timeout:90_000,path:info.outputPath(`${name}.png`)});return luminance(page,shot)}
   const original=await capture('initial')
@@ -28,7 +29,7 @@ test('real WebGL lamp toggles, hover and drag do not produce black frame spikes'
   const measurementStart=startDiagnostics.frames?.at(-1)?.time??0
   // The original model's shade center projects to this region of the 3:2 frame.
   let lamp:{x:number;y:number}|undefined
-  for(const [x,y] of [[300,269],[310,270],[290,260],[310,235],[330,235],[340,260]]){
+  for(const [x,y] of [[287,283],[298,283],[280,275],[300,269],[310,270],[290,260]]){
     await page.mouse.move(x,y);await page.waitForTimeout(350)
     if((await page.locator('.studio-object-tooltip').textContent())?.includes('Lamp')){lamp={x,y};break}
   }
@@ -72,4 +73,8 @@ test('portrait starts on desk detail and pans without losing WebGL',async({page}
   await canvas.screenshot({path:info.outputPath('mobile-left.png')})
   await page.mouse.move(350,450);await page.mouse.down();await page.mouse.move(15,450,{steps:6});await page.mouse.up();await page.waitForTimeout(500)
   await canvas.screenshot({path:info.outputPath('mobile-right.png')});await expect(stage).toHaveAttribute('data-status','ready')
+  // Repeated full-width swipes and a viewport change cannot expose the corner.
+  for(let i=0;i<3;i++){await page.mouse.move(370,440);await page.mouse.down();await page.mouse.move(12,790);await page.mouse.up()}
+  const host=page.locator('.studio-render');const target=(await host.getAttribute('data-camera-target'))!.split(',').map(Number)
+  expect(Math.abs(target[0])).toBeLessThanOrEqual(2.10);expect(target[1]).toBeCloseTo(2.30,2)
 })

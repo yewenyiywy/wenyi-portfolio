@@ -1,5 +1,5 @@
 """Bake stable contact occlusion from real Blender geometry, without decals."""
-import bpy, math, struct, zlib
+import bpy, math, struct, zlib, sys
 import numpy as np
 from pathlib import Path
 from mathutils import Vector
@@ -59,6 +59,7 @@ def bake(name,w,h,origin,u,v,normal,distance,window_shadow=False):
 
 # Image rows advance with Three.js Z; PNG textures are loaded flipY=false.
 bake('desk-contact',640,320,(-3.7,1.65,1.344),(7.4,0,0),(0,-3.5,0),(0,0,1),.72)
-bake('mat-contact',384,192,(-1.225,-.39,1.370),(2.95,0,0),(0,-1.30,0),(0,0,1),.35)
-bake('wall-contact',512,256,(-3.8,2.266,1.45),(7.6,0,0),(0,0,3.6),(0,-1,0),.45)
-bake('floor-contact',512,320,(-4,2.27,-1.345),(8.5,0,0),(0,-7,0),(0,0,1),.75,True)
+if '--desk-only' not in sys.argv:
+    bake('mat-contact',384,192,(-1.225,-.39,1.370),(2.95,0,0),(0,-1.30,0),(0,0,1),.35)
+    bake('wall-contact',512,256,(-3.8,2.266,1.45),(7.6,0,0),(0,0,3.6),(0,-1,0),.45)
+    bake('floor-contact',512,320,(-4,2.27,-1.345),(8.5,0,0),(0,-7,0),(0,0,1),.75,True)
