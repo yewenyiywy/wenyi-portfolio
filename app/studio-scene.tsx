@@ -10,10 +10,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
-  target_about:{label:'Photographs · About me',href:'/classic#about'},
-  target_education:{label:'Degree certificate · Education & awards',href:'/classic#education'},
-  target_experience:{label:'Résumé · Professional experience',href:'/classic#experience'},
-  target_projects:{label:'Research notebook · Projects & skills',href:'/classic#projects'},
+  target_about:{label:'Personal photograph',href:''},
+  target_education:{label:'Degree certificate',href:''},
+  target_experience:{label:'Résumé · View portfolio',href:'/classic/full'},
+  target_projects:{label:'Research notebook',href:''},
   target_hobbies:{label:'Hobbies · Personal journal',href:'/hobbies'},
   target_computer:{label:'Alchemy · Play game',href:'/game'},
   target_contact:{label:'Contact · Card index',href:'#contact-card'},
@@ -227,7 +227,7 @@ export default function StudioScene(){
       let route: {label:string;href:string}|undefined=destinations[target]
       // Only the résumé opens the old professional portfolio. Keep visual
       // interactions, labels and the independent games/journal unchanged.
-      if(route?.href.startsWith('/classic')&&target!=='target_experience')route=undefined
+      if(!route?.href||(route.href.startsWith('/classic')&&target!=='target_experience'))route=undefined
       if(object.name==='computer'){
         route=undefined
         if(name==='computer_screen'&&hit.uv){
@@ -239,7 +239,8 @@ export default function StudioScene(){
         }
       }
       let label=route?.label??destinations[target]?.label??''
-      if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Education':'UC Berkeley · Education'
+      if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Degree certificate':'UC Berkeley · Degree certificate'
+      else if(object.name.startsWith('Sheer curtain'))label='Sheer curtain'
       else if(object.name==='computer'||object.name==='keyboard'||object.name==='mouse'){
         if(object.name==='mouse')label='Wired mouse'
         else if(object.name==='keyboard')label='Keyboard'
@@ -585,6 +586,6 @@ export default function StudioScene(){
         <p className="contact-exit-hint">Press Esc or click outside to return</p>
       </div></div>}
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic#experience">Résumé</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
+    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic/full">Résumé</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
   </main>
 }
