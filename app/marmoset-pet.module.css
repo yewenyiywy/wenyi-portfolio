@@ -8,6 +8,7 @@
 }
 
 :global(body:has([aria-modal='true'])) .world { visibility: hidden; }
+:global(body:has(.studio-home)) .world { display: none; }
 
 .roamer {
   position: absolute;

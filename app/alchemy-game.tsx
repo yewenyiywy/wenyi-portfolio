@@ -74,7 +74,7 @@ export default function AlchemyGame() {
   }
 
   return <div className="alchemy-home">
-    <nav className="alchemy-nav"><Link href="/" className="alchemy-brand">← Back to studio</Link><div><Link href="/hobbies">Hobbies</Link><Link href="/classic" className="alchemy-skip">Skip game · View portfolio</Link></div></nav>
+    <nav className="alchemy-nav"><Link href="/" className="alchemy-brand">← Back to studio</Link></nav>
     <div className="alchemy-shell">
       <header className="alchemy-heading"><h1>Mix two ingredients to uncover a chapter of Wenyi’s story.</h1></header>
       <div className="alchemy-scene" aria-label="Alchemy workbench">
@@ -89,7 +89,6 @@ export default function AlchemyGame() {
         <p className="alchemy-message" role="status">{message}</p>
       </div>
       {unlocked.length > 0 && <div className="alchemy-discoveries" aria-label="Discovered archive papers">{recipes.filter(r => unlocked.includes(r.id)).map((r,index) => <button key={r.id} className="alchemy-archive-slip" style={{'--slip-angle':`${index%2===0?-2:2}deg`} as CSSProperties} aria-pressed={chapter===r.id} onClick={() => openChapter(r.id)} type="button">{r.title}</button>)}</div>}
-      <p className="alchemy-note">Prefer a traditional introduction? <Link href="/classic/full">Read the complete portfolio.</Link></p>
       {chapter && <div ref={reward} className="alchemy-reward"><div className="alchemy-reward-header"><span>{recipes.find(r => r.id === chapter)?.title}</span><button onClick={() => setChapter(null)} type="button">Close ×</button></div><div className="professional-shell professional-game-reward"><div className="professional-dossier"><PortfolioView key={chapter} chapter={chapter}/></div></div></div>}
     </div>
   </div>
