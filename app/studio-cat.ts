@@ -2,7 +2,6 @@ import * as T from 'three'
 
 // Blender armature samples: trot, resting-to-standing, descent, ascent.
 const WALK=0, REST=12, STAND=20, DOWN=21, UP=30, FRAME_COUNT=39
-const sleepingYaw=1.15
 type Phase={kind:'rise'|'turn'|'down'|'walk'|'up'|'rest';from:T.Vector3;to:T.Vector3;yaw:number;duration:number}
 
 export async function installCat(model:T.Group,signal:AbortSignal){
@@ -35,6 +34,11 @@ export async function installCat(model:T.Group,signal:AbortSignal){
   const top=model.getObjectByName('Desk lacquered top'),crt=model.getObjectByName('CRT rear casing')
   if(!top||!crt)throw Error('Missing support surfaces')
   const desk=new T.Box3().setFromObject(top),tower=new T.Box3().setFromObject(crt)
+  // Aim the muzzle toward the default camera on +Z. In a curled pose
+  // the direction from the torso to the head differs from the gaze.
+  const landmark=(vertex:number)=>new T.Vector3().fromArray(frames,REST*size+vertex*3)
+  const muzzle=landmark(44163).sub(landmark(38689).lerp(landmark(16668),.5))
+  const sleepingYaw=-Math.atan2(muzzle.x,muzzle.z)
   const rotated=new T.Vector3(),sleepBounds=new T.Box3()
   for(let i=0;i<size;i+=3){
     rotated.fromArray(frames,REST*size+i).divideScalar(32000).applyAxisAngle(new T.Vector3(0,1,0),sleepingYaw)
