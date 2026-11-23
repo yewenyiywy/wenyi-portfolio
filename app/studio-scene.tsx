@@ -1,5 +1,6 @@
 'use client'
 
+import { installCat } from './studio-cat'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -123,6 +124,7 @@ export default function StudioScene(){
   },[router])
   useEffect(()=>{
     const host=mount.current;if(!host)return
+    let cat:Awaited<ReturnType<typeof installCat>>|undefined
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
@@ -195,6 +197,7 @@ export default function StudioScene(){
       const hit=intersections.find(entry=>!entry.object.name.includes('Window prism caustic'));if(!hit)return null
       const object=interactive.get(hit.object)
       if(!object)return null
+      if(object===cat?.group)return {object,label:cat.awake?'Studio cat':'Sleeping cat · Wake up',route:undefined}
       const name=hit.object.name.toLowerCase()
       const target=object.userData.destination as string
       let route: {label:string;href:string}|undefined=destinations[target]
@@ -259,6 +262,7 @@ export default function StudioScene(){
         lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
       }
       if(!hit)return
+      if(hit.object===cat?.group){cat.wake();return}
       highlight(hit.object)
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
@@ -351,10 +355,12 @@ export default function StudioScene(){
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
           })
           assembleInteractions();host.dataset.lampState='on';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          installCat(model,abort.signal).then(result=>{if(!alive||!model)return;cat=result;model.add(cat.group);interactive.set(cat.mesh,cat.group);host.dataset.catReady='true';dirty=true;renderer!.shadowMap.needsUpdate=true}).catch(()=>{if(alive)host.dataset.catReady='false'})
         }catch(e){if(alive)setStatus('fallback')}
       })()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
+        if(cat?.tick(performance.now())){dirty=true;renderer.shadowMap.needsUpdate=true}
         const goal=lampOn?1:0
         if(Math.abs(lampLevel-goal)>.001){
           lampLevel=reduced?goal:THREE.MathUtils.lerp(lampLevel,goal,.16)
