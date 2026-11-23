@@ -1,9 +1,11 @@
 import * as T from 'three'
 
+import riseRegions from './cat-rise-regions.json'
+
 type Point = T.Vector3
-const scale = 1.16, stride = .40 * scale, speed = stride / .72
+const scale = 1.65, stride = .40 * scale, speed = stride / .72
 // The walking mesh, including its tail, stays inside this swept circle at every heading.
-const clearance = .35
+const clearance = .51
 export async function installCat(model:T.Group, signal:AbortSignal) {
   const response=await fetch('/studio-model/cat.bin.gz',{signal})
   if(!response.ok)throw Error('Cat model unavailable')
@@ -14,6 +16,48 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   const colors=new Uint8Array(buf,start,count*3)
   const frames=new Int16Array(buf.slice(start+count*3))
   if(frames.length!==16*count*3)throw Error('Incomplete cat animation')
+  // Broaden the ribcage and haunches in model space. The mask follows vertex identity across poses.
+  const frameSize=count*3
+  for(let i=0;i<frameSize;i+=3){
+    const z=frames[frameSize+i+2]/32000, y=frames[frameSize+i+1]/32000
+    const torso=Math.exp(-Math.pow((z+.01)/.135,4))*T.MathUtils.smoothstep(y,.035,.115)
+    for(let f=0;f<16;f++){
+      const at=f*frameSize+i
+      frames[at]*=1+(f===0?.14:.46)*torso
+      frames[at+1]*=1+(f===0?.19:.06)*torso
+    }
+  }
+  // Interpolate each part in its rotating local frame. Straight vertex blends collapse
+  // the neck and ribcage halfway between the curled and upright silhouettes.
+  const rise=Array.from({length:7},()=>new Int16Array(frameSize))
+  const regions=riseRegions.map(values=>{
+    const pivot=new T.Vector3().fromArray(values,3),end=new T.Vector3().fromArray(values,6)
+    const q=new T.Quaternion().fromArray(values,9).normalize(),inverse=q.clone().invert()
+    const matrices=rise.map((_,j)=>{
+      const t=(j+1)/8,turn=new T.Quaternion().slerp(q,t)
+      return [new T.Matrix4().makeRotationFromQuaternion(turn),new T.Matrix4().makeRotationFromQuaternion(turn.clone().multiply(inverse))]
+    })
+    return {center:new T.Vector3().fromArray(values),pivot,end,matrices}
+  })
+  const a=new T.Vector3(),b=new T.Vector3(),v=new T.Vector3(),u=new T.Vector3()
+  for(let i=0;i<frameSize;i+=3){
+    a.fromArray(frames,i).divideScalar(32000);b.fromArray(frames,i+frameSize).divideScalar(32000)
+    // Neighbouring regions overlap so the skin remains continuous at their borders.
+    const weights=regions.map(r=>Math.exp(-b.distanceToSquared(r.center)/.001225))
+    const total=weights.reduce((sum,w)=>sum+w,0)
+    for(let j=0;j<7;j++){
+      const t=(j+1)/8;let x=0,y=0,z=0
+      regions.forEach((r,k)=>{
+        const w=weights[k]/total
+        if(w<.00001)return
+        v.copy(a).sub(r.pivot).applyMatrix4(r.matrices[j][0]).add(r.pivot)
+        u.copy(b).sub(r.end).applyMatrix4(r.matrices[j][1]).add(r.end)
+        v.lerp(u,t);x+=w*v.x;y+=w*v.y;z+=w*v.z
+      })
+      rise[j][i]=Math.round(x*32000);rise[j][i+1]=Math.round(Math.max(0,y)*32000);rise[j][i+2]=Math.round(z*32000)
+    }
+  }
+  const poses=[...Array.from({length:16},(_,i)=>frames.subarray(i*frameSize,(i+1)*frameSize)),...rise]
   const positions=new Float32Array(count*3)
   const geometry=new T.BufferGeometry()
   geometry.setIndex(new T.BufferAttribute(index,1))
@@ -37,7 +81,7 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   fur.frustumCulled=false;fur.raycast=()=>{};mesh.add(fur)
   function pose(a:number,b:number,t:number){
     const n=positions.length
-    for(let i=0;i<n;i++)positions[i]=(frames[a*n+i]*(1-t)+frames[b*n+i]*t)/32000
+    for(let i=0;i<n;i++)positions[i]=(poses[a][i]*(1-t)+poses[b][i]*t)/32000
     geometry.attributes.position.needsUpdate=true;geometry.computeVertexNormals()
     geometry.computeBoundingSphere()
     const normals=geometry.attributes.normal.array
@@ -66,14 +110,20 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   })
   const clear=(p:Point,air=false)=>p.x>desk.min.x+clearance&&p.x<desk.max.x-clearance&&p.z>desk.min.z+clearance&&p.z<desk.max.z-clearance&&!obstacles.some(b=>{
     if(air&&b.intersectsBox(tower)&&b.max.y<=home.y+.015)return false
-    if(b.max.y<=p.y+.008||b.min.y>p.y+.40)return false
+    if(b.max.y<=p.y+.008||b.min.y>p.y+.53)return false
     return Math.hypot(Math.max(b.min.x-p.x,0,p.x-b.max.x),Math.max(b.min.z-p.z,0,p.z-b.max.z))<clearance
   })
-  const arc=(a:Point,b:Point,t:number)=>a.clone().lerp(b,t).addScaledVector(new T.Vector3(0,1,0),4*t*(1-t)*.72)
+  function arc(a:Point,b:Point,t:number){
+    const descending=a.y>b.y
+    const u=descending?t:1-t, top=descending?a:b, bottom=descending?b:a
+    const p=top.clone().lerp(bottom,u)
+    p.y=top.y+(bottom.y-top.y)*u*u+2.8*u*(1-u)
+    return p
+  }
   function plan(){
     let best:Point[]=[]
-    for(const reach of [1.30,1.55,1.8,2.05,2.30,2.55])for(let k=0;k<48;k++){
-      const angle=k*Math.PI/24
+    for(let reach=1.35;reach<=3.30;reach+=.10)for(let k=0;k<96;k++){
+      const angle=k*Math.PI/48
       const land=home.clone().add(new T.Vector3(reach*Math.cos(angle),0,reach*Math.sin(angle)));land.y=desk.max.y+.012
       if(!clear(land))continue
       if(Array.from({length:31},(_,i)=>arc(home,land,i/30)).some(p=>!clear(p,true)))continue
@@ -91,7 +141,7 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
     }
     return best
   }
-  let elapsed=0,step=0,distance=0,last=0
+  let elapsed=0,step=0,distance=0,last=0,walkStride=stride
   type Phase={from:Point,to:Point,kind:'rise'|'walk'|'jump'|'rest',duration:number}
   let phases:Phase[]=[]
   function wake(){
@@ -102,6 +152,8 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
     const phase=(from:Point,to:Point,kind:Phase['kind'],duration:number)=>({from,to,kind,duration})
     phases=[phase(home,home,'rise',1.1),phase(home,landing,'jump',.78)]
     for(let i=1;i<loop.length;i++)phases.push(phase(loop[i-1],loop[i],'walk',loop[i].distanceTo(loop[i-1])/speed))
+    const travel=phases.filter(p=>p.kind==='walk').reduce((sum,p)=>sum+p.from.distanceTo(p.to),0)
+    walkStride=travel/Math.max(1,Math.round(travel/stride))
     phases.push(phase(landing,home,'jump',.88),phase(home,home,'rest',1.15))
     elapsed=step=distance=last=0
   }
@@ -120,11 +172,17 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
         const keys=[1,13,14,15,1],times=[0,.14,.51,.86,1]
         const j=t<.14?0:t<.51?1:t<.86?2:3
         pose(keys[j],keys[j+1],(t-times[j])/(times[j+1]-times[j]))}
-      else {group.position.lerpVectors(part.from,part.to,t);distance+=dt*speed;const f=(distance/stride*12)%12;pose(1+Math.floor(f),1+(Math.floor(f)+1)%12,f%1)}
+      else {group.position.lerpVectors(part.from,part.to,t);const covered=distance+t*part.from.distanceTo(part.to);const f=(covered/walkStride*12)%12;pose(1+Math.floor(f),1+(Math.floor(f)+1)%12,f%1)}
     }else {
-      const u=t*t*(3-2*t);pose(0,1,part.kind==='rise'?u:1-u)
+      const u=t*t*(3-2*t),progress=(part.kind==='rise'?u:1-u)*8
+      const keys=[0,16,17,18,19,20,21,22,1],j=Math.min(7,Math.floor(progress))
+      pose(keys[j],keys[j+1],progress-j)
+      if(part.kind==='rest'){
+        const delta=Math.atan2(Math.sin(Math.PI/2-group.rotation.y),Math.cos(Math.PI/2-group.rotation.y))
+        group.rotation.y+=T.MathUtils.clamp(delta,-dt*4,dt*4)
+      }
     }
-    if(t===1){elapsed=0;if(++step===phases.length){phases=[];group.rotation.y=Math.PI/2}}
+    if(t===1){if(part.kind==='walk')distance+=part.from.distanceTo(part.to);elapsed=0;if(++step===phases.length){phases=[];group.rotation.y=Math.PI/2}}
     return true
   }
   return {group,mesh,wake,tick,plan,get awake(){return phases.length>0}}
