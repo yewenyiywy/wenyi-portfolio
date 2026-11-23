@@ -3,9 +3,6 @@ import * as T from 'three'
 import riseRegions from './cat-rise-regions.json'
 
 type Point = T.Vector3
-const scale = 1.65, stride = .40 * scale, speed = stride / .72
-// The walking mesh, including its tail, stays inside this swept circle at every heading.
-const clearance = .51
 export async function installCat(model:T.Group, signal:AbortSignal) {
   const response=await fetch('/studio-model/cat.bin.gz',{signal})
   if(!response.ok)throw Error('Cat model unavailable')
@@ -65,7 +62,7 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   geometry.setAttribute('position',new T.BufferAttribute(positions,3).setUsage(T.DynamicDrawUsage))
   const mesh=new T.Mesh(geometry,new T.MeshPhysicalMaterial({vertexColors:true,roughness:.94,sheen:.45,sheenColor:0x8b8885}))
   mesh.castShadow=true;mesh.receiveShadow=true
-  const group=new T.Group();group.name='Studio cat';group.scale.setScalar(scale);group.add(mesh)
+  const group=new T.Group();group.name='Studio cat';group.add(mesh)
   // Short guard hairs follow the animated skin at their roots.
   const strands=8500,roots=new Uint32Array(strands),tips=new Uint32Array(strands)
   const hairs=new Float32Array(strands*6),hairColors=new Float32Array(strands*6)
@@ -99,6 +96,15 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   const top=model.getObjectByName('Desk lacquered top'),crt=model.getObjectByName('CRT rear casing')
   if(!top||!crt)throw Error('Missing cat support surfaces')
   const desk=bounds(top),tower=bounds(crt),home=tower.getCenter(new T.Vector3())
+  // The curled silhouette should occupy almost the full width of the CRT.
+  let left=Infinity,right=-Infinity,radius=0
+  for(let i=0;i<frameSize;i+=3){
+    left=Math.min(left,poses[0][i+2]/32000);right=Math.max(right,poses[0][i+2]/32000)
+    for(let p=1;p<16;p++)radius=Math.max(radius,Math.hypot(poses[p][i],poses[p][i+2])/32000)
+  }
+  const scale=(tower.max.x-tower.min.x)*.96/(right-left)
+  const clearance=radius*scale+.025,stride=.40*scale,speed=stride/1.05
+  group.scale.setScalar(scale)
   home.y=tower.max.y+.02
   group.position.copy(home);group.rotation.y=Math.PI/2;pose(0,0,0)
   const obstacles:T.Box3[]=[]
@@ -110,7 +116,7 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
   })
   const clear=(p:Point,air=false)=>p.x>desk.min.x+clearance&&p.x<desk.max.x-clearance&&p.z>desk.min.z+clearance&&p.z<desk.max.z-clearance&&!obstacles.some(b=>{
     if(air&&b.intersectsBox(tower)&&b.max.y<=home.y+.015)return false
-    if(b.max.y<=p.y+.008||b.min.y>p.y+.53)return false
+    if(b.max.y<=p.y+.008||b.min.y>p.y+.30*scale)return false
     return Math.hypot(Math.max(b.min.x-p.x,0,p.x-b.max.x),Math.max(b.min.z-p.z,0,p.z-b.max.z))<clearance
   })
   function arc(a:Point,b:Point,t:number){
@@ -142,12 +148,13 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
     return best
   }
   let elapsed=0,step=0,distance=0,last=0,walkStride=stride
+  let restingSince=0
   type Phase={from:Point,to:Point,kind:'rise'|'walk'|'jump'|'rest',duration:number}
   let phases:Phase[]=[]
   function wake(){
     if(phases.length)return
     const path=plan()
-    if(path.length<2)return
+    if(path.length<2){restingSince=performance.now();return}
     const landing=path[0],loop=path.concat(path.slice(0,-1).reverse())
     const phase=(from:Point,to:Point,kind:Phase['kind'],duration:number)=>({from,to,kind,duration})
     phases=[phase(home,home,'rise',1.1),phase(home,landing,'jump',.78)]
@@ -158,7 +165,16 @@ export async function installCat(model:T.Group, signal:AbortSignal) {
     elapsed=step=distance=last=0
   }
   function tick(now:number){
-    if(!phases.length)return false
+    if(!phases.length){
+      // A sleeping cat remains grounded. A click stirs its breathing briefly.
+      if(last&&now-last<90)return false
+      last=now
+      const stirred=restingSince?Math.max(0,1-(now-restingSince)/1800):0
+      const breath=(.5+.5*Math.sin(now/580))*(.014+.012*stirred)
+      mesh.scale.y=1+breath
+      return true
+    }
+    mesh.scale.y=1
     if(last&&now-last<30)return false
     const dt=last?Math.min(.10,(now-last)/1000):0;last=now
     const part=phases[step];elapsed+=dt
