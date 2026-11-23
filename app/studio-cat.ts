@@ -2,24 +2,29 @@ import * as T from 'three'
 
 // Blender armature samples: trot, resting-to-standing, descent, ascent.
 const WALK=0, REST=12, STAND=20, DOWN=21, UP=30, FRAME_COUNT=39
-const sleepingYaw=1.02
+const sleepingYaw=1.15
 type Phase={kind:'rise'|'turn'|'down'|'walk'|'up'|'rest';from:T.Vector3;to:T.Vector3;yaw:number;duration:number}
 
 export async function installCat(model:T.Group,signal:AbortSignal){
-  const manifest=await fetch('/studio-model/cat-rig-v3.json',{signal})
-  if(!manifest.ok)throw Error('Cat animation unavailable')
-  const parts=await manifest.json() as string[]
-  const chunks=await Promise.all(parts.map(async name=>{
-    const response=await fetch('/studio-model/'+name,{signal})
-    if(!response.ok)throw Error('Cat animation unavailable')
-    return response.arrayBuffer()
-  }))
-  const bytes=await new Blob(chunks).arrayBuffer()
-  const raw=new Uint8Array(bytes)[0]===31?await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer():bytes
+  async function load(name:string){
+    const manifest=await fetch('/studio-model/'+name+'.json',{signal})
+    if(!manifest.ok)throw Error('Cat animation unavailable')
+    const parts=await manifest.json() as string[]
+    const chunks=await Promise.all(parts.map(async part=>{
+      const response=await fetch('/studio-model/'+part,{signal})
+      if(!response.ok)throw Error('Cat animation unavailable')
+      return response.arrayBuffer()
+    }))
+    const bytes=await new Blob(chunks).arrayBuffer()
+    return new Uint8Array(bytes)[0]===31?await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer():bytes
+  }
+  const [raw,restingFrames]=await Promise.all([load('cat-rig-v3'),load('cat-rig-v4')])
   const header=new Uint32Array(raw,0,2),count=header[0],indices=header[1],offset=8+indices*4
   const index=new Uint32Array(raw,8,indices),colors=new Uint8Array(raw,offset,count*3)
   const frames=new Int16Array(raw.slice(offset+count*3)),size=count*3
   if(frames.length!==FRAME_COUNT*size)throw Error('Incomplete rig bake')
+  if(restingFrames.byteLength!==9*size*2)throw Error('Incomplete sleeping animation')
+  frames.set(new Int16Array(restingFrames),REST*size)
   const positions=new Float32Array(size),geometry=new T.BufferGeometry()
   geometry.setIndex(new T.BufferAttribute(index,1))
   geometry.setAttribute('color',new T.Uint8BufferAttribute(colors,3,true))
@@ -41,16 +46,24 @@ export async function installCat(model:T.Group,signal:AbortSignal){
   const home=tower.getCenter(new T.Vector3());home.y=tower.max.y+.021;home.x-=center.x*scale;home.z-=center.z*scale
   group.position.copy(home);group.rotation.y=sleepingYaw
   // The same root and physical scale are used for every frame.
-  const strands=10000,hairs=new Float32Array(strands*6),hairColors=new Float32Array(strands*6),roots=new Uint32Array(strands)
+  const strands=36000,hairs=new Float32Array(strands*6),hairColors=new Float32Array(strands*6),roots=new Uint32Array(strands)
   for(let i=0;i<strands;i++){
     roots[i]=index[((i*7919)%Math.floor(indices/3))*3]
-    for(let j=0;j<6;j++)hairColors[6*i+j]=colors[roots[i]*3+j%3]/255*(j<3?.8:1.35)
+    for(let j=0;j<6;j++)hairColors[6*i+j]=colors[roots[i]*3+j%3]/255*(j<3?.85:1.55)
   }
   const furGeometry=new T.BufferGeometry()
   furGeometry.setAttribute('position',new T.BufferAttribute(hairs,3).setUsage(T.DynamicDrawUsage))
   furGeometry.setAttribute('color',new T.BufferAttribute(hairColors,3))
   const fur=new T.LineSegments(furGeometry,new T.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.6,depthWrite:false}))
   fur.frustumCulled=false;fur.raycast=()=>{};mesh.add(fur)
+  // Whiskers are rooted in the actual cheek vertices and follow the local
+  // head frame as the cat rolls or raises its head.
+  const whiskerPositions=new Float32Array(12*4*6)
+  const whiskerGeometry=new T.BufferGeometry()
+  whiskerGeometry.setAttribute('position',new T.BufferAttribute(whiskerPositions,3).setUsage(T.DynamicDrawUsage))
+  const whiskers=new T.LineSegments(whiskerGeometry,new T.LineBasicMaterial({color:0xe7dfd3,transparent:true,opacity:.82}))
+  whiskers.frustumCulled=false;whiskers.raycast=()=>{};mesh.add(whiskers)
+  const cheekL=new T.Vector3(),cheekR=new T.Vector3(),nose=new T.Vector3(),headTop=new T.Vector3(),sideAxis=new T.Vector3(),frontAxis=new T.Vector3(),upAxis=new T.Vector3(),origin=new T.Vector3(),point=new T.Vector3(),previous=new T.Vector3()
   function pose(a:number,b:number,t:number,pitch=0){
     let min=Infinity
     const c=Math.cos(pitch),s=Math.sin(pitch)
@@ -65,9 +78,27 @@ export async function installCat(model:T.Group,signal:AbortSignal){
     geometry.attributes.position.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere()
     const normal=geometry.attributes.normal.array
     for(let i=0;i<strands;i++)for(let j=0;j<3;j++){
-      const k=roots[i]*3+j;hairs[i*6+j]=positions[k];hairs[i*6+3+j]=positions[k]+normal[k]*.0021
+      const k=roots[i]*3+j;hairs[i*6+j]=positions[k];hairs[i*6+3+j]=positions[k]+normal[k]*(.0024+.0018*((i*37)%101)/100)
     }
     furGeometry.attributes.position.needsUpdate=true
+    cheekL.fromArray(positions,38689*3);cheekR.fromArray(positions,16668*3)
+    sideAxis.subVectors(cheekR,cheekL).normalize()
+    nose.fromArray(positions,44163*3);headTop.fromArray(positions,19423*3)
+    frontAxis.copy(nose).sub(point.copy(cheekL).lerp(cheekR,.5)).normalize()
+    upAxis.subVectors(headTop,nose).addScaledVector(sideAxis,-headTop.clone().sub(nose).dot(sideAxis)).normalize()
+    let cursor=0
+    for(const sign of [-1,1])for(let w=0;w<6;w++){
+      const root=(sign<0?[38689,37784,22905]:[16668,15763,884])[w%3]
+      origin.fromArray(positions,root*3);previous.copy(origin)
+      for(let segment=1;segment<=4;segment++){
+        const t=segment/4
+        point.copy(origin).addScaledVector(sideAxis,sign*(.035+.008*(w%3))*t)
+          .addScaledVector(frontAxis,(.009+.003*(w%3))*t)
+          .addScaledVector(upAxis,(w-2.5)*.003*t-.004*t*t)
+        whiskerPositions.set(previous.toArray(),cursor);whiskerPositions.set(point.toArray(),cursor+3);cursor+=6;previous.copy(point)
+      }
+    }
+    whiskerGeometry.attributes.position.needsUpdate=true
   }
   function sample(first:number,last:number,t:number,pitch=0){
     const f=T.MathUtils.clamp(t,0,1)*(last-first),a=Math.floor(f)
