@@ -149,6 +149,7 @@ export default function StudioScene(){
     const debug=debugParams.get('debug')==='shadows'
     const legacy=debug&&debugParams.get('mode')==='legacy'
     setShadowDebug(debug)
+    let cat:Awaited<ReturnType<typeof import('./studio-cat').installCat>>|undefined
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
@@ -263,6 +264,7 @@ export default function StudioScene(){
       const hit=intersections.find(entry=>!entry.object.name.includes('Window prism caustic'));if(!hit)return null
       const object=interactive.get(hit.object)
       if(!object)return null
+      if(object===cat?.group)return {object,label:cat.awake?'Studio cat':'Sleeping cat · Wake up',route:undefined}
       const name=hit.object.name.toLowerCase()
       const target=object.userData.destination as string
       let route: {label:string;href:string}|undefined=destinations[target]
@@ -343,6 +345,7 @@ export default function StudioScene(){
         lampStartLevel=lampLevel;lampStartedAt=performance.now();lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';host.dataset.lampSettled='false';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
       }
       if(!hit)return
+      if(hit.object===cat?.group){cat.wake();return}
       highlight(hit.object)
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
       // Large anchored furniture and window frames must never rotate into
@@ -563,12 +566,18 @@ export default function StudioScene(){
             else if(name==='Continuous chevron parquet')applyContact(obj,floorAO,-4,8.5,-2.27,7)
           })
           assembleInteractions();lampGroup=Array.from(interactive.values()).find(group=>group.name==='lamp');let transmissionCount=0;lampGroup?.traverse(obj=>{if(obj instanceof THREE.Mesh&&(obj.material as THREE.MeshPhysicalMaterial).transmission>0)transmissionCount++});host.dataset.lampTransmissionCount=String(transmissionCount);host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          import('./studio-cat').then(({installCat})=>installCat(model!,abort.signal)).then(result=>{
+            if(!alive||!model)return
+            cat=result;model.add(cat.group);interactive.set(cat.mesh,cat.group)
+            host.dataset.catReady='true';dirty=true;renderer!.shadowMap.needsUpdate=true
+          }).catch(()=>{if(alive)host.dataset.catReady='false'})
         }catch(e){if(alive)setStatus('fallback')}
       })()
       let lastFrameTime=performance.now()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
         const now=performance.now(),dt=Math.max(1,now-lastFrameTime);lastFrameTime=now
+        if(cat?.tick(now)){dirty=true;renderer.shadowMap.needsUpdate=true}
         const goal=lampOn?1:0
         if(host.dataset.lampSettled==='false'){
           const t=reduced?1:Math.min(1,(performance.now()-lampStartedAt)/280)
