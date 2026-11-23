@@ -862,6 +862,7 @@ projects=group('target_projects')
 box('Research notebook cover',(-2.62,-.54,1.37),(.88,.72,.08),burgundy,.026,projects)
 box('Research notebook pages',(-2.62,-.54,1.43),(.83,.67,.07),paper,.01,projects)
 box('Research notebook front',(-2.62,-.54,1.484),(.88,.72,.045),burgundy,.018,projects)
+box('Research notebook spine',(-3.045,-.54,1.42),(.105,.714,.172),burgundy,.025,projects)
 surface('research_cover',(-2.62,-.54,1.51),.82,.65,print_material('Research cover print','research.jpg'),False,projects)
 
 contact_holder(2.73,.72)
@@ -994,17 +995,7 @@ for row in range(3):
         if i%3==0:
             city_box(glass_city,x,y,-2+height+.13,w*.80,d*.83,.26)
             city_box(roof,x,y,-2+height+.30,w*.6,d*.64,.12)
-# Separate vegetation silhouettes add another parallax layer between homes.
-tree_crown=[mat('Exterior tree foliage '+str(i),(.12+i*.024,.24+i*.027,.095+i*.013),.94) for i in range(3)]
-trunk=mat('Exterior tree bark',(.16,.105,.065),.94)
-for i in range(21):
-    x=-7.8+city_rng.uniform(-.25,.25);y=-13+i*2.9
-    city_box(trunk,x,y,-2.18,.11,.11,1.45)
-    for j in range(5):
-        cx=x+city_rng.uniform(-.35,.35);cy=y+city_rng.uniform(-.43,.43);cz=-1.22+city_rng.uniform(-.25,.47);r=city_rng.uniform(.29,.49)
-        vertices=[(cx,cy,cz+r)]+[(cx+math.cos(a*math.tau/9)*r,cy+math.sin(a*math.tau/9)*r,cz) for a in range(9)]+[(cx,cy,cz-r)]
-        faces=[(0,1+k,1+(k+1)%9) for k in range(9)]+[(10,1+(k+1)%9,1+k) for k in range(9)]
-        city_poly(city_rng.choice(tree_crown),vertices,faces)
+# Keep the architecture unobstructed; no exterior tree silhouettes.
 for material,(verts,faces) in city_meshes.items():
     mesh=bpy.data.meshes.new(material.name);mesh.from_pydata(verts,[],faces);mesh.update()
     if 'tile_size' in material:
@@ -1017,20 +1008,6 @@ for material,(verts,faces) in city_meshes.items():
                 uv.data[loop_index].uv=((v.y if axis==0 else v.x)/tile,(v.y if axis==2 else v.z)/tile)
     ob=bpy.data.objects.new(material.name,mesh);bpy.context.collection.objects.link(ob);mesh.materials.append(material)
     ob.visible_shadow=True
-# A scanned shrub model adds real branch and leaf detail at different street depths.
-shrub_path=os.path.join(city_assets,'shrub_01','shrub_01.gltf')
-before=set(bpy.data.objects)
-bpy.ops.import_scene.gltf(filepath=shrub_path)
-shrubs=[o for o in bpy.data.objects if o not in before and o.type=='MESH']
-for source in shrubs:
-    source.name='Exterior scanned shrub'
-    source.visible_shadow=True
-    source.location=(-7.5,-7,-2.65)
-    source.scale=(.42,.42,.42)
-    for j in range(1,8):
-        clone=source.copy();clone.data=source.data
-        clone.location=(-7.5,-7+j*4.7,-2.65);clone.rotation_euler.z=j*1.27
-        bpy.context.collection.objects.link(clone)
 # Print actual key legends from one UV atlas, with no overlapping geometry.
 alphabet="1234567890-=+~QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./"
 legends=print_material('ABS key printing','legends.jpg',.64)

@@ -20,6 +20,7 @@ const phones = [
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: 'studio-render.spec.ts',
   fullyParallel: true,
   timeout: 90_000,
   forbidOnly: !!process.env.CI,

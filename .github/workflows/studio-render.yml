@@ -1,0 +1,24 @@
+name: Studio WebGL regression
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  webgl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.studio.config.ts
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: studio-webgl-frames
+          path: test-results/studio/
+          retention-days: 14

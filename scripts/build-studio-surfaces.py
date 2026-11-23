@@ -39,5 +39,5 @@ Image.fromarray(np.uint8(np.clip(rgb,0,255))).save(out/'chevron-oak.jpg',quality
 Image.fromarray(np.uint8(np.clip(height,0,255))).save(out/'chevron-height.jpg',quality=90)
 
 grain = np.clip((scan-np.median(scan))*.15,-8,8)
-lacquer = np.array([101,112,73]) + grain[...,None]*np.array([1,1,.75])
+lacquer = np.array([120,136,112]) + grain[...,None]*np.array([1,1,.85])  # approved A: #788870
 Image.fromarray(np.uint8(np.clip(lacquer,0,255))).save(out/'olive-lacquer.jpg',quality=94)

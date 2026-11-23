@@ -6,17 +6,15 @@ import Link from 'next/link'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
-import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import './studio.css'
 
 const destinations: Record<string, { label: string; href: string }> = {
-  target_about:{label:'Photographs · About me',href:'/classic#about'},
-  target_education:{label:'Degree certificate · Education & awards',href:'/classic#education'},
-  target_experience:{label:'Résumé · Professional experience',href:'/classic#experience'},
-  target_projects:{label:'Research notebook · Projects & skills',href:'/classic#projects'},
+  target_about:{label:'Personal photograph',href:''},
+  target_education:{label:'Degree certificate',href:''},
+  target_experience:{label:'Résumé · View portfolio',href:'/classic/full'},
+  target_projects:{label:'Research notebook',href:''},
   target_hobbies:{label:'Hobbies · Personal journal',href:'/hobbies'},
   target_computer:{label:'Alchemy · Play game',href:'/game'},
   target_contact:{label:'Contact · Card index',href:'#contact-card'},
@@ -78,18 +76,40 @@ function resumeTexture(){return canvasTexture((ctx,w,h)=>{
     const y=160+i*108;ctx.fillText(company,48,y);ctx.fillStyle='#b2ac9b';for(let j=0;j<3;j++)ctx.fillRect(48,y+16+j*17,w-96-(j%2)*60,3);ctx.fillStyle='#2b342d'
   })
 })}
-function screenTexture(){return canvasTexture((ctx,w,h)=>{
+type CRTFolder = 'desktop'|'games'|'about'|'videos'
+function drawScreen(ctx:CanvasRenderingContext2D,w:number,h:number,folder:CRTFolder){
   ctx.fillStyle='#075c59';ctx.fillRect(0,0,w,h);ctx.fillStyle='#e5e6d7';ctx.fillRect(0,0,w,37)
-  ctx.font='bold 20px monospace';ctx.fillStyle='#182620';ctx.textAlign='left';ctx.fillText('◈  Wenyi OS     File   Games',15,25)
-  title(ctx,'WENYI’S PLAYROOM',w/2,112,39,'#d9e7c8','monospace')
+  ctx.font='bold 20px monospace';ctx.fillStyle='#182620';ctx.textAlign='left';ctx.fillText('◈  Wenyi OS     File   View',15,25)
   const icon=(x:number,label:string,symbol:string,color:string)=>{
     ctx.fillStyle='#082f30';ctx.fillRect(x-82,177,164,128);ctx.fillStyle='#e5e3cc';ctx.fillRect(x-73,168,146,128)
     ctx.fillStyle=color;ctx.fillRect(x-63,178,126,108);title(ctx,symbol,x,253,64,'#f0e8d0','monospace');title(ctx,label,x,338,27,'#fff6d6','monospace')
   }
-  icon(w*.25,'ALCHEMY','✦','#5c376c');icon(w*.75,'AFTERGLOW','☾','#9a6058')
-  title(ctx,'Choose a game',w/2,435,22,'#d2ded0','monospace')
+  const folderIcon=(x:number,label:string)=>{
+    ctx.fillStyle='#443e24';ctx.fillRect(x-65,199,136,91)
+    ctx.fillStyle='#d4ae64';ctx.fillRect(x-66,183,53,23);ctx.fillRect(x-66,199,132,84)
+    ctx.fillStyle='#f3d788';ctx.fillRect(x-62,207,124,72);ctx.fillStyle='#fff0af';ctx.fillRect(x-62,207,124,4)
+    title(ctx,label,x,322,24,'#fff6d6','monospace')
+  }
+  if(folder==='desktop'){
+    title(ctx,'WENYI OS',w/2,112,39,'#d9e7c8','monospace')
+    folderIcon(128,'Games');folderIcon(384,'About Me');folderIcon(640,'Videos')
+    title(ctx,'Select a folder',w/2,435,22,'#d2ded0','monospace')
+  }else{
+    ctx.fillStyle='#e5e6d7';ctx.fillRect(35,60,698,420);ctx.fillStyle='#344c55';ctx.fillRect(41,66,686,42)
+    title(ctx,folder==='games'?'Games':folder==='about'?'About Me':'Videos',w/2,96,27,'#fff6d6','monospace')
+    ctx.fillStyle='#d7c5a0';ctx.fillRect(684,74,30,26);title(ctx,'×',699,96,29,'#182620','monospace')
+    ctx.fillStyle='#075c59';ctx.fillRect(46,113,676,358)
+    if(folder==='games'){icon(192,'ALCHEMY','✦','#5c376c');icon(576,'AFTERGLOW','☾','#9a6058');title(ctx,'Choose a game',w/2,435,22,'#d2ded0','monospace')}
+    else if(folder==='about'){
+      title(ctx,'Wenyi Ye',w/2,185,39,'#f0e8d0','monospace')
+      title(ctx,'Quantitative Finance · AI · Product',w/2,247,23,'#d2ded0','monospace')
+      title(ctx,'UC Berkeley · MFE',w/2,294,24,'#d2ded0','monospace')
+      title(ctx,'University of Michigan',w/2,337,24,'#d2ded0','monospace')
+    }else{title(ctx,'No videos yet',w/2,282,30,'#d2ded0','monospace')}
+  }
   for(let y=0;y<h;y+=4){ctx.fillStyle='#101c2424';ctx.fillRect(0,y,w,1)}
-},768,532)}
+}
+function screenTexture(){return canvasTexture((ctx,w,h)=>drawScreen(ctx,w,h,'desktop'),768,532)}
 function woodTexture(){return canvasTexture((ctx,w,h)=>{
   const image=ctx.createImageData(w,h)
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
@@ -114,6 +134,8 @@ export default function StudioScene(){
   const [hover,setHover]=useState('')
   const [contactOpen,setContactOpen]=useState(false)
   const [contactIndex,setContactIndex]=useState(0)
+  const [shadowDebug,setShadowDebug]=useState(false)
+  const diagnosticExport=useRef<(()=>void)|null>(null)
   const openContact=()=>{setContactIndex(0);setContactOpen(true);contactAction.current?.(true)}
   const closeContact=()=>{setContactOpen(false);contactAction.current?.(false)}
   useEffect(()=>{if(!contactOpen)return;contactDialog.current?.focus();const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape'){setContactOpen(false);contactAction.current?.(false)}};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[contactOpen])
@@ -123,21 +145,46 @@ export default function StudioScene(){
   },[router])
   useEffect(()=>{
     const host=mount.current;if(!host)return
+    const debugParams=new URLSearchParams(window.location.search)
+    const debug=debugParams.get('debug')==='shadows'
+    const legacy=debug&&debugParams.get('mode')==='legacy'
+    setShadowDebug(debug)
     let dirty=true
     let alive=true,frame=0,renderer:THREE.WebGLRenderer|undefined,scene:THREE.Scene|undefined,model:THREE.Group|undefined
     let observer:ResizeObserver|undefined,transition:ReturnType<typeof setTimeout>|undefined,environmentTarget:THREE.WebGLRenderTarget|undefined
-    let composer:EffectComposer|undefined,outline:OutlinePass|undefined
     let lampLight:THREE.PointLight|undefined
-    let lampOn=true,lampLevel=1
+    let lampOn=true,lampLevel=1,lampStartLevel=1,lampStartedAt=0
     const lampShades=new Set<THREE.MeshStandardMaterial>()
     const interactive=new Map<THREE.Object3D,THREE.Group>()
+    let crtFolder:CRTFolder='desktop',crtTexture:THREE.CanvasTexture|undefined
+    const setCRTFolder=(folder:CRTFolder)=>{
+      crtFolder=folder;host.dataset.crtFolder=folder
+      if(crtTexture){const canvas=crtTexture.image as HTMLCanvasElement;drawScreen(canvas.getContext('2d')!,canvas.width,canvas.height,folder);crtTexture.needsUpdate=true;dirty=true}
+    }
+    let matStarted:number|null=null
+    const matParts:{mesh:THREE.Mesh;rest:Float32Array;world:THREE.Matrix4;inverse:THREE.Matrix4}[]=[]
     const poses=new Map<THREE.Group,{start:number;rotation:THREE.Euler}>()
+    const curtains=new Map<THREE.Group,{mesh:THREE.Mesh;rest:Float32Array;height:Float32Array;phase:Float32Array;inward:THREE.Vector3;start:number|null}>()
+    // A depth-tested additive rim on the existing mesh. No scene-wide depth
+    // overrides, postprocessing targets, or changes to the original material.
+    const rimMaterial=new THREE.ShaderMaterial({
+      uniforms:{tint:{value:new THREE.Color('#ffdf99')}},
+      vertexShader:`varying vec3 vNormal; varying vec3 vView; void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vNormal=normalize(normalMatrix*normal);vView=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`uniform vec3 tint; varying vec3 vNormal; varying vec3 vView; void main(){float rim=pow(1.0-abs(dot(normalize(vNormal),normalize(vView))),3.0);gl_FragColor=vec4(tint,rim*0.65);}`,
+      transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,toneMapped:false
+    })
+    let highlighted:THREE.Group|undefined
+    const rimMeshes:THREE.Mesh[]=[]
     const highlight=(group?:THREE.Group)=>{
-      if(!outline)return
-      // OutlinePass uses an opaque depth override, which is incompatible with
-      // the lamp's transmissive glass. Keep its tooltip without the depth pass.
-      if(group?.name==='lamp')group=undefined
-      if(outline.selectedObjects[0]!==group){outline.selectedObjects=group?[group]:[];dirty=true}
+      // Do not draw a second surface over transmissive glass. Hover leaves the
+      // approved lamp material, depth and transmission pass untouched.
+      if(group?.name==='lamp'&&!legacy)group=undefined
+      if(highlighted===group)return
+      for(const mesh of rimMeshes)mesh.removeFromParent()
+      rimMeshes.length=0;highlighted=group;dirty=true
+      if(!group)return
+      const meshes=group.children.filter((obj):obj is THREE.Mesh=>obj instanceof THREE.Mesh)
+      for(const mesh of meshes){const rim=new THREE.Mesh(mesh.geometry,rimMaterial);rim.name='Interaction rim';rim.raycast=()=>{};rim.castShadow=false;rim.receiveShadow=false;rim.renderOrder=20;mesh.add(rim);rimMeshes.push(rim)}
     }
     const assembleInteractions=()=>{
       if(!model)return
@@ -172,6 +219,26 @@ export default function StudioScene(){
         if(key==='plant')pivot.y=box.min.y
         group.position.copy(pivot);model.add(group);group.updateMatrixWorld(true)
         for(const o of meshes){group.attach(o);interactive.set(o,group)}
+        if(key==='mat'){
+          for(const obj of meshes){
+            const mesh=obj as THREE.Mesh
+            mesh.updateWorldMatrix(true,false)
+            const world=mesh.matrixWorld.clone(),inverse=world.clone().invert()
+            // Subdivide both the leather and stitched border; the same
+            // world-space bend keeps them perfectly aligned.
+            mesh.geometry=new TessellateModifier(.035,8).modify(mesh.geometry)
+            matParts.push({mesh,rest:new Float32Array(mesh.geometry.attributes.position.array),world,inverse})
+          }
+        }
+        if(key.startsWith('Sheer curtain')){
+          const mesh=meshes[0] as THREE.Mesh;mesh.geometry=mesh.geometry.clone()
+          mesh.updateWorldMatrix(true,false)
+          const p=mesh.geometry.attributes.position,rest=new Float32Array(p.array),height=new Float32Array(p.count),phase=new Float32Array(p.count),world=new THREE.Vector3()
+          const bounds=new THREE.Box3().setFromObject(mesh),span=Math.max(.01,bounds.max.y-bounds.min.y)
+          for(let i=0;i<p.count;i++){world.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);height[i]=THREE.MathUtils.clamp((bounds.max.y-world.y)/span,0,1);phase[i]=world.z*3.1}
+          const inward=new THREE.Vector3(1,0,0).transformDirection(mesh.matrixWorld.clone().invert())
+          curtains.set(group,{mesh,rest,height,phase,inward,start:null})
+        }
         group.userData.destination=key.startsWith('photo-')?'target_about':key.startsWith('degree-')?'target_education':key
       }
     }
@@ -179,11 +246,12 @@ export default function StudioScene(){
     const ownedMaterials:THREE.Material[]=[]
     const abort=new AbortController()
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
-    const camera=new THREE.PerspectiveCamera(35,1,.1,125)
-    const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone()
+    const camera=new THREE.PerspectiveCamera(35,1,.25,100)
+    const baseLook=new THREE.Vector3(.10,1.76,-.35),look=baseLook.clone(),restLook=baseLook.clone()
     let yaw=0,pitch=0,dragYaw=0,dragPitch=0,aspect=1,hovered='',moving=false
+    let hoverTarget=''
     let focus:THREE.Vector3|null=null,focusCamera:THREE.Vector3|null=null
-    let pointer:{x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
+    let pointer:{id:number;x:number;y:number;yaw:number;pitch:number;lamp:boolean}|null=null
     const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),desired=new THREE.Vector3()
     const choose=(event:PointerEvent)=>{
       if(!model||!renderer)return null
@@ -198,18 +266,28 @@ export default function StudioScene(){
       const name=hit.object.name.toLowerCase()
       const target=object.userData.destination as string
       let route: {label:string;href:string}|undefined=destinations[target]
+      // Only the résumé opens the old professional portfolio. Keep visual
+      // interactions, labels and the independent games/journal unchanged.
+      if(!route?.href||(route.href.startsWith('/classic')&&target!=='target_experience'))route=undefined
       if(object.name==='computer'){
         route=undefined
         if(name==='computer_screen'&&hit.uv){
           const x=hit.uv.x*768,y=hit.uv.y*532
-          if(y>=165&&y<=307){
-            if(Math.abs(x-192)<=74)route={label:'Alchemy · Play game',href:'/game'}
-            if(Math.abs(x-576)<=74)route={label:'Afterglow · Play game',href:'/game/afterglow'}
+          if(crtFolder==='desktop'&&y>=175&&y<=346){
+            for(const [center,folder,label] of [[128,'games','Games'],[384,'about','About Me'],[640,'videos','Videos']] as const)
+              if(Math.abs(x-center)<=92)route={label:`${label} · Open folder`,href:`#crt-${folder}`}
+          }else if(crtFolder!=='desktop'){
+            if(x>=673&&x<=728&&y>=60&&y<=112)route={label:'Close folder',href:'#crt-desktop'}
+            else if(crtFolder==='games'&&y>=165&&y<=350){
+              if(Math.abs(x-192)<=82)route={label:'Alchemy · Play game',href:'/game'}
+              if(Math.abs(x-576)<=82)route={label:'Afterglow · Play game',href:'/game/afterglow'}
+            }
           }
         }
       }
-      let label=route?.label??''
-      if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Education':'UC Berkeley · Education'
+      let label=route?.label??destinations[target]?.label??''
+      if(target==='target_education')label=object.name==='degree-0'?'University of Michigan · Degree certificate':'UC Berkeley · Degree certificate'
+      else if(object.name.startsWith('Sheer curtain'))label='Sheer curtain'
       else if(object.name==='computer'||object.name==='keyboard'||object.name==='mouse'){
         if(object.name==='mouse')label='Wired mouse'
         else if(object.name==='keyboard')label='Keyboard'
@@ -241,38 +319,63 @@ export default function StudioScene(){
       if(moving)return
       const bounds=host.getBoundingClientRect()
       if(pointer){
-        dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.6,-.23,.23)
-        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.35,-.12,.12)
+        if(e.pointerId!==pointer.id)return
+        dragYaw=THREE.MathUtils.clamp(pointer.yaw+(e.clientX-pointer.x)/bounds.width*.48,-.19,.19)
+        dragPitch=THREE.MathUtils.clamp(pointer.pitch+(e.clientY-pointer.y)/bounds.height*.20,-.07,.07)
         if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5){updateHover('');highlight()}
       }else if(e.pointerType==='mouse'){
         const x=(e.clientX-bounds.left)/bounds.width*2-1,y=(e.clientY-bounds.top)/bounds.height*2-1
-        yaw=x*.065;pitch=-y*.035;const hit=choose(e);highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
+        const hit=choose(e),wasLamp=hoverTarget==='lamp';hoverTarget=hit?.object.name??''
+        if(debug)dirty=true
+        // Keep the camera fixed when entering or leaving the lamp. A hover
+        // should not re-sort overlapping refractive glass at the same time.
+        if(legacy){yaw=x*.065;pitch=-y*.035}
+        highlight(hit?.object);updateHover(hit?.label??'',Boolean(hit));positionTooltip(e)
       }
     }
-    const down=(e:PointerEvent)=>{if(moving||e.button!==0)return;pointer={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
+    const down=(e:PointerEvent)=>{if(moving||pointer||e.button!==0)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch,lamp:choose(e)?.object.name==='lamp'};renderer?.domElement.setPointerCapture(e.pointerId)}
     const up=(e:PointerEvent)=>{
-      const p=pointer;pointer=null;if(!p||moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
+      const p=pointer;if(!p||p.id!==e.pointerId)return;pointer=null;if(moving||Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)return
       const hit=choose(e)
       // Retain the lamp hit from pointer-down while the camera eases to its
       // parallax position, so an ordinary click never misses a thin shade.
       if(p.lamp||hit?.object.name==='lamp'){
-        lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
+        lampStartLevel=lampLevel;lampStartedAt=performance.now();lampOn=!lampOn;host.dataset.lampState=lampOn?'on':'off';host.dataset.lampSettled='false';dirty=true;highlight();updateHover(lampOn?'Lamp · Turn off':'Lamp · Turn on',true);return
       }
       if(!hit)return
       highlight(hit.object)
       const animated=hit.object.name==='planter'?Array.from(interactive.values()).find(group=>group.name==='plant')??hit.object:hit.object
-      const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
+      // Large anchored furniture and window frames must never rotate into
+      // the tabletop/wall: that can create overlapping geometry and shadows.
+      if(hit.route?.href.startsWith('#crt-')){
+        setCRTFolder(hit.route.href.slice(5) as CRTFolder);highlight();updateHover('');return
+      }
+      if(animated.name==='mat'){
+        if(!reduced){matStarted=performance.now();dirty=true}
+      }else if(curtains.has(animated)){
+        if(!reduced){const curtain=curtains.get(animated)!;curtain.start=performance.now();dirty=true}
+      }else if(animated.name!=='desk'&&animated.name!=='window'&&animated.name!=='computer'){
+        const existing=poses.get(animated);poses.set(animated,{start:performance.now(),rotation:existing?.rotation??animated.rotation.clone()});dirty=true
+      }
       if(!hit.route)return
       const route=hit.route
       if(route.href==='#contact-card'){setContactIndex(0);setContactOpen(true);contactAction.current?.(true);return}
       if(route.href.startsWith('https:')){window.open(route.href,'_blank','noopener,noreferrer');updateHover('');return}
       moving=true;updateHover('')
       if(!reduced&&!hit.object.name.startsWith('photo-')){focus=new THREE.Box3().setFromObject(hit.object).getCenter(new THREE.Vector3());focusCamera=camera.position.clone().lerp(focus,.34)}
+      if(!reduced&&hit.object.name==='target_hobbies'){
+        // Stay on the front/left side of the desk, not a close orbit around
+        // the book: neither the right wall nor the underside enters frame.
+        const limit=aspect<1.15?Math.min(2.10,Math.max(0,3.55-3.34*aspect)):.84
+        const shift=Math.min(.25,Math.max(0,desired.x+limit))
+        focus=restLook.clone();focus.x-=shift
+        focusCamera=desired.clone();focusCamera.x-=shift
+      }
       const navigate=()=>router.push(route.href)
       transition=setTimeout(navigate,hit.object.name.startsWith('photo-')?1100:reduced?0:580)
     }
-    const leave=()=>{if(!pointer&&!moving){yaw=pitch=0;updateHover('');highlight()}}
-    const cancel=()=>{pointer=null}
+    const leave=()=>{if(!pointer&&!moving){if(legacy||hoverTarget!=='lamp')yaw=pitch=0;hoverTarget='';updateHover('');highlight()}}
+    const cancel=(e:PointerEvent)=>{if(pointer?.id===e.pointerId)pointer=null}
     try {
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'})
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace
@@ -280,22 +383,47 @@ export default function StudioScene(){
       renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap
       renderer.shadowMap.autoUpdate=false
       renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cursor='grab';host.appendChild(renderer.domElement)
+      const debugFrames:Array<{time:number;event:string;lampOn:boolean;level:number;black:number;mean:number;camera:number[];calls:number}>=[]
+      const debugEvents:Array<{time:number;event:string}>=[]
+      const monitorCanvas=document.createElement('canvas');monitorCanvas.width=96;monitorCanvas.height=96
+      const monitorCtx=debug?monitorCanvas.getContext('2d',{willReadFrequently:true}):null
+      const monitorBounds=new THREE.Box3(),monitorPoint=new THREE.Vector3()
+      let prevDebugTarget='',debugError='',lampGroup:THREE.Group|undefined
+      const recordEvent=(event:string)=>{if(!debug)return;debugEvents.push({time:Math.round(performance.now()),event});if(debugEvents.length>150)debugEvents.shift()}
+      const snapshot=()=>({mode:legacy?'legacy-hover':'isolated-hover',frames:debugFrames,events:debugEvents,error:debugError})
+      const monitor=()=>{
+        if(!monitorCtx||!renderer||!lampGroup)return
+        try{
+          monitorBounds.setFromObject(lampGroup);let left=1,right=-1,bottom=1,top=-1
+          for(const x of [monitorBounds.min.x,monitorBounds.max.x])for(const y of [monitorBounds.min.y,monitorBounds.max.y])for(const z of [monitorBounds.min.z,monitorBounds.max.z]){monitorPoint.set(x,y,z).project(camera);left=Math.min(left,monitorPoint.x);right=Math.max(right,monitorPoint.x);bottom=Math.min(bottom,monitorPoint.y);top=Math.max(top,monitorPoint.y)}
+          const source=renderer.domElement,w=source.width,h=source.height
+          const x0=Math.max(0,(left+1)*w/2),x1=Math.min(w,(right+1)*w/2),y0=Math.max(0,(1-top)*h/2),y1=Math.min(h,(1-bottom)*h/2)
+          if(x1-x0<2||y1-y0<2)return
+          monitorCtx.drawImage(source,x0,y0,x1-x0,y1-y0,0,0,96,96)
+          const pixels=monitorCtx.getImageData(0,0,96,96).data;let dark=0,sum=0
+          for(let i=0;i<pixels.length;i+=4){const luminance=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;sum+=luminance;if(luminance<25)dark++}
+          if(prevDebugTarget!==hoverTarget){recordEvent(`hover: ${prevDebugTarget||'none'} → ${hoverTarget||'none'}`);prevDebugTarget=hoverTarget}
+          debugFrames.push({time:Math.round(performance.now()),event:hoverTarget||'none',lampOn,level:Number(lampLevel.toFixed(3)),black:Number((dark/(96*96)).toFixed(4)),mean:Number((sum/(96*96)).toFixed(2)),camera:camera.position.toArray().map(v=>Number(v.toFixed(3))),calls:renderer.info.render.calls})
+          if(debugFrames.length>360)debugFrames.shift();host.dataset.shadowDiagnostics=JSON.stringify(snapshot())
+        }catch(error){debugError=String(error);host.dataset.shadowDiagnostics=JSON.stringify(snapshot())}
+      }
+      if(debug){
+        renderer.domElement.addEventListener('webglcontextlost',()=>{recordEvent('WebGL context lost');host.dataset.shadowDiagnostics=JSON.stringify(snapshot())})
+        diagnosticExport.current=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}));const anchor=document.createElement('a');anchor.href=url;anchor.download='studio-shadow-diagnostics.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+      }
       scene=new THREE.Scene();scene.background=new THREE.Color('#c893a7')
       const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);environmentTarget=pmrem.fromScene(room,.04);scene.environment=environmentTarget.texture;scene.environmentIntensity=.37;room.dispose();pmrem.dispose()
       scene.add(new THREE.HemisphereLight('#dee3ff','#796653',.53))
-      // Spread the key across the window aperture to create a soft penumbra.
-      for(const [x,y,z] of [[-5.5,3.6,.6],[-5.5,2.8,.6],[-5.5,3.6,-.7],[-5.5,2.8,-.7]]){
-        const sunlight=new THREE.DirectionalLight('#ffcf9b',.31);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
-        sunlight.shadow.mapSize.set(1024,1024);sunlight.shadow.camera.left=-5;sunlight.shadow.camera.right=5;sunlight.shadow.camera.top=5;sunlight.shadow.camera.bottom=-5;sunlight.shadow.normalBias=.012;sunlight.shadow.bias=-.00012;sunlight.shadow.radius=3;scene.add(sunlight,sunlight.target)
+      // The old shadow cameras sat behind the enclosing wall, which blocked
+      // the window key and washed out the contact shadows. Place two samples
+      // in the actual aperture; they share the previous total light energy.
+      for(const [x,y,z,energy] of [[-3.85,3.65,.52,.64],[-3.85,3.35,-.52,.60]]){
+        const sunlight=new THREE.DirectionalLight('#ffcf9b',energy);sunlight.position.set(x,y,z);sunlight.target.position.set(.1,1.3,-.3);sunlight.castShadow=true
+        const shadow=sunlight.shadow;shadow.mapSize.set(2048,2048);shadow.camera.left=-5;shadow.camera.right=5;shadow.camera.top=4.5;shadow.camera.bottom=-4.5;shadow.camera.near=.05;shadow.camera.far=14;shadow.camera.updateProjectionMatrix();shadow.normalBias=.005;shadow.bias=-.00005;shadow.radius=3;scene.add(sunlight,sunlight.target)
       }
       const fill=new THREE.DirectionalLight('#d1e2e4',.38);fill.position.set(4,4,5);scene.add(fill)
       lampLight=new THREE.PointLight('#ffb65f',8.5,3.4,2);lampLight.position.set(-1.55,2.30,-.77);scene.add(lampLight)
-      composer=new EffectComposer(renderer)
-      composer.addPass(new RenderPass(scene,camera))
-      outline=new OutlinePass(new THREE.Vector2(host.clientWidth,host.clientHeight),scene,camera)
-      outline.visibleEdgeColor.set('#ffe8ad');outline.hiddenEdgeColor.set('#000000');outline.edgeStrength=2;outline.edgeGlow=.4;outline.edgeThickness=1.2
-      composer.addPass(outline);composer.addPass(new OutputPass())
-      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);composer?.setSize(host.clientWidth,host.clientHeight)}
+      const resize=()=>{if(!renderer||!host.clientWidth||!host.clientHeight)return;dirty=true;aspect=host.clientWidth/host.clientHeight;camera.aspect=aspect;camera.fov=aspect<1.15?42:Math.min(33.5,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(16.75))*1.85/aspect)));camera.zoom=1;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
       observer=new ResizeObserver(resize);observer.observe(host);resize()
       const apply=(mesh:THREE.Mesh,texture:THREE.Texture,unlit=false)=>{
         dirty=true;textures.push(texture);const material=unlit?new THREE.MeshBasicMaterial({map:texture}):new THREE.MeshStandardMaterial({map:texture,roughness:.86});ownedMaterials.push(material);mesh.material=material
@@ -314,6 +442,48 @@ export default function StudioScene(){
           // GLTFLoader sanitizes spaces into underscores. Preserve the original
           // Blender names for all interaction, mesh and shadow classifications.
           model.traverse(obj=>{if(typeof obj.userData.name==='string')obj.name=obj.userData.name})
+          const research=model.getObjectByName('target_projects')
+          if(research){
+            const bookResponse=await fetch('/studio-model/research-book.glb.gz',{signal:abort.signal});if(!bookResponse.ok)throw Error('Research notebook unavailable')
+            const encodedBook=await bookResponse.arrayBuffer(),sig=new Uint8Array(encodedBook,0,4)
+            const bookBuffer=sig[0]===0x67&&sig[1]===0x6c?encodedBook:await new Response(new Blob([encodedBook]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
+            const book=await loader.parseAsync(bookBuffer,'/');if(!alive)return
+            research.clear();book.scene.name='Approved research book';book.scene.position.set(-2.78,1.34,.55);book.scene.rotation.y=THREE.MathUtils.degToRad(8);research.add(book.scene)
+            host.dataset.researchBook='bound-leather'
+          }
+          const player=model.getObjectByName('Mint pocket MP3')
+          if(player){
+            const old:THREE.Object3D[]=[];player.traverse(o=>{if(/^(Earphone lead|Earbud housing|Headphone plug)/.test(o.name))old.push(o)});old.forEach(o=>o.removeFromParent())
+            const rubber=new THREE.MeshStandardMaterial({color:'#292a29',roughness:.72}),housing=new THREE.MeshStandardMaterial({color:'#303335',roughness:.36,metalness:.23}),silicone=new THREE.MeshStandardMaterial({color:'#1c1c1c',roughness:.88}),metal=new THREE.MeshStandardMaterial({color:'#858c89',roughness:.34,metalness:.8}),bezel=new THREE.MeshStandardMaterial({color:'#53645d',roughness:.38,metalness:.24})
+            ownedMaterials.push(rubber,housing,silicone,metal,bezel)
+            const add=(name:string,geometry:THREE.BufferGeometry,material:THREE.Material,parent:THREE.Object3D,position:THREE.Vector3)=>{const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.position.copy(position);parent.add(mesh);return mesh}
+            add('Player screen inset bezel',new RoundedBoxGeometry(.184,.004,.222,3,.012),bezel,player,new THREE.Vector3(0,.046,-.064))
+            add('Player side volume button',new RoundedBoxGeometry(.007,.018,.055,3,.002),metal,player,new THREE.Vector3(.104,.025,-.025))
+            add('Headphone connector',new RoundedBoxGeometry(.031,.021,.058,3,.008),housing,player,new THREE.Vector3(0,.021,.218))
+            const cable=(name:string,points:THREE.Vector3[],radius=.0038)=>{const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');add(name,new THREE.TubeGeometry(curve,Math.max(24,points.length*12),radius,8,false),rubber,player,new THREE.Vector3())}
+            const v=(x:number,y:number,z:number)=>new THREE.Vector3(x,y,z)
+            // A long, loose coil lies entirely on the free area in front of
+            // the player. The branch point is a real molded Y splitter.
+            const split=v(-.48,.015,.63)
+            cable('Earphone main cable',[v(0,.021,.245),v(.055,.013,.34),v(.135,.012,.54),v(.025,.012,.72),v(-.29,.012,.80),v(-.59,.012,.70),v(-.67,.012,.48),v(-.44,.012,.34),v(-.23,.018,.43),v(-.26,.019,.62),split])
+            add('Earphone Y splitter',new RoundedBoxGeometry(.025,.022,.055,3,.008),housing,player,split)
+            const makeBud=(name:string,center:THREE.Vector3,direction:THREE.Vector3,lead:THREE.Vector3[])=>{
+              const group=new THREE.Group();group.name=name;group.position.copy(center);group.quaternion.setFromUnitVectors(v(0,1,0),direction.clone().normalize());player.add(group)
+              const profile=(points:number[][])=>new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),32)
+              add(name+' molded housing',profile([[.009,-.031],[.017,-.026],[.023,-.017],[.025,-.005],[.022,.009],[.016,.02],[.010,.024]]),housing,group,v(0,0,0))
+              add(name+' acoustic silver collar',new THREE.CylinderGeometry(.017,.017,.003,32),metal,group,v(0,.018,0))
+              add(name+' silicone tip',profile([[.010,.022],[.019,.025],[.021,.031],[.017,.039],[.009,.042],[.007,.039]]),silicone,group,v(0,0,0))
+              add(name+' sound mesh',new THREE.CylinderGeometry(.007,.007,.002,24),rubber,group,v(0,.042,0))
+              add(name+' strain relief',new THREE.CylinderGeometry(.007,.004,.025,16),rubber,group,v(0,-.042,0))
+              const end=center.clone().addScaledVector(direction.clone().normalize(),-.053);cable(name+' branch cable',[split,...lead,end],.0028)
+            }
+            makeBud('Earbud left',v(-.59,.031,.45),v(-.9,.06,-.4),[v(-.50,.013,.57),v(-.52,.013,.48)])
+            makeBud('Earbud right',v(-.79,.031,.65),v(-.6,.06,.8),[v(-.62,.013,.64),v(-.71,.013,.58)])
+            host.dataset.earphones='coiled-in-ear'
+          }
+          const vegetation:THREE.Object3D[]=[]
+          model.traverse(obj=>{if(/^Exterior (tree |scanned shrub)/.test(obj.name))vegetation.push(obj)})
+          vegetation.forEach(obj=>obj.removeFromParent())
           const floorLoader=new THREE.TextureLoader()
           const loadSurface=(path:string,colorSpace:THREE.ColorSpace)=>{
             const texture=floorLoader.load(path,()=>{dirty=true});textures.push(texture);texture.colorSpace=colorSpace;texture.flipY=false;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=renderer!.capabilities.getMaxAnisotropy();return texture
@@ -321,71 +491,167 @@ export default function StudioScene(){
           const floorColor=loadSurface('/studio-surfaces/chevron-oak.jpg',THREE.SRGBColorSpace)
           const floorHeight=loadSurface('/studio-surfaces/chevron-height.jpg',THREE.NoColorSpace)
           const lacquer=loadSurface('/studio-surfaces/olive-lacquer.jpg',THREE.SRGBColorSpace)
+          // Geometry-baked contact AO, projected through mesh UV1, is stable
+          // at every viewing angle. No extra surfaces to fight the depth buffer.
+          const contact=(name:string)=>{const t=loadSurface(`/studio-surfaces/${name}-contact.png`,THREE.NoColorSpace);t.channel=1;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;return t}
+          const deskAO=contact('desk'),matAO=contact('mat'),wallAO=contact('wall'),floorAO=contact('floor')
+          const applyContact=(mesh:THREE.Mesh,texture:THREE.Texture,x0:number,xSpan:number,v0:number,vSpan:number,vertical=false)=>{
+            const material=(mesh.material as THREE.MeshStandardMaterial).clone();material.aoMap=texture;material.aoMapIntensity=1;material.needsUpdate=true;ownedMaterials.push(material);mesh.material=material
+            // Ambient occlusion alone does not attenuate bright direct light.
+            // The floor map also contains a traced window-to-desk visibility
+            // term; apply it to the final diffuse illumination, on the floor itself.
+            if(mesh.name==='Continuous chevron parquet'){
+              material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\n reflectedLight.directDiffuse *= mix(1.0, texture2D(aoMap, vAoMapUv).r, 0.82);')}
+              material.customProgramCacheKey=()=> 'studio-floor-visibility-v1'
+            }
+            mesh.geometry=mesh.geometry.clone();const positions=mesh.geometry.attributes.position,uv=new Float32Array(positions.count*2),p=new THREE.Vector3()
+            for(let i=0;i<positions.count;i++){p.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);uv[i*2]=(p.x-x0)/xSpan;uv[i*2+1]=((vertical?p.y:p.z)-v0)/vSpan}
+            mesh.geometry.setAttribute('uv1',new THREE.BufferAttribute(uv,2))
+          }
+          model.updateMatrixWorld(true)
           const wood=woodTexture(),grain=surfaceGrain();textures.push(wood,grain)
           model.traverse(obj=>{
             if(!(obj instanceof THREE.Mesh))return
-            obj.castShadow=!obj.name.startsWith('Exterior ')&&!obj.name.startsWith('Sheer curtain')&&!obj.name.includes('Window prism caustic');obj.receiveShadow=!obj.name.startsWith('Exterior ')
+            obj.castShadow=!/^(Exterior |Papered |Plaster ceiling|Continuous |Sheer curtain|Window prism caustic|keyboard_label_|computer_screen|degree_texture_|contact_card_texture|contact_tab_|resume_texture|research_cover|Foil sun and moon tooling)/.test(obj.name);obj.receiveShadow=!obj.name.startsWith('Exterior ')
             const m=obj.material as THREE.MeshStandardMaterial
-            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.12;m.thickness=.014;m.roughness=.32;m.needsUpdate=true}}
+            // The entire sculptural lamp contains closely spaced intersecting
+            // transparent and metallic shells. Exclude it from shadow-map
+            // reception, while retaining all original PBR material parameters.
+            // Its ground/contact shadow remains in the baked receiver maps.
+            if(!legacy&&obj.name.startsWith('Lamp ')){obj.castShadow=false;obj.receiveShadow=false}
+            if(m.name==='Satin amber pendant glass'){lampShades.add(m);m.emissive.set('#ff9d2f');m.emissiveIntensity=.8;obj.castShadow=false}
             if(m.name==='Olive lacquer'){m.map=lacquer;m.color.set('#ffffff');m.bumpMap=grain;m.bumpScale=.002;m.roughness=.48;m.metalness=0;m.needsUpdate=true}
-            if(m.name==='Moulded green art glass'){m.color.set('#477443');m.roughness=.3;if(m instanceof THREE.MeshPhysicalMaterial){m.transmission=.18;m.thickness=.035}obj.castShadow=false;m.needsUpdate=true}
-            if(m.name==='Hand finished brass'){m.color.set('#b58c47');m.metalness=.78;m.roughness=.37;m.needsUpdate=true}
+            if(m.name==='Warm oxblood calfskin'){m.color.setRGB(.095,.018,.009);m.bumpMap=grain;m.bumpScale=.0012;m.roughness=.65;m.needsUpdate=true;host.dataset.researchLeather='oxblood-red'}
             if(m.name==='Chevron oak parquet'){m.map=floorColor;m.color.set('#ffffff');m.bumpMap=floorHeight;m.bumpScale=.012;m.roughness=.58;m.metalness=0;m.needsUpdate=true}
             if(obj.name==='Continuous oak subfloor'&&obj.position.y> -1.46)obj.position.y-=.04
+            // The rainbow decal was only 1 mm above the desktop. Use a
+            // depth offset and a non-writing transparent layer, not another
+            // competing opaque surface at the exact same depth.
+            if(obj.name==='Window prism caustic'){m.depthWrite=false;m.transparent=true;m.polygonOffset=true;m.polygonOffsetFactor=-2;m.polygonOffsetUnits=-2;obj.position.y+=.006;obj.receiveShadow=false;obj.renderOrder=2;m.needsUpdate=true}
             if(m.name==='Ivory sheer linen'){m.transparent=true;m.opacity=.39;m.depthWrite=false;m.side=THREE.DoubleSide;m.roughness=.9}
             if(m.name.includes('cast glass')||m.name.includes('blown glass')){
               const green=m.name.includes('emerald');const physical=m instanceof THREE.MeshPhysicalMaterial?m:new THREE.MeshPhysicalMaterial({name:m.name,color:m.color,roughness:m.roughness})
-              physical.metalness=0;physical.transmission=green?.22:.35;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.29:.23;physical.envMapIntensity=.85;physical.side=THREE.FrontSide;physical.needsUpdate=true
+              physical.metalness=0;physical.transmission=.92;physical.ior=1.48;physical.thickness=green?.095:.018;physical.attenuationDistance=green?.38:.16;physical.attenuationColor.set(green?'#519143':'#ffb72d');physical.roughness=green?.21:.13;physical.envMapIntensity=1.15;physical.side=THREE.DoubleSide;physical.needsUpdate=true
               if(physical!==m){ownedMaterials.push(physical);obj.material=physical}obj.castShadow=false
+            }
+            // All three glass materials in the reported black silhouette use
+            // the same screen-space transmission render target. Retain their
+            // geometry, tint, IOR, surface reflections and light emission,
+            // but use a stable clear-coated surface instead of sampling that
+            // device-dependent framebuffer. No change to the bronze figure.
+            const lampSurface=obj.material as THREE.MeshPhysicalMaterial
+            if(!legacy&&obj.name.startsWith('Lamp ')&&lampSurface.isMeshPhysicalMaterial&&lampSurface.transmission>0){
+              lampSurface.transmission=0;lampSurface.transparent=false;lampSurface.opacity=1;lampSurface.depthWrite=true
+              lampSurface.clearcoat=.85;lampSurface.clearcoatRoughness=.16;lampSurface.envMapIntensity=1.15
+              if(lampSurface.name==='Moulded green art glass'){lampSurface.color.set('#8b956b');lampSurface.metalness=.14}
+              lampSurface.needsUpdate=true
             }
             if(m.name==='Brass'||m.name==='Cast bronze maiden'){m.metalness=1;m.roughness=.29;m.envMapIntensity=1.2;m.needsUpdate=true}
             if(m.name.startsWith('Botanical ')){m.bumpMap=grain;m.bumpScale=m.name.includes('leaf')?.0035:.0018;m.envMapIntensity=.55;m.needsUpdate=true}
             if(m.name==='Walnut'){m.map=wood;m.color.set('#ffffff');m.roughness=.53;m.needsUpdate=true}
             if(obj.geometry.attributes.uv&&['Walnut','Desk mat leather','Forest green cloth','Warm plaster','Ivory paper','Aged ABS plastic'].includes(m.name)){m.bumpMap=grain;m.bumpScale=m.name==='Warm plaster'?.014:m.name==='Desk mat leather'?.009:.004;m.needsUpdate=true}
             const name=obj.name
-            if(name==='computer_screen'){apply(obj,screenTexture(),true);obj.castShadow=false}
+            if(name==='computer_screen'){crtTexture=screenTexture();apply(obj,crtTexture,true);host.dataset.crtFolder=crtFolder;obj.castShadow=false}
             else if(name==='research_cover')apply(obj,bookTexture('#762d31','RESEARCH','PROJECTS & SKILLS'))
             else if(name==='resume_texture')apply(obj,resumeTexture())
             else if(name==='contact_card_texture')apply(obj,contactCardTexture())
             else if(name.startsWith('contact_tab_')){const i=Number(name.split('_').pop());apply(obj,canvasTexture((ctx,w,h)=>{ctx.fillStyle='#103e33';ctx.fillRect(0,0,w,h);title(ctx,contactCards[i]?.tab.toUpperCase()??'',w/2,h*.64,29,'#f3e5c7','Arial')},256,112))}
             else if(name.startsWith('degree_texture_'))apply(obj,degreeTexture(name.endsWith('0')))
+            if(name==='Desk lacquered top')applyContact(obj,deskAO,-3.7,7.4,-1.65,3.5)
+            else if(name==='Leather desk pad')applyContact(obj,matAO,-1.225,2.95,.39,1.30)
+            else if(name==='Papered rear wall')applyContact(obj,wallAO,-3.8,7.6,1.45,3.6,true)
+            else if(name==='Continuous chevron parquet')applyContact(obj,floorAO,-4,8.5,-2.27,7)
           })
-          assembleInteractions();host.dataset.lampState='on';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
+          assembleInteractions();lampGroup=Array.from(interactive.values()).find(group=>group.name==='lamp');let transmissionCount=0;lampGroup?.traverse(obj=>{if(obj instanceof THREE.Mesh&&(obj.material as THREE.MeshPhysicalMaterial).transmission>0)transmissionCount++});host.dataset.lampTransmissionCount=String(transmissionCount);host.dataset.lampState='on';host.dataset.lampSettled='true';dirty=true;scene!.add(model);renderer!.shadowMap.needsUpdate=true;setStatus('ready')
         }catch(e){if(alive)setStatus('fallback')}
       })()
+      let lastFrameTime=performance.now()
       const animate=()=>{
         if(!alive||!renderer||!scene)return
+        const now=performance.now(),dt=Math.max(1,now-lastFrameTime);lastFrameTime=now
         const goal=lampOn?1:0
-        if(Math.abs(lampLevel-goal)>.001){
-          lampLevel=reduced?goal:THREE.MathUtils.lerp(lampLevel,goal,.16)
-          if(Math.abs(lampLevel-goal)<.001)lampLevel=goal
+        if(host.dataset.lampSettled==='false'){
+          const t=reduced?1:Math.min(1,(performance.now()-lampStartedAt)/280)
+          lampLevel=THREE.MathUtils.lerp(lampStartLevel,goal,1-Math.pow(1-t,3))
+          if(t===1){lampLevel=goal;host.dataset.lampSettled='true'}
           if(lampLight)lampLight.intensity=8.5*lampLevel
           lampShades.forEach(m=>{m.emissiveIntensity=.8*lampLevel})
           dirty=true
         }
-        const radius=8.9*Math.max(1,1.5/aspect)
-        const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.28,.28),b=reduced?0:THREE.MathUtils.clamp(pitch+dragPitch,-.15,.15)
-        desired.set(THREE.MathUtils.clamp(Math.sin(a)*radius,-3.35,7.5),THREE.MathUtils.clamp(3.86+(radius-8.9)*.19+Math.sin(b)*radius,.35,6.15),Math.min(38,Math.cos(a)*radius))
-        const position=focusCamera??desired,target=focus??baseLook
+        const portrait=aspect<1.15
+        if(portrait){
+          // Bound the entire visible frustum, not just the camera center.
+          // Wider portrait/tablet viewports need less lateral translation.
+          const panLimit=Math.min(2.10,Math.max(0,3.55-3.34*aspect))
+          const pan=THREE.MathUtils.clamp(-dragYaw*11.9,-panLimit,panLimit)
+          const vertical=THREE.MathUtils.clamp(-dragPitch*3.1,-.22,.22)
+          desired.set(pan+.08,3.50+vertical,6.50)
+          restLook.set(pan,1.90+vertical,-.35)
+        }else{
+          const radius=8.9
+          const a=reduced?.035:THREE.MathUtils.clamp(.035+yaw+dragYaw,-.095,.095)
+          const vertical=THREE.MathUtils.clamp(-dragPitch*3.1,-.22,.22)
+          desired.set(Math.sin(a)*radius,3.86+vertical,Math.cos(a)*radius);restLook.set(.1,2.05+vertical,-.35)
+        }
+        const position=focusCamera??desired,target=focus??restLook
+        if(matStarted!==null){
+          const t=Math.min(1,(now-matStarted)/1800),angle=.92*Math.pow(Math.sin(Math.PI*t),2)
+          const v=new THREE.Vector3(),corner=.30,invSqrt2=Math.SQRT1_2
+          for(const part of matParts){
+            const p=part.mesh.geometry.attributes.position
+            for(let i=0;i<p.count;i++){
+              if(t===1){p.setXYZ(i,part.rest[i*3],part.rest[i*3+1],part.rest[i*3+2]);continue}
+              v.fromArray(part.rest,i*3).applyMatrix4(part.world)
+              // Front-left diagonal. The rest of the mat remains flat.
+              const d=Math.max(0,corner-((v.x+1.225)+(1.69-v.z))*invSqrt2)
+              if(d>0&&angle>1e-5){
+                const theta=angle*d/corner,r=corner/angle
+                const shift=d-r*Math.sin(theta)
+                v.x+=shift*invSqrt2;v.z-=shift*invSqrt2
+                v.y+=r*(1-Math.cos(theta))
+              }
+              v.applyMatrix4(part.inverse);p.setXYZ(i,v.x,v.y,v.z)
+            }
+            p.needsUpdate=true;part.mesh.geometry.computeVertexNormals()
+          }
+          dirty=true
+          if(t===1)matStarted=null
+        }
+        for(const cloth of Array.from(curtains.values())){
+          if(cloth.start===null)continue
+          const time=(now-cloth.start)/1000,t=Math.min(1,time/4.8),envelope=Math.pow(Math.sin(Math.PI*t),1.6)
+          const p=cloth.mesh.geometry.attributes.position
+          for(let i=0;i<p.count;i++){
+            // Rod stays fixed; a soft inward breeze travels down the folds.
+            const h=cloth.height[i],weight=h*h*(3-2*h),wave=.5+.5*Math.sin(time*2.7-h*3.8+cloth.phase[i]),shift=.10*weight*envelope*(.26+.74*wave)
+            p.setXYZ(i,cloth.rest[i*3]+cloth.inward.x*shift,cloth.rest[i*3+1]+cloth.inward.y*shift,cloth.rest[i*3+2]+cloth.inward.z*shift)
+          }
+          p.needsUpdate=true;cloth.mesh.geometry.computeVertexNormals();dirty=true
+          if(t===1)cloth.start=null
+        }
         for(const [group,pose] of Array.from(poses.entries())){
           const t=Math.min(1,(performance.now()-pose.start)/1100)
           group.rotation.copy(pose.rotation)
           group.rotation.z+=Math.sin(t*Math.PI*4)*(1-t)*(group.name==='plant'?.145:group.name.startsWith('photo-')?.13:group.name==='desk'||group.name==='window'?.005:.04)
-          renderer.shadowMap.needsUpdate=true
+          // Small prop animations retain the stable baked window shadows.
+          // Rebuilding all four shadow maps per swing frame caused temporal
+          // interference on thin, nearly coplanar surfaces.
           dirty=true
           if(t===1){group.rotation.copy(pose.rotation);poses.delete(group)}
         }
-        if(dirty || camera.position.distanceToSquared(position)>1e-7 || look.distanceToSquared(target)>1e-7){
-          camera.position.lerp(position,reduced?1:.085)
-          look.lerp(target,reduced?1:.085);camera.lookAt(look)
-          if(composer)composer.render();else renderer.render(scene,camera);dirty=false
+        if(dirty || camera.position.distanceToSquared(position)>.0001 || look.distanceToSquared(target)>.0001){
+          const alpha=reduced?1:1-Math.exp(-dt/145)
+          camera.position.lerp(position,alpha);if(camera.position.distanceToSquared(position)<.0001)camera.position.copy(position)
+          look.lerp(target,alpha);if(look.distanceToSquared(target)<.0001)look.copy(target);camera.lookAt(look)
+          host.dataset.cameraTarget=restLook.toArray().map(v=>v.toFixed(3)).join(',')
+          renderer.render(scene,camera);dirty=false;monitor()
         }
         frame=requestAnimationFrame(animate)
       }
       camera.position.set(.31,3.86,8.9);animate()
       const canvas=renderer.domElement;canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('pointercancel',cancel)
     }catch{setStatus('fallback')}
-    return()=>{alive=false;contactAction.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();outline?.dispose();composer?.dispose();renderer?.dispose();renderer?.domElement.remove()}
+    return()=>{alive=false;contactAction.current=null;diagnosticExport.current=null;abort.abort();cancelAnimationFrame(frame);if(transition)clearTimeout(transition);observer?.disconnect();highlight();rimMaterial.dispose();scene?.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();const mats=Array.isArray(obj.material)?obj.material:[obj.material];mats.forEach(m=>m.dispose())}});textures.forEach(t=>t.dispose());ownedMaterials.forEach(m=>m.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()}
   },[router])
 
   return <main className="studio-home" data-status={status}>
@@ -395,6 +661,7 @@ export default function StudioScene(){
       {status==='loading'&&<p className="studio-state" role="status">Opening the studio…</p>}
       {status==='fallback'&&<p className="studio-state">The 3D studio is unavailable on this device. All sections are available below.</p>}
       <div ref={tooltip} className={`studio-object-tooltip${hover?' is-visible':''}`} role="tooltip" aria-hidden={!hover}>{hover}</div>
+      {shadowDebug&&<div style={{position:'absolute',zIndex:9,right:12,bottom:12,padding:10,background:'#f8f3e5',color:'#332c24',fontSize:12,border:'1px solid #a68e65'}}><button type="button" onClick={()=>diagnosticExport.current?.()}>Download shadow diagnostics</button><div style={{fontSize:11,marginTop:4}}>Local frame monitor · no data is sent</div></div>}
       {contactOpen&&<div className="contact-backdrop" onClick={closeContact}><div className="contact-index-dialog" role="dialog" aria-modal="true" aria-label="Wenyi Ye contact cards" tabIndex={-1} ref={contactDialog} onClick={e=>e.stopPropagation()}>
         <button type="button" className="contact-dismiss" onClick={closeContact}>← Back to desk</button>
         <div className="contact-tabs" role="tablist" aria-label="Contact channels">{contactCards.map((card,i)=><button type="button" role="tab" aria-selected={i===contactIndex} key={card.tab} onClick={()=>setContactIndex(i)}>{card.tab}</button>)}</div>
@@ -402,6 +669,6 @@ export default function StudioScene(){
         <p className="contact-exit-hint">Press Esc or click outside to return</p>
       </div></div>}
     </div>
-    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic#about">About</Link><Link href="/classic#education">Education</Link><Link href="/classic#experience">Experience</Link><Link href="/classic#projects">Projects</Link><Link href="/classic#skills">Skills</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
+    <nav className="studio-index" aria-label="Portfolio sections" data-allow-overflow><Link href="/classic/full">Résumé</Link><Link href="/hobbies">Hobbies</Link><Link href="/game">Alchemy</Link><Link href="/game/afterglow">Afterglow</Link><button type="button" className="studio-contact-link" onClick={openContact}>Contact</button></nav>
   </main>
 }
